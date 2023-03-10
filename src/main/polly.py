@@ -19,27 +19,52 @@ class TextToSpeech:
 
     def generate_and_store_audio_file(self) -> str:
         """
-        This method is used to convert text to speech
+        Generate and store audio file to local file system
 
-        :returns: The filename of the audio file
+        :returns: The full path of the audio file
         """
+        stream = self._generate_audio_stream()
+        full_path = self._store_audio_file(stream)
 
-        response = (
-            self._generate_polly_client().synthesize_speech(
-                Engine="neural",
-                OutputFormat="mp3",
-                SampleRate="24000",
-                Text=self.input_text,
-                TextType="text",
-                VoiceId="Joanna",
-            )
-        )
+        return full_path
 
-        # play the audio stream
-        stream = response["AudioStream"].read()
+    def generate_and_play_audio_stream(self) -> None:
+        """
+        Generate and play audio stream without storing to local file system
+
+        :returns: None
+        """
+        stream = self._generate_audio_stream()
         self.play_audio_stream(stream)
 
-        # write the audio stream to a file
+    def _generate_audio_stream(self) -> bytes:
+        """
+        This method is used to convert text to speech
+
+        :returns: The audio stream
+        """
+        client = self._generate_polly_client()
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
+        response = client.synthesize_speech(
+            Engine="neural",
+            OutputFormat="mp3",
+            SampleRate="24000",
+            Text=self.input_text,
+            TextType="text",
+            VoiceId="Joanna",
+        )
+
+        stream = response["AudioStream"].read()
+
+        return stream
+
+    def _store_audio_file(self, stream: bytes) -> str:
+        """
+        This method is used to store the audio stream
+
+        :param stream: The audio stream
+        :returns: The full path of the audio file
+        """
         filename = self._generate_file_name()
         self.write_audio_to_file(filename, stream)
 
@@ -63,7 +88,6 @@ class TextToSpeech:
         :returns: Polly client
         """
         aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
         client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
 
         return client
