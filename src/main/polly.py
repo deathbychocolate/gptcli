@@ -23,15 +23,9 @@ class TextToSpeech:
 
         :returns: The filename of the audio file
         """
-        aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
 
-        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
         response = (
-            boto3.session.Session(
-                profile_name=aws_sso_profile_name
-            )
-            .client("polly")
-            .synthesize_speech(
+            self._generate_polly_client().synthesize_speech(
                 Engine="neural",
                 OutputFormat="mp3",
                 SampleRate="24000",
@@ -46,12 +40,12 @@ class TextToSpeech:
         self.play_audio_stream(stream)
 
         # write the audio stream to a file
-        filename = self.generate_file_name()
+        filename = self._generate_file_name()
         self.write_audio_to_file(filename, stream)
 
         return filename
 
-    def generate_file_name(self) -> str:
+    def _generate_file_name(self) -> str:
         """
         This method is used to generate a file name
 
@@ -61,6 +55,18 @@ class TextToSpeech:
         filename = f"{int(time.time())}.mp3"
         file_path = "".join([path, filename])
         return file_path
+
+    def _generate_polly_client(self) -> boto3.client:
+        """
+        This method is used to generate a boto3 client
+
+        :returns: Polly client
+        """
+        aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
+        client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
+
+        return client
 
     def write_audio_to_file(self, filename: str, stream: bytes) -> None:
         """
