@@ -23,17 +23,12 @@ class TextToSpeech:
 
         :returns: The filename of the audio file
         """
-        aws_account_id = os.getenv("AWS_ACCOUNT_ID", "562832330937")
-        aws_account_role = os.getenv("AWS_ACCOUNT_ROLE", "EngineeringAdmin")
-        aws_region_name = os.getenv("AWS_REGION_NAME", "eu-west-1")
-
-        profile_name = f"{aws_account_id}_{aws_account_role}"
+        aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
 
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
         response = (
             boto3.session.Session(
-                profile_name=profile_name,
-                region_name=aws_region_name,
+                profile_name=aws_sso_profile_name
             )
             .client("polly")
             .synthesize_speech(
@@ -62,7 +57,7 @@ class TextToSpeech:
 
         :returns: The filename
         """
-        path = "./audio/"
+        path = ""  # "./audio/"
         filename = f"{int(time.time())}.mp3"
         file_path = "".join([path, filename])
         return file_path
