@@ -24,11 +24,11 @@ export OPENAI_API_KEY=<API-KEY>
 - Install AWS CLI by following the official guide found [here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 - Create an AWS account [here](https://aws.amazon.com/).
 - Follow the AWS SSO setup found [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
-- Authenticate yourself to AWS using the foloowing command:
+- Authenticate yourself to AWS using the following command:
 ```
 aws sso login --profile <YOUR_PROFILE_NAME>
 ```
-- Export the SSO name to your local environment with the following:
+- Export the SSO name to your local environment with the following command:
 ```
 export AWS_SSO_PROFILE_NAME=<YOUR_AWS_SSO_PROFILE_NAME>
 ```
