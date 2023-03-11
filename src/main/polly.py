@@ -58,6 +58,17 @@ class TextToSpeech:
 
         return stream
 
+    def _generate_polly_client(self) -> boto3.client:
+        """
+        This method is used to generate a boto3 client
+
+        :returns: Polly client
+        """
+        aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
+        client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
+
+        return client
+
     def _store_audio_file(self, stream: bytes) -> str:
         """
         This method is used to store the audio stream
@@ -81,17 +92,6 @@ class TextToSpeech:
         file_path = "".join([path, filename])
         return file_path
 
-    def _generate_polly_client(self) -> boto3.client:
-        """
-        This method is used to generate a boto3 client
-
-        :returns: Polly client
-        """
-        aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
-        client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
-
-        return client
-
     def write_audio_to_file(self, filename: str, stream: bytes) -> None:
         """
         This method is used to write the audio stream to a file
@@ -104,17 +104,6 @@ class TextToSpeech:
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         soundfile.write(filename, audio_data, samplerate=frequency)
 
-    def play_audio_file(self, filename: str) -> None:
-        """
-        This method is used to play the audio file
-
-        :param filename: The filename of the audio file
-        :returns: None
-        """
-        audio_data, sample_rate = soundfile.read(filename, dtype="float64")
-        sounddevice.play(audio_data, samplerate=sample_rate)
-        sounddevice.wait()
-
     def play_audio_stream(self, stream: bytes) -> None:
         """
         This method is used to play the audio stream
@@ -125,4 +114,15 @@ class TextToSpeech:
         data_io = io.BytesIO(stream)
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         sounddevice.play(audio_data, samplerate=frequency)
+        sounddevice.wait()
+
+    def play_audio_file(self, filename: str) -> None:
+        """
+        This method is used to play the audio file
+
+        :param filename: The filename of the audio file
+        :returns: None
+        """
+        audio_data, sample_rate = soundfile.read(filename, dtype="float64")
+        sounddevice.play(audio_data, samplerate=sample_rate)
         sounddevice.wait()
