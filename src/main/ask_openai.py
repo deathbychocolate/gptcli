@@ -1,6 +1,7 @@
 """
 Contains a wrapper for the openai SDK
 """
+import os
 import openai
 
 
@@ -48,16 +49,19 @@ class AskOpenAI:
     A wrapper for the openai python library
     """
 
-    ENGINE = "gpt-3.5-turbo"
+    DEFAULT_ENGINE = "gpt-3.5-turbo"
     MAX_TOKENS = 4096  # The limit as defined by openai docs
 
-    def __init__(self, questions: str):
-        """
-        XXX
-        """
-        pass
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    def ask(self, model: str, messages: list):
+    def __init__(self, model: str, question: str):
+        """
+        Constructor
+        """
+        self.model = model
+        self.question = question
+
+    def ask(self):
         """
         Asks openai a question
 
@@ -65,21 +69,20 @@ class AskOpenAI:
         :param messages: The messages to use
         :return: The response from openai
         """
-        response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        messages = self._build_messages(self.question)
+        response = openai.ChatCompletion.create(model=self.model, messages=messages)
+        reply = response["choices"][0]["message"]["content"]
 
-        return response["choices"][0]["message"]["content"]
+        return reply
 
+    def _build_messages(self, question: str) -> list:
+        """
+        Builds messages to pass to openai
+        TODO: it currently handles only one message, it should handle multiple
 
-def main():
-    """
-    Start here
-    """
-    response = AskOpenAI("").ask(
-        model=AskOpenAI.ENGINE,
-        messages=[MessageFactory.create_message("user", "Hello!")],
-    )
-    print(response)
+        :param messages: The question to use
+        :return: A list representation of the question to ask openai
+        """
+        messages = [MessageFactory.create_message("user", question)]
 
-
-if __name__ == "__main__":
-    main()
+        return messages
