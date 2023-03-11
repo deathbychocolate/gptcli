@@ -1,12 +1,21 @@
-# Polly
-A class that uses the boto3 SDK to create an aws polly client, along with some needed methods to feed text generate audio with ease.
+# What is it?
+This is a simple python project that aims to provide a command line interface for communicating with OpenAIs AI models and provide voice based reponses.
 
-# Openai
-A class that uses the openai module needed to communicate with the openai API. It's purpose is to generate the text to be fed to polly.
+# How does it work?
+The project uses the official OpenAI SDK named openai. This SDK is a very comprenhensive CLI based python project of which we use only the Completions features. I recommend you investigate this further  by installing it using the following command:
+
+```
+python3 -m pip3 install openai
+```
+
+The project also uses the official AWS SDK named boto3. This SDK is a very comprenhensive python module which we use to communicate with AWS's Polly service; a text to speech service (TTS). I recommend experimenting with it once installed with the following command:
+```
+python3 -m pip3 install boto3
+```
 
 
 # Before running the project:
-- Creata an openai account [here](https://chat.openai.com/).
+- Create an openai account [here](https://chat.openai.com/).
 - Generate an openai API key [here](https://platform.openai.com/account/api-keys).
 - Export the API key in your current bash session using the following command:
 ```
@@ -16,5 +25,8 @@ export OPENAI_API_KEY=<API-KEY>
 - Follow the AWS SSO setup found [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
 - Authenticate yourself to AWS using the foloowing command:
 ```
-aws sso login
+aws sso login --profile <YOUR_PROFILE_NAME>
 ```
+
+# How do I run it?
+You may run the project by entering main.py at the root of the project, updating the string currently there with your text, save, and run.
