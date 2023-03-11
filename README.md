@@ -27,6 +27,10 @@ export OPENAI_API_KEY=<API-KEY>
 ```
 aws sso login --profile <YOUR_PROFILE_NAME>
 ```
+- Export the SSO name to your local environment with the following:
+```
+export AWS_SSO_PROFILE_NAME=<YOUR_AWS_SSO_PROFILE_NAME>
+```
 
 # How do I run it?
 You may run the project by entering main.py at the root of the project, updating the string currently there with your text, save, and run.
