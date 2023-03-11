@@ -65,10 +65,7 @@ class OpenAIWrapper:
         :param messages: The messages to use
         :return: The response from openai
         """
-
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=messages
-        )
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
 
         return response["choices"][0]["message"]["content"]
 

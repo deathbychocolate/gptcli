@@ -2,7 +2,7 @@
 """
 This is the main file for the project
 """
-from src.main.polly import TextToSpeech
+from src.main.text_to_speech import TextToSpeech
 
 
 def main() -> None:
