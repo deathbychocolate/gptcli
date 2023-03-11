@@ -22,6 +22,7 @@ python3 -m pip3 install boto3
 export OPENAI_API_KEY=<API-KEY>
 ```
 - Install AWS CLI by following the official guide found [here](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+- Create an AWS account [here](https://aws.amazon.com/).
 - Follow the AWS SSO setup found [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
 - Authenticate yourself to AWS using the foloowing command:
 ```
