@@ -43,7 +43,7 @@ class MessageFactory:
         return Message(role, content).dictionary()
 
 
-class OpenAIWrapper:
+class AskOpenAI:
     """
     A wrapper for the openai python library
     """
@@ -74,8 +74,8 @@ def main():
     """
     Start here
     """
-    response = OpenAIWrapper("").ask(
-        model=OpenAIWrapper.ENGINE,
+    response = AskOpenAI("").ask(
+        model=AskOpenAI.ENGINE,
         messages=[MessageFactory.create_message("user", "Hello!")],
     )
     print(response)
