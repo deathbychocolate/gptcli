@@ -10,6 +10,7 @@ from src.main.text_to_speech import TextToSpeech
 
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -17,16 +18,16 @@ def main() -> None:
     This is the main function
     """
     time_start = time.time()
-    response = AskOpenAI(AskOpenAI.DEFAULT_ENGINE, "When did greece win the european football championship?").ask()
+    response = AskOpenAI(AskOpenAI.DEFAULT_ENGINE, "what is a DAG?").ask()
     time_end = time.time()
     time_taken = time_end - time_start
-    logging.info("Time taken to generate text: %f", time_taken)
+    logger.info("Time taken to generate text: %f", time_taken)
 
     time_start = time.time()
     text_to_speech = TextToSpeech(response)
     time_end = time.time()
     time_taken = time_end - time_start
-    logging.info("Time taken to generate audio: %f", time_taken)
+    logger.info("Time taken to generate audio: %f", time_taken)
 
     text_to_speech.generate_and_play_audio_stream()
 

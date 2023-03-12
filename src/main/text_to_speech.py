@@ -10,6 +10,9 @@ import sounddevice
 import boto3
 
 
+logger = logging.getLogger(__name__)
+
+
 class TextToSpeech:
     """
     This class is used to convert text to speech
@@ -24,10 +27,10 @@ class TextToSpeech:
 
         :returns: The full path of the audio file
         """
-        logging.info("Generating and storing audio stream")
+        logger.info("Generating and storing audio stream")
         stream = self._generate_audio_stream()
         full_path = self._store_audio_stream_to_file(stream)
-        logging.info("Audio stream generated and stored")
+        logger.info("Audio stream generated and stored")
 
         return full_path
 
@@ -37,10 +40,10 @@ class TextToSpeech:
 
         :returns: None
         """
-        logging.info("Generating and playing audio stream")
+        logger.info("Generating and playing audio stream")
         stream = self._generate_audio_stream()
         self.play_audio_stream(stream)
-        logging.info("Audio stream generated and played")
+        logger.info("Audio stream generated and played")
 
     def _generate_audio_stream(self) -> bytes:
         """
@@ -48,7 +51,7 @@ class TextToSpeech:
 
         :returns: The audio stream
         """
-        logging.info("Generating audio stream")
+        logger.info("Generating audio stream")
         client = self._generate_polly_client()
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
         response = client.synthesize_speech(
@@ -61,7 +64,7 @@ class TextToSpeech:
         )
 
         stream = response["AudioStream"].read()
-        logging.info("Audio stream generated")
+        logger.info("Audio stream generated")
 
         return stream
 
@@ -71,10 +74,10 @@ class TextToSpeech:
 
         :returns: Polly client
         """
-        logging.info("Generating polly client")
+        logger.info("Generating polly client")
         aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
         client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
-        logging.info("Polly client generated")
+        logger.info("Polly client generated")
 
         return client
 
@@ -85,10 +88,10 @@ class TextToSpeech:
         :param stream: The audio stream
         :returns: The full path of the audio file
         """
-        logging.info("Storing audio stream")
+        logger.info("Storing audio stream")
         filename = self._generate_file_name()
         self.write_audio_to_file(filename, stream)
-        logging.info("Audio stream stored")
+        logger.info("Audio stream stored")
 
         return filename
 
@@ -111,11 +114,11 @@ class TextToSpeech:
         :param stream: The audio stream
         :returns: None
         """
-        logging.info("Writing audio stream to file: %s", filename)
+        logger.info("Writing audio stream to file: %s", filename)
         data_io = io.BytesIO(stream)
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         soundfile.write(filename, audio_data, samplerate=frequency)
-        logging.info("Finished writing audio stream to file")
+        logger.info("Finished writing audio stream to file")
 
     def play_audio_stream(self, stream: bytes) -> None:
         """
@@ -124,12 +127,12 @@ class TextToSpeech:
         :param stream: The audio stream
         :returns: None
         """
-        logging.info("Playing audio stream")
+        logger.info("Playing audio stream")
         data_io = io.BytesIO(stream)
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         sounddevice.play(audio_data, samplerate=frequency)
         sounddevice.wait()
-        logging.info("Finished playing audio stream")
+        logger.info("Finished playing audio stream")
 
     def play_audio_file(self, filename: str) -> None:
         """
@@ -138,8 +141,8 @@ class TextToSpeech:
         :param filename: The filename of the audio file
         :returns: None
         """
-        logging.info("Playing audio file: %s", filename)
+        logger.info("Playing audio file: %s", filename)
         audio_data, sample_rate = soundfile.read(filename, dtype="float64")
         sounddevice.play(audio_data, samplerate=sample_rate)
         sounddevice.wait()
-        logging.info("Finished playing audio file")
+        logger.info("Finished playing audio file")
