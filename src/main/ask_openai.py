@@ -2,6 +2,7 @@
 Contains a wrapper for the openai SDK
 """
 import os
+import logging
 import openai
 
 
@@ -69,9 +70,11 @@ class AskOpenAI:
         :param messages: The messages to use
         :return: The response from openai
         """
+        logging.info("Asking openai a question")
         messages = self._build_messages(self.question)
         response = openai.ChatCompletion.create(model=self.model, messages=messages)
         reply = response["choices"][0]["message"]["content"]
+        logging.info("Openai replied with: %s", reply)
 
         return reply
 
@@ -83,6 +86,8 @@ class AskOpenAI:
         :param messages: The question to use
         :return: A list representation of the question to ask openai
         """
+        logging.info("Building messages to pass to openai")
         messages = [MessageFactory.create_message("user", question)]
+        logging.info("Messages built: %s", messages)
 
         return messages
