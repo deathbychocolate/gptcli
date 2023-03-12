@@ -18,11 +18,17 @@ def main() -> None:
     """
     time_start = time.time()
     response = AskOpenAI(AskOpenAI.DEFAULT_ENGINE, "When did greece win the european football championship?").ask()
-    text_to_speech = TextToSpeech(response)
-    text_to_speech.generate_and_play_audio_stream()
     time_end = time.time()
     time_taken = time_end - time_start
-    logging.info("Time taken: %f", time_taken)
+    logging.info("Time taken to generate text: %f", time_taken)
+
+    time_start = time.time()
+    text_to_speech = TextToSpeech(response)
+    time_end = time.time()
+    time_taken = time_end - time_start
+    logging.info("Time taken to generate audio: %f", time_taken)
+
+    text_to_speech.generate_and_play_audio_stream()
 
 
 if __name__ == "__main__":
