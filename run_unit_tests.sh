@@ -3,4 +3,4 @@
 # Run unit tests
 # Usage: bash run_unit_tests.sh
 
-pytest --source=./src test_*.py
+pytest --tb=line src/test/test_*.py
