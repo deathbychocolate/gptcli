@@ -1,2 +1,2 @@
 [MASTER]
-ignore=test_*
+ignore-patterns = test_*
