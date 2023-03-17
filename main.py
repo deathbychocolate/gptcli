@@ -5,7 +5,7 @@ This is the main file for the project
 import time
 import logging
 
-from src.main.ask_openai import AskOpenAI
+from src.main.openai_helper import OpenAIHelper
 from src.main.text_to_speech import TextToSpeech
 
 
@@ -18,7 +18,7 @@ def main() -> None:
     This is the main function
     """
     time_start = time.time()
-    response = AskOpenAI(AskOpenAI.DEFAULT_ENGINE, "what is a DAG?").ask()
+    response = OpenAIHelper(OpenAIHelper.DEFAULT_ENGINE, "Πες μου σε παρακαλώ τα μεγαλύτερα νέα του 2004 για την Ελλάδα").send()
     time_end = time.time()
     time_taken = time_end - time_start
     logger.info("Time taken to generate text: %f", time_taken)

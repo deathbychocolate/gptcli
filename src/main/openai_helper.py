@@ -48,7 +48,7 @@ class MessageFactory:
         return Message(role, content).dictionary()
 
 
-class OpenAIWrapper:
+class OpenAIHelper:
     """
     A wrapper for the openai python library
     """
