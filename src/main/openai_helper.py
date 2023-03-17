@@ -48,13 +48,13 @@ class MessageFactory:
         return Message(role, content).dictionary()
 
 
-class AskOpenAI:
+class OpenAIWrapper:
     """
     A wrapper for the openai python library
     """
 
-    DEFAULT_ENGINE = "gpt-3.5-turbo"
-    MAX_TOKENS = 4096  # The limit as defined by openai docs
+    DEFAULT_ENGINE = "gpt-4-0314"
+    MAX_TOKENS = 8_192  # The limit as defined by openai docs
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -65,15 +65,13 @@ class AskOpenAI:
         self.model = model
         self.question = question
 
-    def ask(self):
+    def send(self):
         """
-        Asks openai a question
+        Sends message(s) to openai
 
-        :param model: The model to use
-        :param messages: The messages to use
         :return: The response from openai
         """
-        logger.info("Asking openai a question")
+        logger.info("Sending message to openai")
         messages = self._build_messages(self.question)
         response = openai.ChatCompletion.create(model=self.model, messages=messages)
         reply = response["choices"][0]["message"]["content"]
