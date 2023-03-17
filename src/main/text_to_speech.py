@@ -30,7 +30,6 @@ class TextToSpeech:
         logger.info("Generating and storing audio stream")
         stream = self._generate_audio_stream()
         full_path = self._store_audio_stream_to_file(stream)
-        logger.info("Audio stream generated and stored")
 
         return full_path
 
@@ -43,7 +42,6 @@ class TextToSpeech:
         logger.info("Generating and playing audio stream")
         stream = self._generate_audio_stream()
         self.play_audio_stream(stream)
-        logger.info("Audio stream generated and played")
 
     def _generate_audio_stream(self) -> bytes:
         """
@@ -51,7 +49,6 @@ class TextToSpeech:
 
         :returns: The audio stream
         """
-        logger.info("Generating audio stream")
         client = self._generate_polly_client()
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/polly/client/synthesize_speech.html
         response = client.synthesize_speech(
@@ -77,7 +74,6 @@ class TextToSpeech:
         logger.info("Generating polly client")
         aws_sso_profile_name = os.getenv("AWS_SSO_PROFILE_NAME", "Spark_Drop_Playground")
         client = boto3.session.Session(profile_name=aws_sso_profile_name).client("polly")
-        logger.info("Polly client generated")
 
         return client
 
@@ -91,7 +87,6 @@ class TextToSpeech:
         logger.info("Storing audio stream")
         filename = self._generate_file_name()
         self.write_audio_to_file(filename, stream)
-        logger.info("Audio stream stored")
 
         return filename
 
@@ -118,7 +113,6 @@ class TextToSpeech:
         data_io = io.BytesIO(stream)
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         soundfile.write(filename, audio_data, samplerate=frequency)
-        logger.info("Finished writing audio stream to file")
 
     def play_audio_stream(self, stream: bytes) -> None:
         """
@@ -132,7 +126,6 @@ class TextToSpeech:
         audio_data, frequency = soundfile.read(data_io, dtype="float64")
         sounddevice.play(audio_data, samplerate=frequency)
         sounddevice.wait()
-        logger.info("Finished playing audio stream")
 
     def play_audio_file(self, filename: str) -> None:
         """
@@ -145,4 +138,3 @@ class TextToSpeech:
         audio_data, sample_rate = soundfile.read(filename, dtype="float64")
         sounddevice.play(audio_data, samplerate=sample_rate)
         sounddevice.wait()
-        logger.info("Finished playing audio file")
