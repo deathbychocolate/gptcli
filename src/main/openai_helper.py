@@ -22,7 +22,8 @@ class Message:
         self.role = role
         self.content = content
 
-    def dictionary(self):
+    @property
+    def dictionary(self) -> dict:
         """
         Returns a dictionary representation of the message
 
@@ -37,15 +38,15 @@ class MessageFactory:
     """
 
     @staticmethod
-    def create_message(role: str, content: str):
+    def create_message(role: str, content: str) -> Message:
         """
-        Creates a message
+        Creates a message, you may specify the role and the content
 
         :param role: The role of the message
         :param content: The content of the message
-        :return: A message
+        :return: A message object
         """
-        return Message(role, content).dictionary()
+        return Message(role, content)
 
 
 class OpenAIHelper:
@@ -58,37 +59,42 @@ class OpenAIHelper:
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    def __init__(self, model: str, question: str):
-        """
-        Constructor
-        """
+    def __init__(self, model: str, user_input: str):
         self.model = model
-        self.question = question
+        self.user_input = user_input
 
-    def send(self):
+    def send(self) -> str:
         """
         Sends message(s) to openai
 
         :return: The response from openai
         """
         logger.info("Sending message to openai")
-        messages = self._build_messages(self.question)
-        response = openai.ChatCompletion.create(model=self.model, messages=messages)
-        reply = response["choices"][0]["message"]["content"]
-        logger.info("Openai replied with: %s", reply)
+        chat_completion = self._create_chat_completion()
+        content = self._retrieve_chat_completion_content(chat_completion)
 
-        return reply
+        return content
 
-    def _build_messages(self, question: str) -> list:
-        """
-        Builds messages to pass to openai
-        TODO: it currently handles only one message, it should handle multiple
+    def _create_chat_completion(self) -> dict:
+        logger.info("Creating chat completion")
+        messages = self._build_messages(self.user_input)
+        chat_completion = openai.ChatCompletion.create(model=self.model, messages=messages)
 
-        :param messages: The question to use
-        :return: A list representation of the question to ask openai
-        """
-        logger.info("Building messages to pass to openai")
-        messages = [MessageFactory.create_message("user", question)]
-        logger.info("Messages built: %s", messages)
+        return chat_completion
+
+    def _retrieve_chat_completion_content(self, chat_completion: dict) -> str:
+        return chat_completion["choices"][0]["message"]["content"]
+
+    def _build_messages(self, user_input: str) -> list:
+        # TODO: it currently handles only one message, it should handle multiple
+        logger.info("Building messages")
+        messages = [MessageFactory.create_message("user", user_input).dictionary]
+
+        return messages
+
+    def _build_message(self, user_input: str) -> list:
+        # TODO: it currently handles only one message, it should handle multiple
+        logger.info("Building messages")
+        messages = [MessageFactory.create_message("user", user_input).dictionary]
 
         return messages
