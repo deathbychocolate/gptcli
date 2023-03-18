@@ -18,10 +18,11 @@ def main() -> None:
     This is the main function
     """
     time_start = time.time()
-    response = OpenAIHelper(OpenAIHelper.DEFAULT_ENGINE, "Πες μου σε παρακαλώ τα μεγαλύτερα νέα του 2004 για την Ελλάδα").send()
+    response = OpenAIHelper(OpenAIHelper.DEFAULT_ENGINE, "Good morning!").send()
     time_end = time.time()
     time_taken = time_end - time_start
     logger.info("Time taken to generate text: %f", time_taken)
+    print(response)
 
     time_start = time.time()
     text_to_speech = TextToSpeech(response)
