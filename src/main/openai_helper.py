@@ -93,8 +93,7 @@ class OpenAIHelper:
         return messages
 
     def _build_message(self, user_input: str) -> list:
-        # TODO: it currently handles only one message, it should handle multiple
         logger.info("Building message")
-        messages = [MessageFactory.create_message("user", user_input).dictionary]
+        message = [MessageFactory.create_message("user", user_input).dictionary]
 
-        return messages
+        return message
