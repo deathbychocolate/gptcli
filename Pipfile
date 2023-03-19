@@ -8,6 +8,7 @@ sounddevice = "*"
 soundfile = "*"
 boto3 = "*"
 pytest = "*"
+openai = "*"
 
 [dev-packages]
 
