@@ -1,2 +1,5 @@
 [MASTER]
 ignore-patterns = test_*
+
+[pycodestyle]
+max-line-length = 120
