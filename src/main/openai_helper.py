@@ -54,8 +54,13 @@ class OpenAIHelper:
     A wrapper for the openai python library
     """
 
-    DEFAULT_ENGINE = "gpt-4-0314"
-    MAX_TOKENS = 8_192  # The limit as defined by openai docs
+    # see here: https://platform.openai.com/docs/models/
+    ENGINE_GPT_4 = "gpt-4-0314"
+    ENGINE_GPT_3_5 = "gpt-3.5-turbo"
+    ENGINE_GPT_3_5_301 = "gpt-3.5-turbo-0301"
+    DEFAULT_ENGINE = ENGINE_GPT_4
+
+    MAX_TOKENS = 8_192
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
