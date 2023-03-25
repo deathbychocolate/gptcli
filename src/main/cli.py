@@ -28,16 +28,16 @@ class CommandLineInterface:
         self.parser.add_argument(
             "-l",
             "--loglevel",
-            choices=["debug", "info", "warning", "error", "critical"],
+            choices=["debug", "info", "warning", "error", "critical", "fatal"],
             default="critical",
             help="Will set the log level of the application. Defaults to INFO.",
         )
         self.parser.add_argument(
             "-m",
             "--model",
-            choices=["gpt-3.5-turbo", "gpt-3.5-turbo-0301", "gpt-4-0314"],
-            default="gpt-3.5-turbo-0301",
-            help="The model to use. Defaults to gpt-3.5() gpt-4-0314.",
+            choices=OpenAIHelper.GPT_ALL,
+            default=OpenAIHelper.GPT_DEFAULT,
+            help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}",
         )
         # self.parser.add_argument(
         #     "-c",
@@ -61,33 +61,12 @@ class CommandLineInterface:
         """
         Will start the gptcli
         """
-        logger.info("Starting gptcli")
-        self._set_logging_level()
-        readline.parse_and_bind('"^[[A": history-search-backward')
-        readline.parse_and_bind('"^[[B": history-search-forward')
-        readline.parse_and_bind('"^[[C": forward-char')
-        readline.parse_and_bind('"^[[D": backward-char')
-        while True:
-            try:
-                user_input = input(">>> USER: ")
-            except KeyboardInterrupt as exception:
-                break
-            except EOFError as exception:
-                break
-            user_input_length = len(user_input)
-            if user_input_length == 0:
-                continue
-            elif user_input == "exit":
-                break
-            response = OpenAIHelper(OpenAIHelper.ENGINE_GPT_3_5_301, user_input).send()
-            print("".join([">>> AI: ", response]))
+        logger.info("Running cli")
+        self._configure_logging()
+        self._configure_readline()
+        self._start_chat()
 
-    # def _clean_input(self, user_input: str) -> str:
-    #     """
-    #     Will clean the input from the user
-    #     """
-    #     return user_input.strip()
-    def _set_logging_level(self) -> None:
+    def _configure_logging(self) -> None:
         """
         Will set the logging level
         """
@@ -97,3 +76,36 @@ class CommandLineInterface:
         else:
             logging.basicConfig(level=logging.CRITICAL)
         logging.info("Logging level set to %s", log_level)
+
+    def _configure_readline(self) -> None:
+        readline.parse_and_bind('"^[[A": history-search-backward')
+        readline.parse_and_bind('"^[[B": history-search-forward')
+        readline.parse_and_bind('"^[[C": forward-char')
+        readline.parse_and_bind('"^[[D": backward-char')
+
+    def _start_chat(self) -> None:
+        logger.info("Starting chat")
+        while True:
+
+            # check for KeyboardInterrupt and EOFError
+            try:
+                user_input = input(">>> USER: ")
+            except KeyboardInterrupt as exception:
+                logger.info("Keyboard interrupt detected")
+                logger.info(exception)
+                break
+            except EOFError as exception:
+                logger.info("EOF detected")
+                logger.info(exception)
+                break
+
+            # check for special commands
+            user_input_length = len(user_input)
+            if user_input_length == 0:
+                continue
+            elif user_input == "exit":
+                break
+
+            model = self.args.model.lower()
+            response = OpenAIHelper(model, user_input).send()
+            print("".join([">>> AI: ", response]))
