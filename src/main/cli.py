@@ -66,7 +66,12 @@ class CommandLineInterface:
         readline.parse_and_bind('"^[[C": forward-char')
         readline.parse_and_bind('"^[[D": backward-char')
         while True:
-            user_input = input(">>> USER: ")
+            try:
+                user_input = input(">>> USER: ")
+            except KeyboardInterrupt as exception:
+                break
+            except EOFError as exception:
+                break
             user_input_length = len(user_input)
             if user_input_length == 0:
                 continue
@@ -74,7 +79,7 @@ class CommandLineInterface:
                 break
             response = OpenAIHelper(OpenAIHelper.ENGINE_GPT_3_5_301, user_input).send()
             print("".join([">>> AI: ", response]))
-    
+
     # def _clean_input(self, user_input: str) -> str:
     #     """
     #     Will clean the input from the user
