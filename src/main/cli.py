@@ -115,6 +115,6 @@ class CommandLineInterface:
             elif user_input == "exit":
                 break
 
-            model = self.args.model.lower()
+            model = self.args.model
             response = OpenAIHelper(model, user_input).send()
             print("".join([">>> AI: ", response]))
