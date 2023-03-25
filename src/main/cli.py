@@ -62,7 +62,7 @@ class CommandLineInterface:
             user_input = input(">>> USER: ")
             if user_input == "exit":
                 break
-            response = OpenAIHelper(OpenAIHelper.DEFAULT_ENGINE, user_input).send()
+            response = OpenAIHelper(OpenAIHelper.ENGINE_GPT_3_5_301, user_input).send()
             print("".join([">>> AI: ", response]))
     
     # def _clean_input(self, user_input: str) -> str:
