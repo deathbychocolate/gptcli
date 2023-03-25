@@ -2,12 +2,12 @@
 Main command line interface.
 """
 
+import readline
 import logging
 import argparse
 
 from src.main.openai_helper import OpenAIHelper
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +28,9 @@ class CommandLineInterface:
         self.parser.add_argument(
             "-l",
             "--loglevel",
-            help="log level",
+            choices=["debug", "info", "warning", "error", "critical"],
+            default="critical",
+            help="Will set the log level of the application. Defaults to INFO.",
         )
         self.parser.add_argument(
             "-m",
@@ -57,7 +59,12 @@ class CommandLineInterface:
         """
         Will start the gptcli
         """
-        logger.info("Rendering gptcli")
+        logger.info("Starting gptcli")
+        self._set_logging_level()
+        readline.parse_and_bind('"^[[A": history-search-backward')
+        readline.parse_and_bind('"^[[B": history-search-forward')
+        readline.parse_and_bind('"^[[C": forward-char')
+        readline.parse_and_bind('"^[[D": backward-char')
         while True:
             user_input = input(">>> USER: ")
             user_input_length = len(user_input)
@@ -73,3 +80,13 @@ class CommandLineInterface:
     #     Will clean the input from the user
     #     """
     #     return user_input.strip()
+    def _set_logging_level(self) -> None:
+        """
+        Will set the logging level
+        """
+        log_level = self.args.loglevel.upper()
+        if log_level != "CRITICAL":
+            logging.basicConfig(level=log_level)
+        else:
+            logging.basicConfig(level=logging.CRITICAL)
+        logging.info("Logging level set to %s", log_level)
