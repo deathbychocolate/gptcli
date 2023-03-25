@@ -6,8 +6,8 @@ The project uses the official OpenAI SDK named openai. This SDK is a very compre
 
 # Before running the project:
 You need valid OpenAI credentials to communicate with the AI models. To do this, follow the points below:
-- Create an openai account [here](https://chat.openai.com/).
-- Generate an openai API key [here](https://platform.openai.com/account/api-keys).
+- Create an openai account here: https://chat.openai.com/
+- Generate an openai API key here: https://platform.openai.com/account/api-keys
 - Export the API key in your current bash session using the following command:
 ```
 export OPENAI_API_KEY=<API-KEY>
