@@ -60,7 +60,10 @@ class CommandLineInterface:
         logger.info("Rendering gptcli")
         while True:
             user_input = input(">>> USER: ")
-            if user_input == "exit":
+            user_input_length = len(user_input)
+            if user_input_length == 0:
+                continue
+            elif user_input == "exit":
                 break
             response = OpenAIHelper(OpenAIHelper.ENGINE_GPT_3_5_301, user_input).send()
             print("".join([">>> AI: ", response]))
