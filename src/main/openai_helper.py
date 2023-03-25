@@ -55,12 +55,27 @@ class OpenAIHelper:
     """
 
     # see here: https://platform.openai.com/docs/models/
-    ENGINE_GPT_4 = "gpt-4-0314"
-    ENGINE_GPT_3_5 = "gpt-3.5-turbo"
-    ENGINE_GPT_3_5_301 = "gpt-3.5-turbo-0301"
-    DEFAULT_ENGINE = ENGINE_GPT_4
+    GPT_3_5 = "gpt-3.5-turbo"
+    GPT_3_5_301 = "gpt-3.5-turbo-0301"
+    GPT_4 = "gpt-4"
+    GPT_4_32K = "gpt-4-32k"
+    GPT_4_0314 = "gpt-4-0314"
+    GPT_4_32K_0314 = "gpt-4-32k-0314"
 
-    MAX_TOKENS = 8_192
+    GPT_ALL = [
+        GPT_3_5,
+        GPT_3_5_301,
+        GPT_4,
+        GPT_4_32K,
+        GPT_4_0314,
+        GPT_4_32K_0314,
+    ]
+
+    GPT_DEFAULT = GPT_3_5
+
+    GPT_3_5_MAX_TOKENS = 4_096
+    GPT_4_MAX_TOKENS = 8_192
+    GPT_4_32K_MAX_TOKENS = 32_768
 
     def __init__(self, model: str, user_input: str):
         self.model = model
@@ -81,7 +96,7 @@ class OpenAIHelper:
 
     def _set_api_key(self) -> None:
         if "OPENAI_API_KEY" not in os.environ:
-            logger.info("Setting API key")
+            logger.info("Exporting API key to environment variable")
 
             # get api key from file
             bash_script_path = os.path.join(os.path.expanduser("~"), ".gptcli/keys/openai")
