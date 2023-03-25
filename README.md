@@ -1,4 +1,4 @@
-# What is it?
+# What is gptcli?
 A CLI version of chatGPT, plus features.
 
 # How does it work?
