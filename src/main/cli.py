@@ -88,10 +88,10 @@ class CommandLineInterface:
         logging.info("Logging level set to %s", log_level)
 
     def _configure_readline(self) -> None:
-        readline.parse_and_bind('"^[[A": history-search-backward')
-        readline.parse_and_bind('"^[[B": history-search-forward')
-        readline.parse_and_bind('"^[[C": forward-char')
-        readline.parse_and_bind('"^[[D": backward-char')
+        readline.parse_and_bind("'^[[A': history-search-backward")
+        readline.parse_and_bind("'^[[B': history-search-forward")
+        readline.parse_and_bind("'^[[C': forward-char")
+        readline.parse_and_bind("'^[[D': backward-char")
 
     def _start_chat(self) -> None:
         logger.info("Starting chat")
