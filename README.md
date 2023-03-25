@@ -1,5 +1,5 @@
 # What is it?
-I am trying to bring the chatGPT webapp to the command line.
+A CLI version of chatGPT, plus features.
 
 # How does it work?
 The project uses the official OpenAI SDK named openai. This SDK is a very comprenhensive CLI based python project of which we use only the Completions features. I recommend you investigate this further using the official openai docs.
