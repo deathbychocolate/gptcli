@@ -108,7 +108,7 @@ class CommandLineInterface:
                 logger.exception(exception)
                 break
 
-            # check for special commands
+            # check for chat session commands
             user_input_length = len(user_input)
             if user_input_length == 0:
                 continue
