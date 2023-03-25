@@ -62,8 +62,6 @@ class OpenAIHelper:
 
     MAX_TOKENS = 8_192
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
     def __init__(self, model: str, user_input: str):
         self.model = model
         self.user_input = user_input
@@ -75,10 +73,25 @@ class OpenAIHelper:
         :return: The response from openai
         """
         logger.info("Sending message to openai")
+        self._set_api_key()
         chat_completion = self._create_chat_completion()
         content = self._retrieve_chat_completion_content(chat_completion)
 
         return content
+
+    def _set_api_key(self) -> None:
+        if "OPENAI_API_KEY" not in os.environ:
+            logger.info("Setting API key")
+
+            # get api key from file
+            bash_script_path = os.path.join(os.path.expanduser("~"), ".gptcli/keys/openai")
+            with open(bash_script_path, "r", encoding="utf8") as filepointer:
+                os.environ["OPENAI_API_KEY"] = filepointer.read()
+
+            # get env variable
+            openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
+        else:
+            logger.info("API key already set")
 
     def _create_chat_completion(self) -> dict:
         logger.info("Creating chat completion")
