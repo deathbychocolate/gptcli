@@ -16,6 +16,14 @@ class CommandLineInterface:
     Class for the command line interface.
     """
 
+    LOGGING_MODE_ALL = [
+        logging.DEBUG,
+        logging.INFO,
+        logging.WARNING,
+        logging.ERROR,
+        logging.CRITICAL,
+    ]
+
     def __init__(self) -> None:
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
@@ -29,6 +37,9 @@ class CommandLineInterface:
             "-l",
             "--loglevel",
             type=int,
+            choices=CommandLineInterface.LOGGING_MODE_ALL,
+            default=logging.CRITICAL,
+            help="Will set the log level of the application. Defaults to CRITICAL.",
         )
         self.parser.add_argument(
             "-m",
@@ -69,8 +80,8 @@ class CommandLineInterface:
         """
         Will set the logging level
         """
-        log_level = self.args.loglevel.upper()
-        if log_level != "CRITICAL":
+        log_level = self.args.loglevel
+        if log_level != 50:
             logging.basicConfig(level=log_level)
         else:
             logging.basicConfig(level=logging.CRITICAL)
