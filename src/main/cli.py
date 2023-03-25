@@ -31,7 +31,7 @@ class CommandLineInterface:
             "--version",
             action="version",
             version="0.0.0",
-            help="Will print the version of the application",
+            help="Print the version number and exit.",
         )
         self.parser.add_argument(
             "-l",
@@ -39,7 +39,7 @@ class CommandLineInterface:
             type=int,
             choices=CommandLineInterface.LOGGING_MODE_ALL,
             default=logging.CRITICAL,
-            help="Will set the log level of the application. Defaults to CRITICAL.",
+            help="Set the log level of the application. Defaults to CRITICAL.",
         )
         self.parser.add_argument(
             "-m",
@@ -47,7 +47,7 @@ class CommandLineInterface:
             type=str,
             choices=OpenAIHelper.GPT_ALL,
             default=OpenAIHelper.GPT_DEFAULT,
-            help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}",
+            help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}.",
         )
         # self.parser.add_argument(
         #     "-c",
