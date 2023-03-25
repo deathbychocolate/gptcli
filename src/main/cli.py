@@ -102,11 +102,11 @@ class CommandLineInterface:
                 user_input = input(">>> USER: ")
             except KeyboardInterrupt as exception:
                 logger.info("Keyboard interrupt detected")
-                logger.info(exception)
+                logger.exception(exception)
                 break
             except EOFError as exception:
                 logger.info("EOF detected")
-                logger.info(exception)
+                logger.exception(exception)
                 break
 
             # check for special commands
