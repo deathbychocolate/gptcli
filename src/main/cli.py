@@ -73,8 +73,8 @@ class CommandLineInterface:
         """
         logger.info("Running cli")
         self._configure_logging()
-        self._configure_readline()
-        self._start_chat()
+        self._configure_chat_session()
+        self._start_chat_session()
 
     def _configure_logging(self) -> None:
         """
@@ -87,16 +87,15 @@ class CommandLineInterface:
             logging.basicConfig(level=logging.CRITICAL)
         logging.info("Logging level set to %s", log_level)
 
-    def _configure_readline(self) -> None:
+    def _configure_chat_session(self) -> None:
         readline.parse_and_bind("'^[[A': history-search-backward")
         readline.parse_and_bind("'^[[B': history-search-forward")
         readline.parse_and_bind("'^[[C': forward-char")
         readline.parse_and_bind("'^[[D': backward-char")
 
-    def _start_chat(self) -> None:
+    def _start_chat_session(self) -> None:
         logger.info("Starting chat")
         while True:
-
             # check for KeyboardInterrupt and EOFError
             try:
                 user_input = input(">>> USER: ")
