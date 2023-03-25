@@ -9,6 +9,7 @@ soundfile = "*"
 boto3 = "*"
 pytest = "*"
 openai = "*"
+readline = "*"
 
 [dev-packages]
 
