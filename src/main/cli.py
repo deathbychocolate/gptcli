@@ -28,13 +28,12 @@ class CommandLineInterface:
         self.parser.add_argument(
             "-l",
             "--loglevel",
-            choices=["debug", "info", "warning", "error", "critical", "fatal"],
-            default="critical",
-            help="Will set the log level of the application. Defaults to INFO.",
+            type=int,
         )
         self.parser.add_argument(
             "-m",
             "--model",
+            type=str,
             choices=OpenAIHelper.GPT_ALL,
             default=OpenAIHelper.GPT_DEFAULT,
             help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}",
