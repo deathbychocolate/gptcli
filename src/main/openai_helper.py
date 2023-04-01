@@ -109,6 +109,8 @@ class OpenAIHelper:
             logger.info("API key already set")
 
     def _create_chat_completion(self) -> dict:
+        # TODO handle -> could raise openai.error.AuthenticationError
+        # TODO maybe replace openai completions module with streaming solution. See https://medium.com/codingthesmartway-com-blog/stream-responses-from-openai-api-with-python-a-step-by-step-guide-1f5d2fa5926f
         logger.info("Creating chat completion")
         messages = self._build_messages(self.user_input)
         chat_completion = openai.ChatCompletion.create(model=self.model, messages=messages)
