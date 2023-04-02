@@ -49,7 +49,7 @@ class Chat:
                 break
 
             response = OpenAIHelper(self.model, user_input).send()
-            print("".join([">>> AI: ", response]))
+            print(">>> AI:", response)
 
     def _configure_chat(self) -> None:
         logger.info("Configuring chat")
