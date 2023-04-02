@@ -72,11 +72,11 @@ class CommandLineInterface:
         Will start the gptcli
         """
         logger.info("Running cli")
-        self._configure_logging()
+        self._configure_default_logging_level()
         self._configure_chat_session()
         self._start_chat_session()
 
-    def _configure_logging(self) -> None:
+    def _configure_default_logging_level(self) -> None:
         """
         Will set the logging level
         """
