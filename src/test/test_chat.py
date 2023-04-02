@@ -51,3 +51,9 @@ class TestPromptUser:
         with pytest.raises(SystemExit):
             chat_session._prompt_user()
         assert True
+
+    def test_should_accept_string_input_and_return_the_same_string_input(self, setup_teardown, monkeypatch):
+        chat_session = setup_teardown
+        monkeypatch.setattr('builtins.input', lambda _: "this is test input")
+        text = chat_session._prompt_user()
+        assert text == "this is test input"
