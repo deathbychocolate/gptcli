@@ -61,6 +61,7 @@ class OpenAIHelper:
     GPT_4_32K = "gpt-4-32k"
     GPT_4_0314 = "gpt-4-0314"
     GPT_4_32K_0314 = "gpt-4-32k-0314"
+    GPT_DEFAULT = GPT_3_5
 
     GPT_ALL = [
         GPT_3_5,
@@ -70,8 +71,6 @@ class OpenAIHelper:
         GPT_4_0314,
         GPT_4_32K_0314,
     ]
-
-    GPT_DEFAULT = GPT_3_5
 
     GPT_3_5_MAX_TOKENS = 4_096
     GPT_4_MAX_TOKENS = 8_192
@@ -85,7 +84,7 @@ class OpenAIHelper:
         """
         Sends message(s) to openai
 
-        :return: The response from openai
+        :return: The response string from openai
         """
         logger.info("Sending message to openai")
         self._set_api_key()
