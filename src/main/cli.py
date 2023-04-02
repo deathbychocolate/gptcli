@@ -81,10 +81,7 @@ class CommandLineInterface:
         """
         logger.info("Configuring logging level")
         log_level = self.args.loglevel
-        if log_level != 50:
-            logging.basicConfig(level=log_level)
-        else:
-            logging.basicConfig(level=logging.CRITICAL)
+        logging.basicConfig(level=log_level)
 
     def _start_chat_session(self) -> None:
         logger.info("Starting chat session")
