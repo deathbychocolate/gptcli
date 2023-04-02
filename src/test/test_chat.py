@@ -20,7 +20,6 @@ class TestHandleChatCommands:
         chat_session = setup_teardown
         with pytest.raises(SystemExit):
             chat_session._handle_chat_commands(user_input="exit")
-        assert True
 
     def test_should_accept_an_empty_string_and_not_perform_a_system_exit(self, setup_teardown):
         chat_session = setup_teardown
