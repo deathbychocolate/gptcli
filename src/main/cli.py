@@ -2,11 +2,11 @@
 Main command line interface.
 """
 
-import readline
 import logging
 import argparse
 
 from src.main.openai_helper import OpenAIHelper
+from src.main.chat import Chat
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,6 @@ class CommandLineInterface:
         """
         logger.info("Running cli")
         self._configure_default_logging_level()
-        self._configure_chat_session()
         self._start_chat_session()
 
     def _configure_default_logging_level(self) -> None:
@@ -87,34 +86,9 @@ class CommandLineInterface:
             logging.basicConfig(level=logging.CRITICAL)
         logging.info("Logging level set to %s", log_level)
 
-    def _configure_chat_session(self) -> None:
-        readline.parse_and_bind("'^[[A': history-search-backward")
-        readline.parse_and_bind("'^[[B': history-search-forward")
-        readline.parse_and_bind("'^[[C': forward-char")
-        readline.parse_and_bind("'^[[D': backward-char")
-
     def _start_chat_session(self) -> None:
-        logger.info("Starting chat")
-        while True:
-            # check for KeyboardInterrupt and EOFError
-            try:
-                user_input = input(">>> USER: ")
-            except KeyboardInterrupt as exception:
-                logger.info("Keyboard interrupt detected")
-                logger.exception(exception)
-                break
-            except EOFError as exception:
-                logger.info("EOF detected")
-                logger.exception(exception)
-                break
+        chat_session = self._create_chat_session()
+        chat_session.start()
 
-            # check for chat session commands
-            user_input_length = len(user_input)
-            if user_input_length == 0:
-                continue
-            elif user_input == "exit":
-                break
-
-            model = self.args.model
-            response = OpenAIHelper(model, user_input).send()
-            print("".join([">>> AI: ", response]))
+    def _create_chat_session(self) -> Chat:
+        return Chat(self.args.model)
