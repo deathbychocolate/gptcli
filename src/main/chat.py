@@ -5,6 +5,7 @@ TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website
 """
 
+import sys
 import logging
 import readline
 
@@ -29,30 +30,37 @@ class Chat:
         """
         logger.info("Starting chat")
         while True:
-            # check for KeyboardInterrupt and EOFError
-            try:
-                user_input = input(">>> USER: ")
-            except KeyboardInterrupt as exception:
-                logger.info("Keyboard interrupt detected")
-                logger.exception(exception)
-                break
-            except EOFError as exception:
-                logger.info("EOF detected")
-                logger.exception(exception)
-                break
+            user_input = self._prompt_user()
+            if len(user_input) != 0:
+                self._handle_chat_commands(user_input)
+                response = OpenAIHelper(self.model, user_input).send()
+                print(">>> AI:", response)
 
-            # check for chat session commands
-            user_input_length = len(user_input)
-            if user_input_length == 0:
-                continue
-            elif user_input == "exit":
-                break
+    def _prompt_user(self) -> str:
+        try:
+            user_input = input(">>> USER: ")
+        except KeyboardInterrupt as exception:
+            logger.info("Keyboard interrupt detected")
+            logger.exception(exception)
+            sys.exit()
+        except EOFError as exception:
+            logger.info("EOF detected")
+            logger.exception(exception)
+            sys.exit()
 
-            response = OpenAIHelper(self.model, user_input).send()
-            print(">>> AI:", response)
+        return user_input
+
+    def _handle_chat_commands(self, user_input: str) -> None:
+        # check for chat session commands
+        if user_input == "exit":
+            sys.exit()
 
     def _configure_chat(self) -> None:
         logger.info("Configuring chat")
+        self._add_arrow_key_support()
+
+    def _add_arrow_key_support(self) -> None:
+        logger.info("Adding arrow key support")
         readline.parse_and_bind("'^[[A': history-search-backward")
         readline.parse_and_bind("'^[[B': history-search-forward")
         readline.parse_and_bind("'^[[C': forward-char")
