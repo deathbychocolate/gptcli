@@ -52,7 +52,6 @@ class Chat:
         return user_input
 
     def _handle_chat_commands(self, user_input: str) -> None:
-        # check for chat session commands
         if user_input == "exit":
             sys.exit()
 
