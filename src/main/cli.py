@@ -69,16 +69,13 @@ class CommandLineInterface:
 
     def run(self) -> None:
         """
-        Will start the gptcli
+        Run this method if you want to start a classic dialog with the AI
         """
         logger.info("Running cli")
         self._configure_logging_level()
         self._start_chat_session()
 
     def _configure_logging_level(self) -> None:
-        """
-        Will set the logging level
-        """
         logger.info("Configuring logging level")
         log_level = self.args.loglevel
         logging.basicConfig(level=log_level)
