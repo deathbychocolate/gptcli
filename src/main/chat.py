@@ -31,6 +31,7 @@ class Chat:
         logger.info("Starting chat")
         while True:
             user_input = self._prompt_user()
+
             if len(user_input) != 0:
                 self._handle_chat_commands(user_input)
                 response = OpenAIHelper(self.model, user_input).send()
