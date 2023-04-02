@@ -72,23 +72,25 @@ class CommandLineInterface:
         Will start the gptcli
         """
         logger.info("Running cli")
-        self._configure_default_logging_level()
+        self._configure_logging_level()
         self._start_chat_session()
 
-    def _configure_default_logging_level(self) -> None:
+    def _configure_logging_level(self) -> None:
         """
         Will set the logging level
         """
+        logger.info("Configuring logging level")
         log_level = self.args.loglevel
         if log_level != 50:
             logging.basicConfig(level=log_level)
         else:
             logging.basicConfig(level=logging.CRITICAL)
-        logging.info("Logging level set to %s", log_level)
 
     def _start_chat_session(self) -> None:
+        logger.info("Starting chat session")
         chat_session = self._create_chat_session()
         chat_session.start()
 
     def _create_chat_session(self) -> Chat:
+        logger.info("Creating chat session")
         return Chat(self.args.model)
