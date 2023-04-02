@@ -42,7 +42,6 @@ class TestPromptUser:
         monkeypatch.setattr('builtins.input', lambda _: KeyboardInterrupt)
         with pytest.raises(SystemExit):
             chat_session._prompt_user()
-        assert True
 
     def test_should_accept_eof_error_and_perform_a_system_exit(self, setup_teardown, monkeypatch):
         chat_session = setup_teardown
@@ -50,7 +49,6 @@ class TestPromptUser:
         monkeypatch.setattr('builtins.input', lambda _: EOFError)
         with pytest.raises(SystemExit):
             chat_session._prompt_user()
-        assert True
 
     def test_should_accept_string_input_and_return_the_same_string_input(self, setup_teardown, monkeypatch):
         chat_session = setup_teardown
