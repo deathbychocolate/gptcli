@@ -6,5 +6,5 @@ class TestInstall:
     """
     template
     """
-    def __init__(self) -> None:
-        pass
+    def test_should_do_something(self):
+        assert False
