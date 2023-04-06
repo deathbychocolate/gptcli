@@ -49,10 +49,8 @@ class Install:
         """Checks to see if the file openai contains one line"""
 
         logging.info("Checking if openai has one line")
-        home_directory = os.path.expanduser("~")
-        openai_file = "/".join([home_directory, ".gptcli/keys/openai"])
         contains_one_line = False
-        with open(openai_file, "r", encoding="utf8") as filepointer:
+        with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
             lines = filepointer.readlines()
             if len(lines) == 1:
                 contains_one_line = True
