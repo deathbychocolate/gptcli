@@ -68,7 +68,7 @@ class Install:
             "Authorization": " ".join(["Bearer", os.getenv("OPENAI_API_KEY")]),
         }
         request_body = {
-            "model": "text-davinci-003",
+            "model": "gpt-3.5-turbo",
             "prompt": "Hi!",
             "max_tokens": 100,
             "temperature": 0,
