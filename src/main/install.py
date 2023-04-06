@@ -8,10 +8,3 @@ class Install:
     """
     def __init__(self) -> None:
         pass
-
-class Configure:
-    """
-    Class to hold all the configuration tools for the local machine
-    """
-    def __init__(self) -> None:
-        pass
