@@ -10,7 +10,8 @@ import requests
 class Install:
     """Class to hold all the install tools for the local machine"""
 
-    def __init__(self, random_id="") -> None:
+    def __init__(self, openai_api_key=None, random_id="") -> None:
+        self.openai_api_key = openai_api_key
         self.random_id = random_id
         self.home_directory = os.path.expanduser("~")
         self.gptcli_filepath = os.path.join(self.home_directory, f".gptcli_{self.random_id}")
@@ -93,6 +94,14 @@ class Install:
             is_valid_api_key = False
 
         return is_valid_api_key
+
+    def load_api_key_to_openai_file(self) -> None:
+        """Will load the given API key to the openai file (will accept any string)"""
+        logging.info("Loading API key to openai file")
+        key = self.openai_api_key
+        filepath = self.openai_filepath
+        with open(filepath, "w", encoding="utf8", newline="") as filepointer:
+            filepointer.write(key)
 
     def load_api_key_to_environment_variable(self) -> None:
         """Loads API key to environment variable OPENAI_API_KEY"""
