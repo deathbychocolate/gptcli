@@ -75,7 +75,7 @@ class Install:
         request_body = {
             "model": "gpt-3.5-turbo",
             "prompt": "Hi!",
-            "max_tokens": 100,
+            "max_tokens": 10,
             "temperature": 0,
             "stream": True,
         }
