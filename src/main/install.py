@@ -18,6 +18,15 @@ class Install:
         self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
         self.openai_filepath = os.path.join(self.keys_filepath, "openai")
 
+    def create_folders(self) -> None:
+        """Will create the minimum required file strcture for the application
+        """
+        logging.info("Creating basic folder structure")
+        os.mkdir(self.gptcli_filepath)
+        os.mkdir(self.keys_filepath)
+        with open(self.openai_filepath, "w", encoding="utf8"):
+            pass
+
     def is_gptcli_folder_present(self) -> bool:
         """Checks to see if the .gptcli is present in the home directory
         """
