@@ -11,11 +11,12 @@ class Install:
     """Class to hold all the install tools for the local machine
     """
 
-    def __init__(self) -> None:
+    def __init__(self, random_id="") -> None:
+        self.random_id = random_id
         self.home_directory = os.path.expanduser("~")
-        self.gptcli_filepath = "/".join([self.home_directory, ".gptcli"])
-        self.keys_filepath = "/".join([self.gptcli_filepath, "keys"])
-        self.openai_filepath = "/".join([self.keys_filepath, "openai"])
+        self.gptcli_filepath = os.path.join(self.home_directory, f".gptcli_{self.random_id}")
+        self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
+        self.openai_filepath = os.path.join(self.keys_filepath, "openai")
 
     def is_gptcli_folder_present(self) -> bool:
         """Checks to see if the .gptcli is present in the home directory
