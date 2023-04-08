@@ -84,7 +84,8 @@ class Install:
         return is_present
 
     def _is_not_openai_file_populated_with_a_valid_api_key(self) -> bool:
-        return not self._is_openai_file_populated_with_a_valid_api_key()
+        is_not_valid_api_key = not self._is_openai_file_populated_with_a_valid_api_key()
+        return is_not_valid_api_key
 
     def _is_openai_file_populated_with_a_valid_api_key(self) -> bool:
         logger.info("Checking if openai file contains valid API key")
