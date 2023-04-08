@@ -85,10 +85,20 @@ class Install:
         return contains_one_line
 
     def _is_openai_file_populated_with_a_valid_api_key(self) -> bool:
+        logger.info("Checking if openai file contains valid API key")
+        key = None
+        with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
+            key = filepointer.readline()
+        is_valid_api_key = self._is_valid_openai_api_key(key)
+
+        return is_valid_api_key
+
+    def _is_valid_openai_api_key(self, key: str) -> bool:
+        logger.info("Checking if openai api key is valid")
         request_url = "https://api.openai.com/v1/completions"
         request_headers = {
             "Accept": "text/event-stream",
-            "Authorization": " ".join(["Bearer", os.getenv("OPENAI_API_KEY")]),
+            "Authorization": " ".join(["Bearer", key]),
         }
         request_body = {
             "model": "gpt-3.5-turbo",
@@ -100,15 +110,18 @@ class Install:
 
         is_valid_api_key = False
         try:
-            requests.post(
+            response = requests.post(
                 request_url,
                 stream=True,
                 headers=request_headers,
                 json=request_body,
                 timeout=3,  # seconds
             )
-            is_valid_api_key = True
-        except TimeoutError:
+        except TimeoutError as error:
+            logger.exception(error)
             is_valid_api_key = False
+
+        if response.status_code == 200:
+            is_valid_api_key = True
 
         return is_valid_api_key
