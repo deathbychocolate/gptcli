@@ -45,9 +45,7 @@ class Install:
 
     def _ask_for_api_key(self) -> None:
         logger.info("Asking user for openai API key")
-        if self._is_openai_file_present() and (
-            not self._openai_contains_one_line() or not self._is_openai_file_populated_with_a_valid_api_key()
-        ):
+        if self._is_openai_file_present() and not self._is_openai_file_populated_with_a_valid_api_key():
             while not self._is_valid_openai_api_key(self.openai_api_key):
                 print(">>> Invalid openai api key detected...")
                 key = str(input(">>> Enter your openai API key: "))
@@ -64,18 +62,15 @@ class Install:
             logger.info("Failed to load api key to openai file")
 
     def _load_api_key_to_environment_variable(self) -> None:
-        if self._openai_contains_one_line():
-            logger.info("Loading API key to environment variable")
-            api_key = os.getenv("OPENAI_API_KEY")
-            if api_key is None:
-                with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
-                    os.environ["OPENAI_API_KEY"] = filepointer.readline()
-                    if self._is_openai_file_populated_with_a_valid_api_key():
-                        logger.warning("Invalid API key detected")
-            else:
-                logger.info("API key already loaded")
+        logger.info("Loading API key to environment variable")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key is None:
+            with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
+                os.environ["OPENAI_API_KEY"] = filepointer.readline()
+                if self._is_openai_file_populated_with_a_valid_api_key():
+                    logger.warning("Invalid API key detected")
         else:
-            logger.info("openai file does not contain one line")
+            logger.info("API key already loaded")
 
     def _is_keys_folder_present(self) -> bool:
         logger.info("Checking for .gptcli/keys")
@@ -93,16 +88,6 @@ class Install:
             is_present = False
 
         return is_present
-
-    def _openai_contains_one_line(self) -> bool:
-        logger.info("Checking if openai has one line")
-        contains_one_line = False
-        with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
-            lines = filepointer.readlines()
-            if len(lines) == 1:
-                contains_one_line = True
-
-        return contains_one_line
 
     def _is_openai_file_populated_with_a_valid_api_key(self) -> bool:
         logger.info("Checking if openai file contains valid API key")

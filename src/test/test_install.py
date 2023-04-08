@@ -64,12 +64,20 @@ class TestInstall:
 
         assert is_present, "openai folder not found"
 
-    def test_should_detect_the_openai_file_contains_one_line(self, setup_teardown):
+    def test_should_detect_the_openai_file_contains_a_valid_api_key(self, setup_teardown):
         install = setup_teardown
         install._load_api_key_to_openai_file()
-        contains_one_line = install._openai_contains_one_line()
+        install._load_api_key_to_environment_variable()
+        is_valid_api_key = install._is_openai_file_populated_with_a_valid_api_key()
 
-        assert contains_one_line, "openai file does not contain one line"
+        assert is_valid_api_key, "openai key is not valid"
+
+    def test_should_detect_the_openai_file_contains_an_invalid_api_key(self, setup_teardown):
+        install = setup_teardown
+        os.getenv("OPENAI_API_KEY")
+        is_valid_api_key = install._is_openai_file_populated_with_a_valid_api_key()
+
+        assert not is_valid_api_key, "openai key is valid"
 
     def test_should_create_gptcli_folder_in_home_directory(self, setup_teardown):
         install = setup_teardown
@@ -118,3 +126,15 @@ class TestInstall:
         is_loaded = key != None
 
         assert is_loaded, "failed to load environment variable with openai api key"
+
+    def test_should_perform_a_standard_install_succesfully(self, setup_teardown):
+        install = setup_teardown
+        is_successful = install.standard_install()
+        assert is_successful
+
+    def test_should_ask_for_openai_api_key_when_openai_file_contains_an_invalid_api_key(self, setup_teardown, capsys):
+        install = setup_teardown
+        captured = capsys.readouterr()
+        print(captured)
+        is_prompt_for_api_detected = ">>> Enter your openai API key: " in captured.out
+        assert is_prompt_for_api_detected
