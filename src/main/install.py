@@ -115,17 +115,17 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai api key is valid")
-        request_url = "https://api.openai.com/v1/completions"
+        request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
             "Accept": "text/event-stream",
             "Authorization": " ".join(["Bearer", key]),
         }
         request_body = {
             "model": "gpt-3.5-turbo",
-            "prompt": "Hi!",
             "max_tokens": 10,
             "temperature": 0,
             "stream": True,
+            "messages":[{"role": "user", "content": "hi!"}]
         }
 
         is_valid_api_key = False
