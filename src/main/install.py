@@ -18,6 +18,12 @@ class Install:
         self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
         self.openai_filepath = os.path.join(self.keys_filepath, "openai")
 
+    def standard_install(self) -> None:
+        """Performs standard install by creating local file directory with needed config files"""
+        self._create_folders()
+        self._load_api_key_to_openai_file()
+        self._load_api_key_to_environment_variable()
+
     def _create_folders(self) -> None:
         logging.info("Creating basic folder structure")
         os.mkdir(self.gptcli_filepath)
