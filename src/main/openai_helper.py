@@ -105,7 +105,8 @@ class OpenAIHelper:
             # get env variable
             openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
         else:
-            logger.info("API key already set")
+            logger.info("API key already in environment variable")
+            openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
 
     def _create_chat_completion(self) -> dict:
         # TODO handle -> could raise openai.error.AuthenticationError
