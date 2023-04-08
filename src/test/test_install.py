@@ -34,12 +34,6 @@ class TestInstall:
 
         assert not is_present, "gtpcli folder found"
 
-    def test_should_detect_the_keys_folder_is_missing(self, setup_teardown_no_folders):
-        install = setup_teardown_no_folders
-        is_present = install._is_keys_folder_present()
-
-        assert not is_present, "keys folder found"
-
     def test_should_detect_the_openai_file_is_missing(self, setup_teardown_no_folders):
         install = setup_teardown_no_folders
         is_present = install._is_openai_file_present()
@@ -51,12 +45,6 @@ class TestInstall:
         is_present = install._is_gptcli_folder_present()
 
         assert is_present, "gtpcli folder not found"
-
-    def test_should_detect_the_keys_folder_is_present(self, setup_teardown):
-        install = setup_teardown
-        is_present = install._is_keys_folder_present()
-
-        assert is_present, "keys folder not found"
 
     def test_should_detect_the_openai_file_is_present(self, setup_teardown):
         install = setup_teardown
@@ -86,14 +74,6 @@ class TestInstall:
         is_created = os.path.exists(filepath)
 
         assert is_created, "gptcli was not created"
-
-    def test_should_create_keys_folder_under_gptcli_folder(self, setup_teardown):
-        install = setup_teardown
-        filepath = install.keys_filepath
-        is_created = False
-        is_created = os.path.exists(filepath)
-
-        assert is_created, "keys was not created"
 
     def test_should_create_openai_file_under_keys_folder(self, setup_teardown):
         install = setup_teardown

@@ -51,7 +51,7 @@ class Install:
                 key = str(input(">>> Enter your openai API key: "))
                 self.openai_api_key = key
         else:
-            logger.info("Not asking for API key as one is present and valid")
+            logger.info("Not asking for API key as openai file is missing or the API is valid")
 
     def _load_api_key_to_openai_file(self) -> None:
         logger.info("Loading API key to openai file")
@@ -71,12 +71,6 @@ class Install:
                     logger.warning("Invalid API key detected")
         else:
             logger.info("API key already loaded")
-
-    def _is_keys_folder_present(self) -> bool:
-        logger.info("Checking for .gptcli/keys")
-        is_present = os.path.exists(self.keys_filepath)
-
-        return is_present
 
     def _is_openai_file_present(self) -> bool:
         logger.info("Checking for .gptcli/keys/openai")
