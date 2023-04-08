@@ -69,6 +69,16 @@ class Install:
     def _load_api_key_to_environment_variable(self) -> None:
         if self._openai_contains_one_line():
             logger.info("Loading API key to environment variable")
+            api_key = os.getenv("OPENAI_API_KEY")
+            if api_key is None:
+                with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
+                    os.environ["OPENAI_API_KEY"] = filepointer.readline()
+                    if self._is_openai_file_populated_with_a_valid_api_key():
+                        logger.warning("Invalid API key detected")
+            else:
+                logger.info("API key already loaded")
+        else:
+            logger.info("openai file does not contain one line")
 
     def _is_keys_folder_present(self) -> bool:
         logger.info("Checking for .gptcli/keys")
