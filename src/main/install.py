@@ -19,7 +19,6 @@ class Install:
         self.openai_filepath = os.path.join(self.keys_filepath, "openai")
 
     def _create_folders(self) -> None:
-        """Will create the minimum required file strcture for the application"""
         logging.info("Creating basic folder structure")
         os.mkdir(self.gptcli_filepath)
         os.mkdir(self.keys_filepath)
@@ -27,21 +26,18 @@ class Install:
             pass  # no need to do anything as file was created
 
     def _is_gptcli_folder_present(self) -> bool:
-        """Checks to see if the .gptcli is present in the home directory"""
         logging.info("Checking for .gptcli")
         is_present = os.path.exists(self.gptcli_filepath)
 
         return is_present
 
     def _is_keys_folder_present(self) -> bool:
-        """Checks to see if the keys folder is present under the .gptcli folder"""
         logging.info("Checking for .gptcli/keys")
         is_present = os.path.exists(self.keys_filepath)
 
         return is_present
 
     def _is_openai_file_present(self) -> bool:
-        """Checks to see if the openai file is present under the .gptcli/keys folder"""
         logging.info("Checking for .gptcli/keys/openai")
         is_present = False
         try:
@@ -53,7 +49,6 @@ class Install:
         return is_present
 
     def _openai_contains_one_line(self) -> bool:
-        """Checks to see if the file openai contains one line"""
         logging.info("Checking if openai has one line")
         contains_one_line = False
         with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
@@ -64,9 +59,6 @@ class Install:
         return contains_one_line
 
     def _is_openai_file_populated_with_a_valid_api_key(self) -> bool:
-        """Checks if API key is valid by performing a cheap (10 token) chat completion.
-        to https://api.openai.com/v1/completions
-        """
         request_url = "https://api.openai.com/v1/completions"
         request_headers = {
             "Accept": "text/event-stream",
@@ -96,7 +88,6 @@ class Install:
         return is_valid_api_key
 
     def _load_api_key_to_openai_file(self) -> None:
-        """Will load the given API key to the openai file (will accept any string)"""
         logging.info("Loading API key to openai file")
         key = self.openai_api_key
         filepath = self.openai_filepath
@@ -104,7 +95,6 @@ class Install:
             filepointer.write(key)
 
     def _load_api_key_to_environment_variable(self) -> None:
-        """Loads API key to environment variable OPENAI_API_KEY"""
         logging.info("Loading API key to environment variable")
         api_key = os.getenv("OPENAI_API_KEY")
         if api_key is None:
