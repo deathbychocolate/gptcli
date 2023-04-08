@@ -58,11 +58,8 @@ class Install:
     def _load_api_key_to_openai_file(self) -> None:
         logger.info("Loading API key to openai file")
         if self._is_openai_file_present():
-            logging.info("Loading API key to openai file")
-            key = self.openai_api_key
-            filepath = self.openai_filepath
-            with open(filepath, "w", encoding="utf8", newline="") as filepointer:
-                filepointer.write(key)
+            with open(self.openai_filepath, "w", encoding="utf8", newline="") as filepointer:
+                filepointer.write(self.openai_api_key)
         else:
             logger.info("Failed to load api key to openai file")
 
