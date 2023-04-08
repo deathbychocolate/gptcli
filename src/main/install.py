@@ -52,13 +52,16 @@ class Install:
 
     def _load_api_key_to_environment_variable(self) -> None:
         if self._openai_contains_one_line():
-            logging.info("Loading API key to environment variable")
-            api_key = os.getenv("OPENAI_API_KEY")
-            if api_key is None:
-                with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
-                    os.environ["OPENAI_API_KEY"] = filepointer.readline()
+            if self._is_openai_file_populated_with_a_valid_api_key():
+                logging.info("Loading API key to environment variable")
+                api_key = os.getenv("OPENAI_API_KEY")
+                if api_key is None:
+                    with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
+                        os.environ["OPENAI_API_KEY"] = filepointer.readline()
+                else:
+                    logging.info("API key already loaded")
             else:
-                logging.info("API key already loaded")
+                logging.warning("invalid API key detected")
         else:
             logging.info("openai file does not contain one line")
 
