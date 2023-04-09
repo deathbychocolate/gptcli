@@ -17,6 +17,7 @@ class Install:
         self.random_id = random_id
         self.home_directory = os.path.expanduser("~")
         self.gptcli_filepath = os.path.join(self.home_directory, f".gptcli{self.random_id}")
+        self.messages_filepath = os.path.join(self.gptcli_filepath, "messages")
         self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
         self.openai_filepath = os.path.join(self.keys_filepath, "openai")
 
@@ -35,6 +36,7 @@ class Install:
         if not self._is_gptcli_folder_present():
             logger.info("Creating basic folder structure")
             os.mkdir(self.gptcli_filepath)
+            os.mkdir(self.messages_filepath)
             os.mkdir(self.keys_filepath)
             with open(self.openai_filepath, "w", encoding="utf8"):
                 pass  # no need to do anything as file was created
@@ -71,8 +73,6 @@ class Install:
         if api_key is None:
             with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
                 os.environ["OPENAI_API_KEY"] = filepointer.readline()
-                if self._is_openai_file_populated_with_a_valid_api_key():
-                    logger.warning("Invalid API key detected")
         else:
             logger.info("API key already loaded")
 
