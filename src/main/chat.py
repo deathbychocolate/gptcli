@@ -34,7 +34,8 @@ class Chat:
 
             if len(user_input) != 0:
                 self._handle_chat_commands(user_input)
-                response = OpenAIHelper(self.model, user_input).send()
+                response = OpenAIHelper(self.model, user_input).send()]
+                # TODO: maybe add markdown support. See here: https://python.plainenglish.io/dump-the-plain-text-help-in-your-command-line-interfaces-today-3282225274dd
                 print(">>> AI:", response)
 
     def _prompt_user(self) -> str:
