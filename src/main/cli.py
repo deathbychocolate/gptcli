@@ -6,7 +6,6 @@ import logging
 import argparse
 
 from src.main.openai_helper import OpenAIHelper
-from src.main.chat import Chat
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +65,6 @@ class CommandLineInterface:
         #     help="Configure the application",
         # )
 
-        self.args = None
-
-    def parse(self) -> None:
-        """
-        Will parse the arguments and store them in self.args
-        """
         self.args = self.parser.parse_args()
 
     def run(self) -> None:
@@ -80,18 +73,8 @@ class CommandLineInterface:
         """
         logger.info("Running cli")
         self._configure_logging_level()
-        self._start_chat_session()
 
     def _configure_logging_level(self) -> None:
         logger.info("Configuring logging level")
         log_level = self.args.loglevel
         logging.basicConfig(level=log_level)
-
-    def _start_chat_session(self) -> None:
-        logger.info("Starting chat session")
-        chat_session = self._create_chat_session()
-        chat_session.start()
-
-    def _create_chat_session(self) -> Chat:
-        logger.info("Creating chat session")
-        return Chat(self.args.model)
