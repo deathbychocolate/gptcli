@@ -17,7 +17,7 @@ def main() -> None:
     cli = CommandLineInterface()
     cli.run()
 
-    install = Install()
+    install = Install(openai_api_key=cli.args.key)
     install.standard_install()
 
     chat = Chat(cli.args.model)
