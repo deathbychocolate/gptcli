@@ -128,6 +128,7 @@ class Install:
             logger.exception(error)
 
         if response.status_code == 200:
+            logger.info("API key is valid")
             is_valid_api_key = True
 
         return is_valid_api_key
