@@ -49,6 +49,13 @@ class CommandLineInterface:
             default=OpenAIHelper.GPT_DEFAULT,
             help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}.",
         )
+        self.parser.add_argument(
+            "-k",
+            "--key",
+            type=str,
+            default="",
+            help="The API key to use. Defaults to the one stored in gptcli or an empty string."
+        )
         # self.parser.add_argument(
         #     "-c",
         #     "--context",
