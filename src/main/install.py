@@ -22,10 +22,13 @@ class Install:
 
     def standard_install(self) -> None:
         """Performs standard install by creating local file directory with needed config files"""
-        self._create_folders()
-        self._ask_for_api_key()
-        self._load_api_key_to_openai_file()
-        self._load_api_key_to_environment_variable()
+        if not self._is_gptcli_folder_present():
+            self._create_folders()
+            self._ask_for_api_key()
+            self._load_api_key_to_openai_file()
+            self._load_api_key_to_environment_variable()
+        else:
+            logger.info("Application already installed")
 
     def _create_folders(self) -> None:
         if not self._is_gptcli_folder_present():
