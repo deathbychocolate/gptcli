@@ -122,7 +122,6 @@ class Install:
             )
         except TimeoutError as error:
             logger.exception(error)
-            is_valid_api_key = False
 
         if response.status_code == 200:
             is_valid_api_key = True
