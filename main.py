@@ -20,7 +20,10 @@ def main() -> None:
     install = Install(openai_api_key=cli.args.key)
     install.standard_install()
 
-    chat = Chat(cli.args.model)
+    chat = Chat(
+        cli.args.model,
+        stream=cli.args.stream,
+    )
     chat.start()
 
 
