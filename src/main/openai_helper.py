@@ -131,6 +131,7 @@ class OpenAIHelper:
             response = requests.post(
                 request_url,
                 headers=request_headers,
+                stream=self.stream,
                 json=request_body,
                 timeout=30,
             )
