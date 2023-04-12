@@ -3,7 +3,11 @@ Contains a wrapper for the openai SDK
 """
 import os
 import logging
+import requests
 import openai
+
+from requests.exceptions import ReadTimeout
+from openai.error import RateLimitError
 
 
 logger = logging.getLogger(__name__)
@@ -76,11 +80,12 @@ class OpenAIHelper:
     GPT_4_MAX_TOKENS = 8_192
     GPT_4_32K_MAX_TOKENS = 32_768
 
-    def __init__(self, model: str, user_input: str):
+    def __init__(self, model: str, user_input: str, stream=False):
         self.model = model
         self.user_input = user_input
+        self.stream = stream
 
-    def send(self) -> str:
+    def send(self) -> requests.Response:
         """
         Sends message(s) to openai
 
@@ -88,10 +93,9 @@ class OpenAIHelper:
         """
         logger.info("Sending message to openai")
         self._set_api_key()
-        chat_completion = self._create_chat_completion()
-        content = self._retrieve_chat_completion_content(chat_completion)
+        response = self._post_request()
 
-        return content
+        return response
 
     def _set_api_key(self) -> None:
         if "OPENAI_API_KEY" not in os.environ:
@@ -102,23 +106,44 @@ class OpenAIHelper:
             with open(bash_script_path, "r", encoding="utf8") as filepointer:
                 os.environ["OPENAI_API_KEY"] = filepointer.read()
 
-            # get env variable
             openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
         else:
             logger.info("API key already in environment variable")
             openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
 
-    def _create_chat_completion(self) -> dict:
-        # TODO handle -> could raise openai.error.AuthenticationError
-        # TODO maybe replace openai completions module with streaming solution. See https://medium.com/codingthesmartway-com-blog/stream-responses-from-openai-api-with-python-a-step-by-step-guide-1f5d2fa5926f
-        logger.info("Creating chat completion")
+    def _post_request(self) -> requests.Response:
+        logger.info("POSTing request to openai API")
         messages = self._build_messages(self.user_input)
-        chat_completion = openai.ChatCompletion.create(model=self.model, messages=messages)
 
-        return chat_completion
+        request_url = "https://api.openai.com/v1/chat/completions"
+        request_headers = {
+            "Accept": "text/event-stream",
+            "Authorization": "Bearer " + os.getenv("OPENAI_API_KEY", "no valid api key"),
+        }
+        request_body = {
+            "model": self.model,
+            "stream": self.stream,
+            "messages": messages,
+        }
 
-    def _retrieve_chat_completion_content(self, chat_completion: dict) -> str:
-        return chat_completion["choices"][0]["message"]["content"]
+        response = None  # return None rather than uninitiated variable
+        try:
+            response = requests.post(
+                request_url,
+                headers=request_headers,
+                json=request_body,
+                timeout=30,
+            )
+        except ReadTimeout:
+            logger.exception("ReadTimeout error detected")
+        except TimeoutError:
+            logger.exception("Timeout error detected")
+        except RateLimitError:
+            logger.exception("RateLimitError error detected")
+        except requests.ConnectionError:
+            logger.exception("It seems you lack an internet connection, please manually resolve the issue")
+
+        return response
 
     def _build_messages(self, user_input: str) -> list:
         # TODO: it currently handles only one message, it should handle multiple
