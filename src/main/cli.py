@@ -58,7 +58,7 @@ class CommandLineInterface:
             "--stream",
             type=str,
             choices=["on", "off"],
-            default="off",
+            default="on",
             help="Defaults to off. If on, enables streaming of text replies. Should be on for chat mode.",
         )
         # self.parser.add_argument(
