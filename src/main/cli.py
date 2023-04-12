@@ -53,15 +53,15 @@ class CommandLineInterface:
             "--key",
             type=str,
             default="",
-            help="The API key to use. Defaults to the one stored in gptcli or an empty string."
+            help="The API key to use. Defaults to the one stored in gptcli or an empty string.",
         )
         self.parser.add_argument(
             "-s",
             "--stream",
             type=str,
-            choices=["on","off"],
+            choices=["on", "off"],
             default="off",
-            help="If on, enables streaming of text replies."
+            help="Defaults to off. If on, enables streaming of text replies. Should be on for chat mode.",
         )
         # self.parser.add_argument(
         #     "-c",
