@@ -1,5 +1,4 @@
-"""
-Contains the chat session code
+"""Contains the chat session code
 
 TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website

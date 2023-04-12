@@ -1,5 +1,4 @@
-"""
-Contains a wrapper for the openai SDK
+"""Contains a wrapper for the openai SDK
 """
 import os
 import logging
@@ -14,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Message:
-    """
-    A message that will be fed to openai
+    """A message that will be fed to openai
 
     Attributes:
         role: The role of the message
@@ -28,8 +26,7 @@ class Message:
 
     @property
     def dictionary(self) -> dict:
-        """
-        Returns a dictionary representation of the message
+        """Returns a dictionary representation of the message
 
         :return: a dictionary
         """
@@ -37,14 +34,12 @@ class Message:
 
 
 class MessageFactory:
-    """
-    A factory for creating messages
+    """A factory for creating messages
     """
 
     @staticmethod
     def create_message(role: str, content: str) -> Message:
-        """
-        Creates a message, you may specify the role and the content
+        """Creates a message, you may specify the role and the content
 
         :param role: The role of the message
         :param content: The content of the message
@@ -54,8 +49,7 @@ class MessageFactory:
 
 
 class OpenAIHelper:
-    """
-    A wrapper for the openai python library
+    """A wrapper for the openai python library
     """
 
     # see here: https://platform.openai.com/docs/models/
@@ -86,8 +80,7 @@ class OpenAIHelper:
         self.stream = stream
 
     def send(self) -> requests.Response:
-        """
-        Sends message(s) to openai
+        """Sends message(s) to openai
 
         :return: The response string from openai
         """

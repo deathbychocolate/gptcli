@@ -1,5 +1,4 @@
-"""
-Main command line interface.
+"""Main command line interface.
 """
 
 import logging
@@ -11,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class CommandLineInterface:
-    """
-    Class for the command line interface.
+    """Class for the command line interface.
     """
 
     LOGGING_MODE_ALL = [
@@ -76,8 +74,7 @@ class CommandLineInterface:
         self.args = self.parser.parse_args()
 
     def run(self) -> None:
-        """
-        Run this method if you want to start a classic dialog with the AI
+        """Run this method if you want to start a classic dialog with the AI
         """
         logger.info("Running cli")
         self._configure_logging_level()
