@@ -34,7 +34,14 @@ class Chat:
             user_input = self._prompt_user()
 
             if len(user_input) != 0:
-                self._handle_chat_commands(user_input)
+                # handle chat commands
+                if user_input == "exit":
+                    break
+                elif user_input == "context on":
+                    continue  # TODO for when we add context parameter
+                elif user_input == "context off":
+                    continue  # TODO for when we add context parameter
+
                 response = OpenAIHelper(self.model, user_input, stream=self.stream).send()
                 self._reply(response, stream=self.stream)
 
@@ -51,14 +58,6 @@ class Chat:
             sys.exit()
 
         return user_input
-
-    def _handle_chat_commands(self, user_input: str) -> None:
-        if user_input == "exit":
-            sys.exit()
-        elif user_input == "context on":
-            pass  # TODO for when we add context parameter
-        elif user_input == "context off":
-            pass  # TODO for when we add context parameter
 
     def _reply(self, response: Response, stream: bool) -> None:
         if response is None:
