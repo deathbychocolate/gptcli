@@ -52,10 +52,13 @@ class Install:
     def _ask_for_api_key(self) -> None:
         logger.info("Asking user for openai API key")
         if self._is_openai_file_present() and self._is_not_openai_file_populated_with_a_valid_api_key():
-            while not self._is_valid_openai_api_key(self.openai_api_key):
+            while True:
                 print(">>> Invalid openai api key detected...")
                 key = str(input(">>> Enter your openai API key: "))
                 self.openai_api_key = key
+                if self._is_valid_openai_api_key(self.openai_api_key):
+                    logger.info("Valid API key detected")
+                    break
         else:
             logger.info("Not asking for API key as openai file is missing or the API is valid")
 
