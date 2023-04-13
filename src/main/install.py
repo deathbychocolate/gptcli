@@ -4,7 +4,7 @@ Use this to install or configure the local machine environment
 import os
 import logging
 
-import requests
+from src.main.openai_helper import OpenAIHelper
 
 logger = logging.getLogger(__name__)
 
@@ -105,33 +105,6 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai API key is valid")
-        request_url = "https://api.openai.com/v1/chat/completions"
-        request_headers = {
-            "Accept": "text/event-stream",
-            "Authorization": " ".join(["Bearer", key]),
-        }
-        request_body = {
-            "model": "gpt-3.5-turbo",
-            "max_tokens": 10,
-            "temperature": 0,
-            "stream": True,
-            "messages": [{"role": "user", "content": "hi!"}],
-        }
+        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, user_input="Hi!").is_valid_api_key(key)
 
-        is_valid_api_key = False
-        try:
-            response = requests.post(
-                request_url,
-                stream=True,
-                headers=request_headers,
-                json=request_body,
-                timeout=3,  # seconds
-            )
-        except TimeoutError as error:
-            logger.exception(error)
-
-        if response.status_code == 200:
-            logger.info("API key is valid")
-            is_valid_api_key = True
-
-        return is_valid_api_key
+        return is_valid

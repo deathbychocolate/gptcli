@@ -34,8 +34,7 @@ class Message:
 
 
 class MessageFactory:
-    """A factory for creating messages
-    """
+    """A factory for creating messages"""
 
     @staticmethod
     def create_message(role: str, content: str) -> Message:
@@ -49,8 +48,7 @@ class MessageFactory:
 
 
 class OpenAIHelper:
-    """A wrapper for the openai python library
-    """
+    """A wrapper for the openai python library"""
 
     # see here: https://platform.openai.com/docs/models/
     GPT_3_5 = "gpt-3.5-turbo"
@@ -86,9 +84,20 @@ class OpenAIHelper:
         """
         logger.info("Sending message to openai")
         self._set_api_key()
-        response = self._post_request()
+
+        key = os.environ["OPENAI_API_KEY"]
+        response = self._post_request(key=key)
 
         return response
+
+    def is_valid_api_key(self, key) -> bool:
+        """Sends a POST request to the Openai API.
+        We expect a return of True if we have a valid key and false if not.
+        """
+        response = self._post_request(key=key)
+        is_valid = True if response.status_code == "200" else False
+
+        return is_valid
 
     def _set_api_key(self) -> None:
         if "OPENAI_API_KEY" not in os.environ:
@@ -104,14 +113,14 @@ class OpenAIHelper:
             logger.info("API key already in environment variable")
             openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
 
-    def _post_request(self) -> requests.Response:
+    def _post_request(self, key: str) -> requests.Response:
         logger.info("POSTing request to openai API")
         messages = self._build_messages(self.user_input)
 
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
             "Accept": "text/event-stream",
-            "Authorization": "Bearer " + os.getenv("OPENAI_API_KEY", "no valid api key"),
+            "Authorization": "Bearer " + key,
         }
         request_body = {
             "model": self.model,
