@@ -53,8 +53,8 @@ class Install:
         logger.info("Asking user for openai API key")
         if self._is_openai_file_present() and self._is_not_openai_file_populated_with_a_valid_api_key():
             while True:
-                print(">>> Invalid openai api key detected...")
-                key = str(input(">>> Enter your openai API key: "))
+                print(">>> [GPTCLI]: Invalid openai API key detected...")
+                key = str(input(">>> [GPTCLI]: Enter your openai API key: "))
                 self.openai_api_key = key
                 if self._is_valid_openai_api_key(self.openai_api_key):
                     logger.info("Valid API key detected")
@@ -68,7 +68,7 @@ class Install:
             with open(self.openai_filepath, "w", encoding="utf8", newline="") as filepointer:
                 filepointer.write(self.openai_api_key)
         else:
-            logger.info("Failed to load api key to openai file")
+            logger.info("Failed to load API key to openai file")
 
     def _load_api_key_to_environment_variable(self) -> None:
         logger.info("Loading API key to environment variable")
@@ -104,7 +104,7 @@ class Install:
         return is_valid_api_key
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
-        logger.info("Checking if openai api key is valid")
+        logger.info("Checking if openai API key is valid")
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
             "Accept": "text/event-stream",
