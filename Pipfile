@@ -11,6 +11,7 @@ pytest = "*"
 openai = "*"
 readline = "*"
 sseclient-py = "*"
+requests = "*"
 
 [dev-packages]
 
