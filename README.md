@@ -1,21 +1,22 @@
-# GPTCLI
-### How do I run it?
-Run ```python3 main.py``` in the project root directory.
+# How do I run it?
+- Users:
+    - A user should only have to run ```gptcli``` in their machine's terminal.
 
-### Are there any project requirements?
-Yes, to install them simply run the following command in the project root directory:
+- Developers:
+    - Install pipenv using: ```python3 -m pip pipenv```
+    - Enter a pipenv shell using: ```pipenv shell```
+    - Install dependencies using: ```pipenv install```
+    - Run ```python3 main.py``` in the project root directory.
+
+# How does it work?
+It uses the openai API to query text from messages that we send via HTTP POST requests.This is respresented to the user as a USER-AI relationship. Meaning you will see something like this in your terminal:
+```text
+>>> [USER]: hi
+>>> [AI, model=gpt-3.5-turbo]: Hello! How can I assist you today?
+>>> [USER]: exit
 ```
-python3 -m pip install -r requirements.txt
-```
-Also, you need a valid openai API key. See below to generate one.
 
-### What is it?
-A CLI version of chatGPT, plus features.
-
-### How does it work?
-The project uses the official OpenAI SDK named openai. This SDK is a very comprenhensive CLI based python project of which we use only the Completions features. I recommend you investigate this further using the official openai docs.
-
-### Before running the project:
-You need valid OpenAI credentials to communicate with the AI models. To do this, follow the points below:
+# Before running the project:
+You need valid OpenAI credentials to communicate with the AI models. To do this:
 - Create an openai account here: https://chat.openai.com/
 - Generate an openai API key here: https://platform.openai.com/account/api-keys
