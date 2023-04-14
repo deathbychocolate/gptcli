@@ -1,0 +1,35 @@
+b'data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"role":"assistant"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"Hello"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"!"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" How"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" may"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" I"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" assist"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" you"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" today"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"?"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{},"index":0,"finish_reason":"stop"}]}
+data: [DONE]
+'
+
+{
+    "id": "chatcmpl-74cCqMlkbdtCTGGau18UhBy9yKbBB",
+    "object": "chat.completion",
+    "created": 1681334532,
+    "model": "gpt-3.5-turbo-0301",
+    "usage": {
+        "prompt_tokens": 9,
+        "completion_tokens": 9,
+        "total_tokens": 18
+    },
+    "choices": [
+        {
+            "message": {
+                "role": "assistant",
+                "content": "Hello! How may I assist you today?"
+            },
+            "finish_reason": "stop",
+            "index": 0
+        }
+    ]
+}
