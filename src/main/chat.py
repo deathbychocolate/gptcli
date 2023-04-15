@@ -90,13 +90,13 @@ class ChatOpenai(Chat):
                     chat_command = user_input.split("!", maxsplit=1)[1]
                     if chat_command == "set context on":
                         print(">>> [GPTCLI]: CONTEXT ON")
-                        continue  # TODO for when we add context parameter
+                        continue  # TODO: FEATURE: for when we add context parameter
                     elif chat_command == "set context off":
                         print(">>> [GPTCLI]: CONTEXT OFF")
-                        continue  # TODO for when we add context parameter
+                        continue  # TODO: FEATURE: for when we add context parameter
                     elif chat_command.startswith("set model "):
                         print(">>> [GPTCLI]: MODEL model")
-                        continue  # TODO add dynamic model switching
+                        continue  # TODO: FEATURE: add dynamic model switching
                     else:
                         print(">>> [GPTCLI]: UNKNOWN COMMAND DETECTED")
                 else:
@@ -117,6 +117,7 @@ class ChatOpenai(Chat):
         print(">>> [GPTCLI]: Unable to send message(s) due to an exception, maybe try again later.")
 
     def _reply_stream(self, response: Response) -> None:
+        # TODO: FEATURE: allow mid message exit via KeyboardInterrupt or EOFError using try catch
         print(f">>> [AI, model={self.model}]: ", end="")
         client = sseclient.SSEClient(response)
         for event in client.events():

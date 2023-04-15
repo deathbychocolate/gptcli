@@ -132,18 +132,32 @@ class OpenAIHelper:
                 json=request_body,
                 timeout=30,
             )
-        # TODO handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
+        # TODO: FEATURE: handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
         except ReadTimeout:
             logger.exception("ReadTimeout error detected")
         except TimeoutError:
             logger.exception("Timeout error detected")
         except requests.ConnectionError:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
+        # Consider susing sys.exc_info()
+        # import sys
+
+        # def call_function(func):
+        #     try:
+        #         func()
+        #     except Exception as e:
+        #         ex_type, ex_value, ex_traceback = sys.exc_info()
+        #         if ex_type.__module__ == "your_target_module":
+        #             print("Caught an exception from the target module:", ex_type, ex_value)
+        #         else:
+        #             print("Caught an exception from a different module:", ex_type, ex_value)
+
+        # # Example of calling a function that may raise an exception and checking if it's from the target module
 
         return response
 
     def _build_messages(self, user_input: str) -> list:
-        # TODO: it currently handles only one message, it should handle multiple
+        # TODO: FEATURE: it currently handles only one message, it should handle multiple
         logger.info("Building messages")
         messages = [MessageFactory.create_message("user", user_input).dictionary]
 
