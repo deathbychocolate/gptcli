@@ -14,16 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class TextToSpeech:
-    """
-    This class is used to convert text to speech
-    """
+    """This class is used to convert text to speech"""
 
     def __init__(self, input_text: str) -> None:
         self.input_text = input_text
 
     def generate_and_store_audio_stream_to_file(self) -> str:
-        """
-        Generate and store audio stream to local file system
+        """Generate and store audio stream to local file system
 
         :returns: The full path of the audio file
         """
@@ -34,8 +31,7 @@ class TextToSpeech:
         return full_path
 
     def generate_and_play_audio_stream(self) -> None:
-        """
-        Generate and play audio stream without storing to local file system
+        """Generate and play audio stream without storing to local file system
 
         :returns: None
         """
@@ -44,8 +40,7 @@ class TextToSpeech:
         self.play_audio_stream(stream)
 
     def _generate_audio_stream(self) -> bytes:
-        """
-        This method is used to convert text to speech
+        """This method is used to convert text to speech
 
         :returns: The audio stream
         """
@@ -66,8 +61,7 @@ class TextToSpeech:
         return stream
 
     def _generate_polly_client(self) -> boto3.client:
-        """
-        This method is used to generate a boto3 client
+        """This method is used to generate a boto3 client
 
         :returns: Polly client
         """
@@ -78,8 +72,7 @@ class TextToSpeech:
         return client
 
     def _store_audio_stream_to_file(self, stream: bytes) -> str:
-        """
-        This method is used to store the audio stream
+        """This method is used to store the audio stream
 
         :param stream: The audio stream
         :returns: The full path of the audio file
@@ -91,8 +84,7 @@ class TextToSpeech:
         return filename
 
     def _generate_file_name(self) -> str:
-        """
-        This method is used to generate a file name
+        """This method is used to generate a file name
 
         :returns: The filename
         """
@@ -102,8 +94,7 @@ class TextToSpeech:
         return file_path
 
     def write_audio_to_file(self, filename: str, stream: bytes) -> None:
-        """
-        This method is used to write the audio stream to a file
+        """This method is used to write the audio stream to a file
 
         :param filename: The filename of the audio file
         :param stream: The audio stream
@@ -115,8 +106,7 @@ class TextToSpeech:
         soundfile.write(filename, audio_data, samplerate=frequency)
 
     def play_audio_stream(self, stream: bytes) -> None:
-        """
-        This method is used to play the audio stream
+        """This method is used to play the audio stream
 
         :param stream: The audio stream
         :returns: None
@@ -128,8 +118,7 @@ class TextToSpeech:
         sounddevice.wait()
 
     def play_audio_file(self, filename: str) -> None:
-        """
-        This method is used to play the audio file
+        """This method is used to play the audio file
 
         :param filename: The filename of the audio file
         :returns: None
