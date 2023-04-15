@@ -8,8 +8,6 @@ sounddevice = "*"
 soundfile = "*"
 boto3 = "*"
 pytest = "*"
-openai = "*"
-readline = "*"
 sseclient-py = "*"
 requests = "*"
 

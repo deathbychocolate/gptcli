@@ -3,10 +3,8 @@
 import os
 import logging
 import requests
-import openai
 
 from requests.exceptions import ReadTimeout
-from openai.error import RateLimitError
 
 
 logger = logging.getLogger(__name__)
@@ -107,11 +105,8 @@ class OpenAIHelper:
             bash_script_path = os.path.join(os.path.expanduser("~"), ".gptcli/keys/openai")
             with open(bash_script_path, "r", encoding="utf8") as filepointer:
                 os.environ["OPENAI_API_KEY"] = filepointer.read()
-
-            openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
         else:
             logger.info("API key already in environment variable")
-            openai.api_key = os.getenv("OPENAI_API_KEY", "no api key found")
 
     def _post_request(self, key: str) -> requests.Response:
         logger.info("POSTing request to openai API")
@@ -129,6 +124,7 @@ class OpenAIHelper:
         }
 
         response = None  # return None rather than uninitiated variable
+        # TODO handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
         try:
             response = requests.post(
                 request_url,
@@ -141,8 +137,6 @@ class OpenAIHelper:
             logger.exception("ReadTimeout error detected")
         except TimeoutError:
             logger.exception("Timeout error detected")
-        except RateLimitError:
-            logger.exception("RateLimitError error detected")
         except requests.ConnectionError:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
 
