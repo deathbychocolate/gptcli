@@ -5,6 +5,7 @@ import os
 import logging
 
 from src.main.openai_helper import OpenAIHelper
+from src.main.chat import ChatInstall
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +53,10 @@ class Install:
     def _ask_for_api_key(self) -> None:
         logger.info("Asking user for openai API key")
         if self._is_openai_file_present() and self._is_not_openai_file_populated_with_a_valid_api_key():
+            chat = ChatInstall()
             while True:
                 print(">>> [GPTCLI]: Invalid openai API key detected...")
-                key = str(input(">>> [GPTCLI]: Enter your openai API key: "))
-                self.openai_api_key = key
+                self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
                 if self._is_valid_openai_api_key(self.openai_api_key):
                     logger.info("Valid API key detected")
                     break

@@ -18,35 +18,20 @@ logger = logging.getLogger(__name__)
 
 
 class Chat:
-    """A chat session"""
+    """A simple chat session"""
 
-    def __init__(self, model, stream="on"):
-        self.model = model
-        self.stream = True if stream == "on" else False
-
+    def __init__(self):
         self._configure_chat()
 
-    def start(self) -> None:
-        """Will start the chat session that allows USER to AI communication (like texting)"""
-        logger.info("Starting chat")
-        while True:
-            user_input = self._prompt_user()
+    def prompt(self, prompt_text: str) -> str:
+        """Prompt user with specified text.
 
-            if len(user_input) != 0:
-                # handle chat commands
-                if user_input == "exit":
-                    break
-                elif user_input == "context on":
-                    continue  # TODO for when we add context parameter
-                elif user_input == "context off":
-                    continue  # TODO for when we add context parameter
-
-                response = OpenAIHelper(self.model, user_input, stream=self.stream).send()
-                self._reply(response, stream=self.stream)
-
-    def _prompt_user(self) -> str:
+        Handles exceptions such as:
+        - KeyboardInterrupt
+        - EOFError
+        """
         try:
-            user_input = input(">>> [USER]: ")
+            user_input = str(input(prompt_text))
         except KeyboardInterrupt as exception:
             logger.info("Keyboard interrupt detected")
             logger.exception(exception)
@@ -57,6 +42,50 @@ class Chat:
             sys.exit()
 
         return user_input
+
+    def _configure_chat(self) -> None:
+        logger.info("Configuring chat")
+        self._add_arrow_key_support()
+
+    def _add_arrow_key_support(self) -> None:
+        logger.info("Adding arrow key support")
+        readline.parse_and_bind("'^[[A': history-search-backward")
+        readline.parse_and_bind("'^[[B': history-search-forward")
+        readline.parse_and_bind("'^[[C': forward-char")
+        readline.parse_and_bind("'^[[D': backward-char")
+
+
+class ChatInstall(Chat):
+    """A chat session for when we are installing GPTCLI"""
+
+    def __init__(self):
+        pass
+
+
+class ChatOpenai(Chat):
+    """A chat session for communicating with Openai"""
+
+    def __init__(self, model, stream="on"):
+        self.model = model
+        self.stream = True if stream == "on" else False
+
+    def start(self) -> None:
+        """Will start the chat session that allows USER to AI communication (like texting)"""
+        logger.info("Starting chat")
+        while True:
+            user_input = self.prompt(">>> [USER]: ")
+
+            if len(user_input) != 0:
+                # handle chat commands
+                if user_input == "exit":
+                    break
+                elif user_input == "context on":
+                    continue  # TODO for when we add context parameter
+                elif user_input == "context off":
+                    continue  # TODO for when we add context parameter
+                else:
+                    response = OpenAIHelper(self.model, user_input, stream=self.stream).send()
+                    self._reply(response, stream=self.stream)
 
     def _reply(self, response: Response, stream: bool) -> None:
         if response is None:
@@ -85,14 +114,3 @@ class Chat:
     def _reply_simple(self, response: Response) -> None:
         text = json.loads(response.content)["choices"][0]["message"]["content"]
         print(text)
-
-    def _configure_chat(self) -> None:
-        logger.info("Configuring chat")
-        self._add_arrow_key_support()
-
-    def _add_arrow_key_support(self) -> None:
-        logger.info("Adding arrow key support")
-        readline.parse_and_bind("'^[[A': history-search-backward")
-        readline.parse_and_bind("'^[[B': history-search-forward")
-        readline.parse_and_bind("'^[[C': forward-char")
-        readline.parse_and_bind("'^[[D': backward-char")

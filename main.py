@@ -6,9 +6,10 @@ import logging
 
 from src.main.cli import CommandLineInterface
 from src.main.install import Install
-from src.main.chat import Chat
+from src.main.chat import ChatOpenai
 
 logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     """
@@ -20,7 +21,7 @@ def main() -> None:
     install = Install(openai_api_key=cli.args.key)
     install.standard_install()
 
-    chat = Chat(
+    chat = ChatOpenai(
         cli.args.model,
         stream=cli.args.stream,
     )
