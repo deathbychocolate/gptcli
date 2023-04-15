@@ -85,10 +85,20 @@ class ChatOpenai(Chat):
                 # handle chat commands
                 if user_input == "exit":
                     break
-                elif user_input == "context on":
-                    continue  # TODO for when we add context parameter
-                elif user_input == "context off":
-                    continue  # TODO for when we add context parameter
+                elif user_input.startswith("!"):
+                    logger.info("Chat command detected")
+                    chat_command = user_input.split("!", maxsplit=1)[1]
+                    if chat_command == "set context on":
+                        print(">>> [GPTCLI]: CONTEXT ON")
+                        continue  # TODO for when we add context parameter
+                    elif chat_command == "set context off":
+                        print(">>> [GPTCLI]: CONTEXT OFF")
+                        continue  # TODO for when we add context parameter
+                    elif chat_command.startswith("set model "):
+                        print(">>> [GPTCLI]: MODEL model")
+                        continue  # TODO add dynamic model switching
+                    else:
+                        print(">>> [GPTCLI]: UNKNOWN COMMAND DETECTED")
                 else:
                     response = OpenAIHelper(self.model, user_input, stream=self.stream).send()
                     self._reply(response, stream=self.stream)
