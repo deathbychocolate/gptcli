@@ -113,6 +113,5 @@ class ChatOpenai(Chat):
         print("")
 
     def _reply_simple(self, response: Response) -> None:
-        print(f">>> [AI, model={self.model}]: ", end="")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
-        print(text)
+        print(f">>> [AI, model={self.model}]: {text}")
