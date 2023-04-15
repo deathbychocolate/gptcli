@@ -45,7 +45,12 @@ class Chat:
 
     def _configure_chat(self) -> None:
         logger.info("Configuring chat")
+        self._clear_history()
         self._add_arrow_key_support()
+
+    def _clear_history(self) -> None:
+        logger.info("Clearing chat history")
+        readline.clear_history()
 
     def _add_arrow_key_support(self) -> None:
         logger.info("Adding arrow key support")
@@ -59,14 +64,13 @@ class ChatInstall(Chat):
     """A chat session for when we are installing GPTCLI"""
 
     def __init__(self):
-        readline.clear_history()
-
+        Chat.__init__(self)
 
 class ChatOpenai(Chat):
     """A chat session for communicating with Openai"""
 
     def __init__(self, model, stream="on"):
-        readline.clear_history()
+        Chat.__init__(self)
 
         self.model = model
         self.stream = True if stream == "on" else False
@@ -90,6 +94,7 @@ class ChatOpenai(Chat):
                     self._reply(response, stream=self.stream)
 
     def _reply(self, response: Response, stream: bool) -> None:
+        logger.info("Selecting reply mode")
         if response is None:
             self._reply_none()
         else:
