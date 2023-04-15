@@ -124,7 +124,6 @@ class OpenAIHelper:
         }
 
         response = None  # return None rather than uninitiated variable
-        # TODO handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
         try:
             response = requests.post(
                 request_url,
@@ -133,6 +132,7 @@ class OpenAIHelper:
                 json=request_body,
                 timeout=30,
             )
+        # TODO handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
         except ReadTimeout:
             logger.exception("ReadTimeout error detected")
         except TimeoutError:
