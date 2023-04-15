@@ -59,13 +59,15 @@ class ChatInstall(Chat):
     """A chat session for when we are installing GPTCLI"""
 
     def __init__(self):
-        pass
+        readline.clear_history()
 
 
 class ChatOpenai(Chat):
     """A chat session for communicating with Openai"""
 
     def __init__(self, model, stream="on"):
+        readline.clear_history()
+
         self.model = model
         self.stream = True if stream == "on" else False
 
@@ -89,19 +91,18 @@ class ChatOpenai(Chat):
 
     def _reply(self, response: Response, stream: bool) -> None:
         if response is None:
-            print(">>> [GPTCLI]: ", end="")
             self._reply_none()
         else:
-            print(f">>> [AI, model={self.model}]: ", end="")
             if stream:
                 self._reply_stream(response)
             else:
                 self._reply_simple(response)
 
     def _reply_none(self) -> None:
-        print("Unable to send message(s) due to an exception, maybe try again later.")
+        print(">>> [GPTCLI]: Unable to send message(s) due to an exception, maybe try again later.")
 
     def _reply_stream(self, response: Response) -> None:
+        print(f">>> [AI, model={self.model}]: ", end="")
         client = sseclient.SSEClient(response)
         for event in client.events():
             if event.data != "[DONE]":
@@ -112,5 +113,6 @@ class ChatOpenai(Chat):
         print("")
 
     def _reply_simple(self, response: Response) -> None:
+        print(f">>> [AI, model={self.model}]: ", end="")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
         print(text)
