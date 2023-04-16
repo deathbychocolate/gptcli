@@ -55,11 +55,12 @@ class Install:
         if self._is_openai_file_present() and self._is_not_openai_file_populated_with_a_valid_api_key():
             chat = ChatInstall()
             while True:
-                print(">>> [GPTCLI]: Invalid openai API key detected...")
                 self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
                 if self._is_valid_openai_api_key(self.openai_api_key):
                     logger.info("Valid API key detected")
                     break
+                else:
+                    print(">>> [GPTCLI]: Invalid openai API key detected...")
         else:
             logger.info("Not asking for API key as openai file is missing or the API is valid")
 
