@@ -24,16 +24,16 @@ class Install:
 
     def standard_install(self) -> None:
         """Performs standard install by creating local file directory with needed config files"""
+        logger.info("Performing standard install")
         if not self._is_gptcli_folder_present():
-            self._create_folders()
-            self._ask_for_api_key()
-            self._load_api_key_to_openai_file()
-        else:
-            logger.info("Application already installed")
+            self._create_folder_structure()
+        if not self._is_openai_file_populated_with_a_valid_api_key():
+            self._setup_api_key()
+            self._write_api_key_to_openai_file()
+        if os.getenv("OPENAI_API_KEY") is None:
+            self._load_api_key_to_environment_variable()
 
-        self._load_api_key_to_environment_variable()
-
-    def _create_folders(self) -> None:
+    def _create_folder_structure(self) -> None:
         if not self._is_gptcli_folder_present():
             logger.info("Creating basic folder structure")
             os.mkdir(self.gptcli_filepath)
@@ -50,21 +50,18 @@ class Install:
 
         return is_present
 
-    def _ask_for_api_key(self) -> None:
+    def _setup_api_key(self) -> None:
         logger.info("Asking user for openai API key")
-        if self._is_openai_file_present() and self._is_not_openai_file_populated_with_a_valid_api_key():
-            chat = ChatInstall()
-            while True:
-                self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
-                if self._is_valid_openai_api_key(self.openai_api_key):
-                    logger.info("Valid API key detected")
-                    break
-                else:
-                    print(">>> [GPTCLI]: Invalid openai API key detected...")
-        else:
-            logger.info("Not asking for API key as openai file is missing or the API is valid")
+        chat = ChatInstall()
+        while True:
+            self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
+            if self._is_valid_openai_api_key(self.openai_api_key):
+                logger.info("Valid API key detected")
+                break
+            else:
+                print(">>> [GPTCLI]: Invalid openai API key detected...")
 
-    def _load_api_key_to_openai_file(self) -> None:
+    def _write_api_key_to_openai_file(self) -> None:
         logger.info("Loading API key to openai file")
         if self._is_openai_file_present():
             with open(self.openai_filepath, "w", encoding="utf8", newline="") as filepointer:
@@ -91,10 +88,6 @@ class Install:
             is_present = False
 
         return is_present
-
-    def _is_not_openai_file_populated_with_a_valid_api_key(self) -> bool:
-        is_not_valid_api_key = not self._is_openai_file_populated_with_a_valid_api_key()
-        return is_not_valid_api_key
 
     def _is_openai_file_populated_with_a_valid_api_key(self) -> bool:
         logger.info("Checking if openai file contains valid API key")
