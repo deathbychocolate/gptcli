@@ -114,9 +114,11 @@ class ChatOpenai(Chat):
                 self._reply_simple(response)
 
     def _reply_none(self) -> None:
+        logger.info("Reply mode: None")
         print(">>> [GPTCLI]: Unable to send message(s) due to an exception, maybe try again later.")
 
     def _reply_stream(self, response: Response) -> None:
+        logger.info("Reply mode: Stream")
         # TODO: FEATURE: allow mid message exit via KeyboardInterrupt or EOFError using try catch
         print(f">>> [AI, model={self.model}]: ", end="")
         client = sseclient.SSEClient(response)
@@ -129,5 +131,6 @@ class ChatOpenai(Chat):
         print("")
 
     def _reply_simple(self, response: Response) -> None:
+        logger.info("Reply mode: Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
         print(f">>> [AI, model={self.model}]: {text}")
