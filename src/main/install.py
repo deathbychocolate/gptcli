@@ -18,6 +18,7 @@ class Install:
         self.random_id = random_id
         self.home_directory = os.path.expanduser("~")
         self.gptcli_filepath = os.path.join(self.home_directory, f".gptcli{self.random_id}")
+        self.install_successful_filepath = os.path.join(self.gptcli_filepath, ".install_successful")
         self.messages_filepath = os.path.join(self.gptcli_filepath, "messages")
         self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
         self.openai_filepath = os.path.join(self.keys_filepath, "openai")
@@ -25,13 +26,28 @@ class Install:
     def standard_install(self) -> None:
         """Performs standard install by creating local file directory with needed config files"""
         logger.info("Performing standard install")
-        if not self._is_gptcli_folder_present():
-            self._create_folder_structure()
-        if not self._is_openai_file_populated_with_a_valid_api_key():
-            self._setup_api_key()
-            self._write_api_key_to_openai_file()
-        if os.getenv("OPENAI_API_KEY") is None:
-            self._load_api_key_to_environment_variable()
+        if not self._is_installed():
+            if not self._is_gptcli_folder_present():
+                self._create_folder_structure()
+            if not self._is_openai_file_populated_with_a_valid_api_key():
+                self._setup_api_key()
+                self._write_api_key_to_openai_file()
+            if os.getenv("OPENAI_API_KEY") is None:
+                self._load_api_key_to_environment_variable()
+            self._mark_install_as_successful()
+        else:
+            logger.info("GPTCLI already installed")
+
+    def _is_installed(self) -> bool:
+        logger.info("Checking if GPTCLI is installed")
+        is_installed = False
+        try:
+            with open(self.install_successful_filepath, "r", encoding="utf8"):
+                is_installed = True
+        except FileNotFoundError:
+            logger.exception("FileNotFoundError: install marker not found")
+
+        return is_installed
 
     def _create_folder_structure(self) -> None:
         if not self._is_gptcli_folder_present():
@@ -103,3 +119,8 @@ class Install:
         is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, user_input="Hi!").is_valid_api_key(key)
 
         return is_valid
+
+    def _mark_install_as_successful(self) -> None:
+        logger.info("Marking install as successful")
+        with open(self.install_successful_filepath, "w", encoding="utf8") as filepointer:
+            pass  # simply create the file
