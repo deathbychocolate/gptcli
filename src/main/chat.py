@@ -124,7 +124,7 @@ class ChatOpenai(Chat):
     def _reply_stream(self, response: Response) -> None:
         logger.info("Reply mode -> Stream")
         try:
-            print(f">>> [REPLY, model={self.model}]: ", end="")
+            self._print_reply("", end="")
             client = sseclient.SSEClient(response)
             for event in client.events():
                 if event.data != "[DONE]":
@@ -140,4 +140,8 @@ class ChatOpenai(Chat):
     def _reply_simple(self, response: Response) -> None:
         logger.info("Reply mode -> Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
-        print(f">>> [REPLY, model={self.model}]: {text}")
+        self._print_reply(text)
+
+    def _print_reply(self, text: str, end="\n") -> None:
+        reply = "".join([f">>> [REPLY, model={self.model}]: ", text])
+        print(reply, end=end)
