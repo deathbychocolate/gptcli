@@ -59,6 +59,10 @@ class Chat:
         readline.parse_and_bind("'^[[C': forward-char")
         readline.parse_and_bind("'^[[D': backward-char")
 
+    def _print_gptcli_message(self, text: str) -> None:
+        message = "".join([">>> [GPTCLI]: ", text])
+        print(message)
+
 
 class ChatInstall(Chat):
     """A chat session for when we are installing GPTCLI"""
@@ -89,16 +93,16 @@ class ChatOpenai(Chat):
                     logger.info("Chat command detected")
                     chat_command = user_input.split("!", maxsplit=1)[1]
                     if chat_command == "set context on":
-                        print(">>> [GPTCLI]: CONTEXT ON")
+                        self._print_gptcli_message("CONTEXT ON")
                         continue  # TODO: FEATURE: for when we add context parameter
                     elif chat_command == "set context off":
-                        print(">>> [GPTCLI]: CONTEXT OFF")
+                        self._print_gptcli_message("CONTEXT OFF")
                         continue  # TODO: FEATURE: for when we add context parameter
                     elif chat_command.startswith("set model "):
-                        print(">>> [GPTCLI]: MODEL model")
+                        self._print_gptcli_message("MODEL model")
                         continue  # TODO: FEATURE: add dynamic model switching
                     else:
-                        print(">>> [GPTCLI]: UNKNOWN COMMAND DETECTED")
+                        self._print_gptcli_message("UNKNOWN COMMAND DETECTED")
                 else:
                     response = OpenAIHelper(self.model, user_input, stream=self.stream).send()
                     self._reply(response, stream=self.stream)
@@ -115,7 +119,7 @@ class ChatOpenai(Chat):
 
     def _reply_none(self) -> None:
         logger.info("Reply mode -> None")
-        print(">>> [GPTCLI]: Unable to send message(s) due to an exception, maybe try again later.")
+        self._print_gptcli_message("Unable to send message(s) due to an exception, maybe try again later.")
 
     def _reply_stream(self, response: Response) -> None:
         logger.info("Reply mode -> Stream")
@@ -130,7 +134,8 @@ class ChatOpenai(Chat):
                         print(text, end="", flush=True)
             print("")
         except KeyboardInterrupt:
-            print("\n>>> [GPTCLI]: KeyboardInterrupt detected")
+            print("")  # newline
+            self._print_gptcli_message("KeyboardInterrupt detected")
 
     def _reply_simple(self, response: Response) -> None:
         logger.info("Reply mode -> Simple")
