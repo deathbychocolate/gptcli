@@ -112,6 +112,7 @@ class ChatOpenai(Chat):
         logger.info("Selecting reply mode")
         if response is None:
             self._reply_none()
+        # TODO: FEATURE: add fast reply feature. Notice that the timestamps in the stream data is the same in the sample_response_data.json file at project root. Find a way to join all the data and print at the same time. See if we have speed improvements.
         else:
             if stream:
                 self._reply_stream(response)
