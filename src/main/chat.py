@@ -129,8 +129,6 @@ class ChatOpenai(Chat):
                         text = delta["content"]
                         print(text, end="", flush=True)
             print("")
-        except EOFError:
-            print("\n>>> [GPTCLI]: EOFError detected")
         except KeyboardInterrupt:
             print("\n>>> [GPTCLI]: KeyboardInterrupt detected")
 
