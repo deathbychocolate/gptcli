@@ -119,16 +119,20 @@ class ChatOpenai(Chat):
 
     def _reply_stream(self, response: Response) -> None:
         logger.info("Reply mode -> Stream")
-        # TODO: FEATURE: allow mid message exit via KeyboardInterrupt or EOFError using try catch
-        print(f">>> [REPLY, model={self.model}]: ", end="")
-        client = sseclient.SSEClient(response)
-        for event in client.events():
-            if event.data != "[DONE]":
-                delta = json.loads(event.data)["choices"][0]["delta"]
-                if delta.get("content") is not None:
-                    text = delta["content"]
-                    print(text, end="", flush=True)
-        print("")
+        try:
+            print(f">>> [REPLY, model={self.model}]: ", end="")
+            client = sseclient.SSEClient(response)
+            for event in client.events():
+                if event.data != "[DONE]":
+                    delta = json.loads(event.data)["choices"][0]["delta"]
+                    if delta.get("content") is not None:
+                        text = delta["content"]
+                        print(text, end="", flush=True)
+            print("")
+        except EOFError:
+            print("\n>>> [GPTCLI]: EOFError detected")
+        except KeyboardInterrupt:
+            print("\n>>> [GPTCLI]: KeyboardInterrupt detected")
 
     def _reply_simple(self, response: Response) -> None:
         logger.info("Reply mode -> Simple")
