@@ -79,7 +79,7 @@ class ChatOpenai(Chat):
         """Will start the chat session that allows USER to AI communication (like texting)"""
         logger.info("Starting chat")
         while True:
-            user_input = self.prompt(">>> [USER]: ")
+            user_input = self.prompt(">>> [MESSAGE]: ")
 
             if len(user_input) != 0:
                 # handle chat commands
@@ -120,7 +120,7 @@ class ChatOpenai(Chat):
     def _reply_stream(self, response: Response) -> None:
         logger.info("Reply mode -> Stream")
         # TODO: FEATURE: allow mid message exit via KeyboardInterrupt or EOFError using try catch
-        print(f">>> [AI, model={self.model}]: ", end="")
+        print(f">>> [REPLY, model={self.model}]: ", end="")
         client = sseclient.SSEClient(response)
         for event in client.events():
             if event.data != "[DONE]":
@@ -133,4 +133,4 @@ class ChatOpenai(Chat):
     def _reply_simple(self, response: Response) -> None:
         logger.info("Reply mode -> Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
-        print(f">>> [AI, model={self.model}]: {text}")
+        print(f">>> [REPLY, model={self.model}]: {text}")
