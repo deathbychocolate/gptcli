@@ -55,7 +55,7 @@ class OpenAIHelper:
     GPT_4_32K = "gpt-4-32k"
     GPT_4_0314 = "gpt-4-0314"
     GPT_4_32K_0314 = "gpt-4-32k-0314"
-    GPT_DEFAULT = GPT_3_5
+    GPT_DEFAULT = GPT_4
 
     GPT_ALL = [
         GPT_3_5,
