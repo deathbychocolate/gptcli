@@ -60,6 +60,7 @@ class Chat:
         readline.parse_and_bind("'^[[D': backward-char")
 
     def _print_gptcli_message(self, text: str) -> None:
+        logger.info("Printing gptcli message")
         message = "".join([">>> [GPTCLI]: ", text])
         print(message)
 
@@ -143,5 +144,6 @@ class ChatOpenai(Chat):
         self._print_reply(text)
 
     def _print_reply(self, text: str, end="\n") -> None:
+        logger.info("Printing reply")
         reply = "".join([f">>> [REPLY, model={self.model}]: ", text])
         print(reply, end=end)
