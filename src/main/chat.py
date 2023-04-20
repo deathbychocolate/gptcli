@@ -71,6 +71,7 @@ class ChatInstall(Chat):
     def __init__(self):
         Chat.__init__(self)
 
+
 class ChatOpenai(Chat):
     """A chat session for communicating with Openai"""
 
@@ -112,9 +113,9 @@ class ChatOpenai(Chat):
         logger.info("Selecting reply mode")
         if response is None:
             self._reply_none()
-        # TODO: FEATURE: add fast reply feature. Notice that the timestamps in the stream data is the same in the sample_response_data.json file at project root. Find a way to join all the data and print at the same time. See if we have speed improvements.
         else:
             if stream:
+                # self._reply_fast(response)
                 self._reply_stream(response)
             else:
                 self._reply_simple(response)
@@ -139,7 +140,31 @@ class ChatOpenai(Chat):
             print("")  # newline
             self._print_gptcli_message("KeyboardInterrupt detected")
 
+    def _reply_fast(self, response: Response) -> None:
+        # TODO: FIX: this option is just as slow (if not slower) than the reply_simple method. Try using Rust to do this process.
+        # TODO: FEATURE: make this mode available for no chat mode.
+        logger.info("Reply mode -> Fast")
+
+        # clean response content to json ready format
+        content = response.content.decode("UTF8")
+        content = content.replace("data: ", "")
+        content = content.split("\n\n")
+        content = content[1:-3]
+
+        # collect all server sent events text into chucks list
+        chunks = []
+        for data in content:
+            chunk = json.loads(data)
+            chunk = chunk["choices"][0]["delta"]["content"]
+            chunks.append(chunk)
+
+        # concatenate the chunks into a full reply
+        reply = "".join(chunks)
+
+        self._print_reply(reply)
+
     def _reply_simple(self, response: Response) -> None:
+        # TODO: FEATURE: make this mode available for no chat mode
         logger.info("Reply mode -> Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(text)
