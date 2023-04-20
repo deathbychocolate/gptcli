@@ -164,7 +164,7 @@ class ChatOpenai(Chat):
         self._print_reply(reply)
 
     def _reply_simple(self, response: Response) -> None:
-        # TODO: FEATURE: make this mode available for no chat mode
+        # TODO: FEATURE: make this mode available for no chat mode.
         logger.info("Reply mode -> Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(text)
