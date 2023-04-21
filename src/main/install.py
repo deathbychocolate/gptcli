@@ -4,7 +4,7 @@ Use this to install or configure the local machine environment
 import os
 import logging
 
-from src.main.openai_helper import OpenAIHelper
+from src.main.api_helper import OpenAIHelper
 from src.main.chat import ChatInstall
 
 logger = logging.getLogger(__name__)

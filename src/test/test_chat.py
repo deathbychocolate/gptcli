@@ -4,7 +4,7 @@ Holds tests for chat sessions
 
 import pytest
 
-from src.main.openai_helper import OpenAIHelper
+from src.main.api_helper import OpenAIHelper
 from src.main.chat import Chat
 
 

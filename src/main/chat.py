@@ -12,7 +12,7 @@ import readline
 from requests import Response
 import sseclient
 
-from src.main.openai_helper import OpenAIHelper
+from src.main.api_helper import OpenAIHelper
 
 logger = logging.getLogger(__name__)
 
