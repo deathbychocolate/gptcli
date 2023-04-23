@@ -122,5 +122,5 @@ class Install:
 
     def _mark_install_as_successful(self) -> None:
         logger.info("Marking install as successful")
-        with open(self.install_successful_filepath, "w", encoding="utf8") as filepointer:
+        with open(self.install_successful_filepath, "w", encoding="utf8"):
             pass  # simply create the file
