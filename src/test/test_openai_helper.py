@@ -13,7 +13,7 @@ class TestMessage:
     @pytest.fixture(scope="session")
     def setup(self):
         message = Message("user", "Hello")
-        return message.dictionary
+        return message.dictionary()
 
     def test_should_return_a_type_dictionary(self, setup):
         dictionary = setup

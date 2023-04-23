@@ -9,7 +9,7 @@ from src.main.api_helper import Message
 logger = logging.getLogger("__name__")
 
 
-class Chats():
+class Chats:
     """Handles storage of Messages"""
 
     def __init__(self) -> None:
@@ -18,7 +18,7 @@ class Chats():
         self.chat_name = "_".join(
             [
                 "gptcli",
-                datetime.now().strftime(r'%Y_%m_%d'),
+                datetime.now().strftime(r"%Y_%m_%d__%H_%M_%S"),
                 str(uuid4()).split("-", maxsplit=1)[0],
                 ".json",
             ]
