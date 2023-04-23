@@ -1,6 +1,7 @@
 """Contains a wrapper for the openai SDK
 """
 import os
+import json
 import logging
 import requests
 
@@ -22,13 +23,16 @@ class Message:
         self.role = role
         self.content = content
 
-    @property
     def dictionary(self) -> dict:
         """Returns a dictionary representation of the message
 
         :return: a dictionary
         """
         return {"role": self.role, "content": self.content}
+
+    def __str__(self) -> str:
+        result = json.dumps(self.dictionary())
+        return result
 
 
 class MessageFactory:
@@ -159,12 +163,12 @@ class OpenAIHelper:
     def _build_messages(self, user_input: str) -> list:
         # TODO: FEATURE: it currently handles only one message, it should handle multiple
         logger.info("Building messages")
-        messages = [MessageFactory.create_message("user", user_input).dictionary]
+        messages = [MessageFactory.create_message("user", user_input).dictionary()]
 
         return messages
 
     def _build_message(self, user_input: str) -> list:
         logger.info("Building message")
-        message = [MessageFactory.create_message("user", user_input).dictionary]
+        message = [MessageFactory.create_message("user", user_input).dictionary()]
 
         return message
