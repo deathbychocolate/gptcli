@@ -85,6 +85,7 @@ class ChatOpenai(Chat):
         """Will start the chat session that allows USER to AI communication (like texting)"""
         logger.info("Starting chat")
         while True:
+
             user_input = self.prompt(">>> [MESSAGE]: ")
 
             if len(user_input) != 0:
