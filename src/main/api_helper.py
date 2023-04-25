@@ -143,6 +143,8 @@ class OpenAIHelper:
             logger.exception("Timeout error detected")
         except requests.ConnectionError:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
+        except KeyboardInterrupt:
+            logger.exception("Keyboard intterupt detected")
         # Consider susing sys.exc_info()
         # import sys
 
