@@ -123,7 +123,7 @@ class ChatOpenai(Chat):
 
     def _reply_none(self) -> None:
         logger.info("Reply mode -> None")
-        self._print_gptcli_message("Unable to send message(s) due to an exception, maybe try again later.")
+        self._print_gptcli_message("POST request was not completed successfully. Maybe try again.")
 
     def _reply_stream(self, response: Response) -> None:
         logger.info("Reply mode -> Stream")
