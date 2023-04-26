@@ -13,9 +13,9 @@
 # How does it work?
 The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a USER-AI relationship. Meaning you will see something like this in your terminal:
 ```text
->>> [USER]: hi
->>> [AI, model=gpt-3.5-turbo]: Hello! How can I assist you today?
->>> [USER]: exit
+>>> [MESSAGE]: hi
+>>> [REPLY, model=gpt-3.5-turbo]: Hello! How can I assist you today?
+>>> [MESSAGE]: exit
 ```
 
 # How do I get an API key?
