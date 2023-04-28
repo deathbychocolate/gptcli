@@ -147,7 +147,7 @@ class OpenAIHelper:
             # sometimes the server will have bad encoding when using Greek, for example. Handle it gracefully.
             logger.exception("Bad encoding on chunk from server side")
         except KeyboardInterrupt:
-            # Allow for user keyboard interrupt when POST requesting is pending completion
+            # Allow for user keyboard interrupt when POST request is pending completion
             logger.exception("Keyboard intterupt detected")
         # Consider susing sys.exc_info()
         # import sys
