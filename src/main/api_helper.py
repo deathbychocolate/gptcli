@@ -143,9 +143,6 @@ class OpenAIHelper:
             logger.exception("Timeout error detected")
         except requests.exceptions.ConnectionError:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
-        except requests.exceptions.ChunkedEncodingError:
-            # sometimes the server will have bad encoding when using Greek, for example. Handle it gracefully.
-            logger.exception("Bad encoding on chunk from server side")
         except KeyboardInterrupt:
             # Allow for user keyboard interrupt when POST request is pending completion
             logger.exception("Keyboard intterupt detected")

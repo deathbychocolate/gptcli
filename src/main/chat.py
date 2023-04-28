@@ -10,6 +10,7 @@ import logging
 import readline
 
 from requests import Response
+from requests.exceptions import ChunkedEncodingError
 import sseclient
 
 from src.main.api_helper import OpenAIHelper
@@ -85,7 +86,6 @@ class ChatOpenai(Chat):
         """Will start the chat session that allows USER to AI communication (like texting)"""
         logger.info("Starting chat")
         while True:
-
             user_input = self.prompt(">>> [MESSAGE]: ")
 
             if len(user_input) != 0:
@@ -137,6 +137,10 @@ class ChatOpenai(Chat):
                         text = delta["content"]
                         print(text, end="", flush=True)
             print("")
+
+        except ChunkedEncodingError:
+            print("")  # newline
+            self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
         except KeyboardInterrupt:
             print("")  # newline
             self._print_gptcli_message("KeyboardInterrupt detected")
