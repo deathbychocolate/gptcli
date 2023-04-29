@@ -1,6 +1,7 @@
 # How do I run it?
 - Users:
     - A user should only have to run ```gptcli``` in their preferred terminal.
+    - For more info on usage, check the builtin help docs using ```gptcli [-h|--help]```
 - Developers:
     - Open your preferred terminal.
     - Clone the project to your local machine using: ```git clone <https_link|ssh_link>```
@@ -11,7 +12,7 @@
     - Run ```python3 main.py``` in the project root directory.
 
 # How does it work?
-The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a USER-AI relationship. Meaning you will see something like this in your terminal:
+The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a MESSAGE-REPLY thread. You as the user sends a message and the AI model replies. Meaning you will see something like this in your terminal:
 ```text
 >>> [MESSAGE]: hi
 >>> [REPLY, model=gpt-3.5-turbo]: Hello! How can I assist you today?
