@@ -11,6 +11,7 @@ logger = logging.getLogger("__name__")
 
 class ChatName:
     """Used to generate names for Chats"""
+
     def __init__(self) -> None:
         self.name = self._generate_chat_name()
 
@@ -25,9 +26,6 @@ class ChatName:
         )
 
         return chat_name
-
-    def _generate_chat_file_extension(self) -> str:
-        return "json"
 
     def _generate_chat_basename(self) -> str:
         basename = "_".join(
@@ -46,6 +44,9 @@ class ChatName:
     def _generate_chat_random_id(self) -> str:
         random_id = str(uuid4()).split("-", maxsplit=1)[0]
         return random_id
+
+    def _generate_chat_file_extension(self) -> str:
+        return "json"
 
 
 class Chat:
