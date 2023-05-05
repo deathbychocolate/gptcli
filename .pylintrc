@@ -3,3 +3,6 @@ ignore-patterns = test_*
 
 [pycodestyle]
 max-line-length = 120
+
+[BASIC]
+no-docstring-rgx = _*|name|filepath
