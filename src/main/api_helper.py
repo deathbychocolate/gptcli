@@ -4,6 +4,7 @@ import os
 import json
 import logging
 import requests
+import tiktoken
 
 from requests.exceptions import ReadTimeout
 
@@ -20,15 +21,46 @@ class Message:
     """
 
     def __init__(self, role: str, content: str):
-        self.role = role
-        self.content = content
+        self._role = role
+        self._content = content
+        self._tokens = self._count_tokens()
 
     def dictionary(self) -> dict:
-        """Returns a dictionary representation of the message
-
-        :return: a dictionary
-        """
+        """Returns a dictionary representation of the message"""
         return {"role": self.role, "content": self.content}
+
+    def _count_tokens(self) -> int:
+        return self._num_tokens_from_message(self.dictionary())
+
+    def _num_tokens_from_message(self, message, model="gpt-3.5-turbo-0301"):
+        # See: https://platform.openai.com/docs/guides/chat/introduction
+        # See: https://github.com/openai/openai-python/blob/main/chatml.md
+        encoding = tiktoken.encoding_for_model(model)
+        number_of_tokens = -1
+        if model == OpenAIHelper.GPT_3_5_301:
+            number_of_tokens = 0
+            number_of_tokens += 4
+            for key, value in message.items():
+                number_of_tokens += len(encoding.encode(value))
+                if key == "name":
+                    number_of_tokens += -1
+            number_of_tokens += 2
+        else:
+            logger.warning("Model '%s' not supported for token count", model)
+
+        return number_of_tokens
+
+    @property
+    def role(self) -> str:
+        return self._role
+
+    @property
+    def content(self) -> str:
+        return self._content
+
+    @property
+    def tokens(self) -> int:
+        return self._tokens
 
     def __str__(self) -> str:
         result = json.dumps(self.dictionary())
