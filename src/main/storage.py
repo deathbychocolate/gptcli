@@ -1,5 +1,6 @@
 """Will handle access and storage of messages"""
 import os
+import json
 import logging
 
 from uuid import uuid4
@@ -14,6 +15,7 @@ class Chat:
 
     class Name:
         """Used to generate names for Chats"""
+
         def generate(self) -> str:
             basename = self._generate_basename()
             file_extension = self._generate_file_extension()
@@ -47,7 +49,40 @@ class Chat:
         def _generate_file_extension(self) -> str:
             return "json"
 
+    class Completion:
+        """Chat Completion object used to keep track of storage standard.
+        For example, we expect to store messages using the following format:
+
+        {
+            "id": "chatcmpl-74cCqMlkbdtCTGGau18UhBy9yKbBB",
+            "object": "chat.completion",
+            "created": 1681334532,
+            "model": "gpt-3.5-turbo-0301",
+            "usage": {
+                "prompt_tokens": 9,
+                "completion_tokens": 9,
+                "total_tokens": 18
+            },
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello! How may I assist you today?"
+                    },
+                    "finish_reason": "stop",
+                    "index": 0
+                }
+            ]
+        }
+        """
+        def __init__(self) -> None:
+            pass
+
+        def generate(self) -> dict:
+            return ""
+
     class Storage:
+
         def __init__(self) -> None:
             self._home_directory = os.path.expanduser("~")
             self._messages_filepath = os.path.join(self._home_directory, "messages")
@@ -55,25 +90,24 @@ class Chat:
             self._filepath = os.path.join(self._messages_filepath, self._name)
 
         @property
-        def filepath(self) -> str:
-            return self._filepath
-
-        @property
         def name(self) -> str:
             return self._name
+
+        @property
+        def filepath(self) -> str:
+            return self._filepath
 
         def store_messages(self, messages: list[Message]) -> None:
             """Will store multiple message"""
             logger.info("Storing messages")
-            # TODO add condition for checking if file exists, add comma or not at the end
             for message in messages:
                 self._store_message(message)
 
         def _store_message(self, message: Message) -> None:
             logger.info("Storing message")
-            # TODO add condition for checking if file exists
-            with open(self._messages_filepath, "a", encoding="utf8") as filepointer:
-                filepointer.write(message.__str__)
+            with open(self.filepath, "a", encoding="utf8") as filepointer:
+                json.dump(message.dictionary, filepointer, indent=4)
+                #  filepointer.write(message.__str__)
 
         def _is_file_present(self) -> bool:
             is_present = False
@@ -86,7 +120,7 @@ class Chat:
 
         def _create_file(self) -> None:
             logger.info("Creating file for storage of message(s)")
-            with open(self._messages_filepath, "w", encoding="utf8"):
+            with open(self.filepath, "w", encoding="utf8"):
                 pass
 
         def open_history(self) -> None:
