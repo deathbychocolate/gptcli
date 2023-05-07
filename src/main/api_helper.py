@@ -149,7 +149,7 @@ class OpenAIHelper:
 
     def _post_request(self, key: str) -> requests.Response:
         logger.info("POSTing request to openai API")
-        messages = self.payload  # self._build_messages(self.payload)
+        messages = self.payload
 
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
@@ -171,7 +171,7 @@ class OpenAIHelper:
                 json=request_body,
                 timeout=30,
             )
-        # TODO: FEATURE: handle all error codes. See here: https://platform.openai.com/docs/guides/error-codes/api-errors
+        # TODO: FEATURE: handle all error codes here: https://platform.openai.com/docs/guides/error-codes/api-errors
         except ReadTimeout:
             logger.exception("ReadTimeout error detected")
         except TimeoutError:
@@ -179,8 +179,7 @@ class OpenAIHelper:
         except requests.exceptions.ConnectionError:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
         except KeyboardInterrupt:
-            # Allow for user keyboard interrupt when POST request is pending completion
-            logger.exception("Keyboard intterupt detected")
+            logger.exception("Keyboard intterupt detected")  # for when the user decides to exit during a POST
         # Consider susing sys.exc_info()
         # import sys
 
