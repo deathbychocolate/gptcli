@@ -83,7 +83,7 @@ class ChatOpenai(Chat):
 
         self._model = model
         self._stream = True if stream == "on" else False
-        self._messages: List[Dict] = [Message("user", "").dictionary()]
+        self._messages: List[Dict] = [Message("user", "").to_dictionary()]
 
     def start(self) -> None:
         """Will start the chat session that allows USER to AI communication (like texting)"""
@@ -112,10 +112,10 @@ class ChatOpenai(Chat):
                     else:
                         self._print_gptcli_message("UNKNOWN COMMAND DETECTED")
                 else:
-                    message = Message(role="user", content=user_input).dictionary()
+                    message = Message(role="user", content=user_input).to_dictionary()
                     self.messages.append(message)
                     response = OpenAIHelper(self._model, payload=self.messages, stream=self.stream).send()
-                    message = self._reply(response, stream=self.stream).dictionary()
+                    message = self._reply(response, stream=self.stream).to_dictionary()
                     self.messages.append(message)
 
     def _reply(self, response: Response, stream: bool) -> Message:
@@ -123,21 +123,21 @@ class ChatOpenai(Chat):
 
         message: Message = None
         if response is None:
-            self._reply_none()
+            self._print_none()
         else:
             if stream:
-                # self._reply_fast(response)
-                message = self._reply_stream(response)
+                # self._print_fast(response)
+                message = self._print_stream(response)
             else:
-                message = self._reply_simple(response)
+                message = self._print_simple(response)
 
         return message
 
-    def _reply_none(self) -> None:
+    def _print_none(self) -> None:
         logger.info("Reply mode -> None")
         self._print_gptcli_message("POST request was not completed successfully. Maybe try again.")
 
-    def _reply_stream(self, response: Response) -> Message:
+    def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
         message = Message("user", "")
         payload = ""
@@ -163,7 +163,7 @@ class ChatOpenai(Chat):
 
         return message
 
-    def _reply_fast(self, response: Response) -> Message:
+    def _print_fast(self, response: Response) -> Message:
         # TODO: FIX: this option is just as slow (if not slower) than the reply_simple method. Try using Rust to do this process.
         # TODO: FEATURE: make this mode available for no chat mode.
         """
@@ -201,7 +201,7 @@ class ChatOpenai(Chat):
 
         self._print_reply(reply)
 
-    def _reply_simple(self, response: Response) -> Message:
+    def _print_simple(self, response: Response) -> Message:
         # TODO: FEATURE: make this mode available for no chat mode.
         logger.info("Reply mode -> Simple")
         text = json.loads(response.content)["choices"][0]["message"]["content"]
