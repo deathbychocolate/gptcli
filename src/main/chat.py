@@ -15,7 +15,8 @@ from requests import Response
 from requests.exceptions import ChunkedEncodingError
 import sseclient
 
-from src.main.api_helper import OpenAIHelper, Message
+from src.main.api_helper import OpenAIHelper
+from src.main.message import Message
 
 logger = logging.getLogger(__name__)
 
