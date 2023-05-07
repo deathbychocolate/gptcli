@@ -79,10 +79,11 @@ class ChatInstall(Chat):
 class ChatOpenai(Chat):
     """A chat session for communicating with Openai"""
 
-    def __init__(self, model, stream="on"):
+    def __init__(self, model, context="off", stream="on"):
         Chat.__init__(self)
 
         self._model = model
+        self._context = True if context == "on" else False
         self._stream = True if stream == "on" else False
         self._messages = Messages()
 
@@ -113,6 +114,8 @@ class ChatOpenai(Chat):
                         self._print_gptcli_message("UNKNOWN COMMAND DETECTED")
                 else:
                     # build and add message to messages
+                    if self.context is False:
+                        self.messages = Messages()
                     message = Message(role="user", content=user_input)
                     self.messages.add_message(message)
 
@@ -190,8 +193,12 @@ class ChatOpenai(Chat):
     def messages(self) -> List[Dict]:
         return self._messages
 
+    @property
+    def context(self) -> str:
+        return self._context
+
     @messages.setter
     def messages(self, value):
-        if not isinstance(Messages):
+        if not isinstance(value, Messages):
             raise ValueError("Was expecting type Messages")
         self._messages = value

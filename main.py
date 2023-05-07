@@ -22,7 +22,8 @@ def main() -> None:
     install.standard_install()
 
     chat = ChatOpenai(
-        cli.args.model,
+        model=cli.args.model,
+        context=cli.args.context,
         stream=cli.args.stream,
     )
     chat.start()

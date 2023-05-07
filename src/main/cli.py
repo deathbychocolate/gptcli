@@ -54,6 +54,14 @@ class CommandLineInterface:
             help="The API key to use. Defaults to the one stored in gptcli or an empty string.",
         )
         self.parser.add_argument(
+            "-c",
+            "--context",
+            type=str,
+            choices=["on", "off"],
+            default="off",
+            help="Defaults to off to conserve tokens. If on, enables sending all previous messages to API.",
+        )
+        self.parser.add_argument(
             "-s",
             "--stream",
             type=str,
@@ -61,15 +69,6 @@ class CommandLineInterface:
             default="on",
             help="Defaults to off. If on, enables streaming of text replies. Should be on for chat mode.",
         )
-        # self.parser.add_argument(
-        #     "-c",
-        #     "--context",
-        #     help="The context to use. Defaults to off (no context) for saving tokens.",
-        # )
-        # self.parser.add_argument(
-        #     "configure",
-        #     help="Configure the application",
-        # )
 
         self.args = self.parser.parse_args()
 
