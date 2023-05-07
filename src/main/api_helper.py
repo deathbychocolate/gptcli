@@ -197,19 +197,6 @@ class OpenAIHelper:
 
         return response
 
-    def _build_messages(self, payload: str) -> list:
-        # TODO: FEATURE: it currently handles only one message, it should handle multiple
-        logger.info("Building messages")
-        messages = [MessageFactory.create_message("user", payload).dictionary()]
-
-        return messages
-
-    def _build_message(self, payload: str) -> list:
-        logger.info("Building message")
-        message = [MessageFactory.create_message("user", payload).dictionary()]
-
-        return message
-
     @property
     def model(self) -> str:
         return self._model
