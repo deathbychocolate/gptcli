@@ -148,6 +148,21 @@ class ChatOpenai(Chat):
     def _reply_fast(self, response: Response) -> None:
         # TODO: FIX: this option is just as slow (if not slower) than the reply_simple method. Try using Rust to do this process.
         # TODO: FEATURE: make this mode available for no chat mode.
+        """
+        b'data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"role":"assistant"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"Hello"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"!"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" How"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" may"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" I"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" assist"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" you"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":" today"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{"content":"?"},"index":0,"finish_reason":null}]}
+        data: {"id":"chatcmpl-74cA0XBe8E7kMcyi0B9J8CKSJtXng","object":"chat.completion.chunk","created":1681334356,"model":"gpt-3.5-turbo-0301","choices":[{"delta":{},"index":0,"finish_reason":"stop"}]}
+        data: [DONE]
+        '
+        """
         logger.info("Reply mode -> Fast")
 
         # clean response content to json ready format
