@@ -1,12 +1,12 @@
 """Contains a wrapper for the openai SDK
 """
 import os
-import json
 import logging
-import requests
-import tiktoken
+from typing import List, Dict
 
+import requests
 from requests.exceptions import ReadTimeout
+import tiktoken
 
 
 logger = logging.getLogger(__name__)
@@ -25,9 +25,6 @@ class Message:
         self._content = content
         self._tokens = self._count_tokens()
 
-    def dictionary(self) -> dict:
-        """Returns a dictionary representation of the message"""
-        return {"role": self.role, "content": self.content}
 
     def _count_tokens(self) -> int:
         return self._num_tokens_from_message(self.dictionary())
@@ -58,13 +55,19 @@ class Message:
     def content(self) -> str:
         return self._content
 
+    @content.setter
+    def content(self, content) -> None:
+        if not isinstance(content, str):
+            raise ValueError("Content must be a string.")
+        self._content = content
+
     @property
     def tokens(self) -> int:
         return self._tokens
 
-    def __str__(self) -> str:
-        result = json.dumps(self.dictionary())
-        return result
+    def dictionary(self) -> dict:
+        """Returns a dictionary representation of the message"""
+        return {"role": self.role, "content": self.content}
 
 
 class MessageFactory:
@@ -106,10 +109,10 @@ class OpenAIHelper:
     GPT_4_MAX_TOKENS = 8_192
     GPT_4_32K_MAX_TOKENS = 32_768
 
-    def __init__(self, model: str, user_input: str, stream=False):
-        self.model = model
-        self.user_input = user_input
-        self.stream = stream
+    def __init__(self, model: str, payload: List[Dict], stream=False):
+        self._model = model
+        self._payload = payload
+        self._stream = stream
 
     def send(self) -> requests.Response:
         """Sends message(s) to openai
@@ -146,7 +149,7 @@ class OpenAIHelper:
 
     def _post_request(self, key: str) -> requests.Response:
         logger.info("POSTing request to openai API")
-        messages = self._build_messages(self.user_input)
+        messages = self.payload  # self._build_messages(self.payload)
 
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
@@ -164,7 +167,7 @@ class OpenAIHelper:
             response = requests.post(
                 request_url,
                 headers=request_headers,
-                stream=self.stream,
+                stream=self._stream,
                 json=request_body,
                 timeout=30,
             )
@@ -195,15 +198,27 @@ class OpenAIHelper:
 
         return response
 
-    def _build_messages(self, user_input: str) -> list:
+    def _build_messages(self, payload: str) -> list:
         # TODO: FEATURE: it currently handles only one message, it should handle multiple
         logger.info("Building messages")
-        messages = [MessageFactory.create_message("user", user_input).dictionary()]
+        messages = [MessageFactory.create_message("user", payload).dictionary()]
 
         return messages
 
-    def _build_message(self, user_input: str) -> list:
+    def _build_message(self, payload: str) -> list:
         logger.info("Building message")
-        message = [MessageFactory.create_message("user", user_input).dictionary()]
+        message = [MessageFactory.create_message("user", payload).dictionary()]
 
         return message
+
+    @property
+    def model(self) -> str:
+        return self._model
+
+    @property
+    def payload(self) -> List[Dict]:
+        return self._payload
+
+    @property
+    def stream(self) -> bool:
+        return self._stream
