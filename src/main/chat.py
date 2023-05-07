@@ -100,18 +100,8 @@ class ChatOpenai(Chat):
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
             if len(user_input) != 0:
-                # handle chat commands
                 if user_input in exit_commands:
                     break
-                elif user_input.startswith("!"):
-                    logger.info("Chat command detected")
-                    chat_command = user_input.split("!", maxsplit=1)[1]
-                    if chat_command == "flush":
-                        self.messages = Messages()
-                        self._print_gptcli_message("MESSAGES FLUSHED")
-                        continue
-                    else:
-                        self._print_gptcli_message("UNKNOWN COMMAND DETECTED")
                 else:
                     # build and add message to messages
                     if self.context is False:
