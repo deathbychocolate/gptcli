@@ -106,7 +106,7 @@ class ChatOpenai(Chat):
                     logger.info("Chat command detected")
                     chat_command = user_input.split("!", maxsplit=1)[1]
                     if chat_command == "flush":
-                        self.messages = []
+                        self.messages = Messages()
                         self._print_gptcli_message("MESSAGES FLUSHED")
                         continue
                     else:
@@ -116,8 +116,8 @@ class ChatOpenai(Chat):
                     message = Message(role="user", content=user_input)
                     self.messages.add_message(message)
 
-                    # send message
-                    response = OpenAIHelper(self._model, payload=self.messages.messages , stream=self.stream).send()
+                    # send message(s)
+                    response = OpenAIHelper(self._model, payload=self.messages.messages, stream=self.stream).send()
 
                     # add reply
                     message = self._reply(response, stream=self.stream)
@@ -193,4 +193,6 @@ class ChatOpenai(Chat):
 
     @messages.setter
     def messages(self, value):
+        if not isinstance(Messages):
+            raise ValueError("Was expecting type Messages")
         self._messages = value
