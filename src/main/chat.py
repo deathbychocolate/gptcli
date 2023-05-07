@@ -16,7 +16,7 @@ from requests.exceptions import ChunkedEncodingError
 import sseclient
 
 from src.main.api_helper import OpenAIHelper
-from src.main.message import Message, Messages
+from src.main.message import Message, Messages, MessageFactory
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class ChatOpenai(Chat):
                     # build and add message to messages
                     if self.context is False:
                         self.messages = Messages()
-                    message = Message(role="user", content=user_input)
+                    message = MessageFactory.create_message(role="user", content=user_input)
                     self.messages.add_message(message)
 
                     # send message(s)
@@ -135,7 +135,6 @@ class ChatOpenai(Chat):
 
     def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
-        message = Message("user", "")
         payload = ""
         try:
             self._print_reply("", end="")
@@ -147,7 +146,6 @@ class ChatOpenai(Chat):
                         text = delta["content"]
                         print(text, end="", flush=True)
                         payload = "".join([payload, text])
-            message.content = payload
             print("")
         except ChunkedEncodingError:
             print("")
@@ -156,13 +154,16 @@ class ChatOpenai(Chat):
             print("")
             self._print_gptcli_message("KeyboardInterrupt detected")
 
+        message = MessageFactory.create_message(role="assistant", content=payload)
+
         return message
 
     def _print_simple(self, response: Response) -> Message:
         logger.info("Reply mode -> Simple")
         content = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(content)
-        message = Message(role="user", content=content)
+
+        message = MessageFactory.create_message(role="assistant", content=content)
 
         return message
 
