@@ -122,7 +122,6 @@ class ChatOpenai(Chat):
                     # add reply
                     message = self._reply(response, stream=self.stream)
                     self.messages.add_message(message)
-                    print(self.messages.messages)
 
     def _reply(self, response: Response, stream: bool) -> Message:
         logger.info("Selecting reply mode")
