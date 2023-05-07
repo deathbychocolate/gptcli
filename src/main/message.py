@@ -1,6 +1,8 @@
 """Will handle messages to and from Openai's API"""
 
 import logging
+from typing import List, Dict
+
 import tiktoken
 
 from src.main.api_helper import OpenAIHelper
@@ -78,3 +80,26 @@ class MessageFactory:
         :return: A message object
         """
         return Message(role, content)
+
+
+class Messages:
+    def __init__(self) -> None:
+        self._messages = list()
+        self._tokens = self._count_tokens()
+    def add_message(self, messsage: Message) -> None:
+        """Add the dictionary form of the Message to Messages"""
+        self.messages.append(messsage.to_dictionary())
+
+    def _count_tokens(self) -> None:
+        count = 0
+        for message in self.messages:
+            count = count + message.tokens
+        return count
+
+    @property
+    def messages(self) -> List[Dict]:
+        return self._messages
+
+    @property
+    def tokens(self) -> int:
+        return self._tokens
