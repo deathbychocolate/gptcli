@@ -92,7 +92,7 @@ class ChatOpenai(Chat):
 
             if len(user_input) != 0:
                 # handle chat commands
-                if user_input == "exit":
+                if user_input in exit_commands:
                     break
                 elif user_input.startswith("!"):
                     logger.info("Chat command detected")
