@@ -6,6 +6,7 @@ import logging
 
 from src.main.api_helper import OpenAIHelper
 from src.main.chat import ChatInstall
+from src.main.message import Messages, MessageFactory
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,10 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai API key is valid")
-        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, user_input="Hi!").is_valid_api_key(key)
+        messages = Messages()
+        message = MessageFactory.create_message("user", "Hi!")
+        messages.add_message(message)
+        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, payload=messages.messages).is_valid_api_key(key)
 
         return is_valid
 
