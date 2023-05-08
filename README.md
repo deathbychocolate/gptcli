@@ -23,3 +23,9 @@ The project uses the openai API to query text from messages that we send via HTT
 You need valid OpenAI credentials to communicate with the AI models. To do this:
 - Create an openai account here: https://chat.openai.com/
 - Generate an openai API key here: https://platform.openai.com/account/api-keys
+
+# Tips and tricks?
+Yes, there are some tips and tricks:
+- You can exit chat mode by typing and entering ```exit``` or ```q``` or ```CRTL+C```.
+- You can abort any process via ```CRTL+C```.
+- You can cycle through your sent messages in your active chat session via the arrow keys: ```up``` and ```down```.
