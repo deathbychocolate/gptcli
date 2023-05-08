@@ -58,7 +58,7 @@ class CommandLineInterface:
             "--context",
             type=str,
             choices=["on", "off"],
-            default="off",
+            default="on",
             help="Defaults to off to conserve tokens. If on, enables sending all previous messages to API.",
         )
         self.parser.add_argument(
