@@ -79,12 +79,21 @@ class ChatInstall(Chat):
 class ChatOpenai(Chat):
     """A chat session for communicating with Openai"""
 
-    def __init__(self, model, context="off", stream="on"):
+    def __init__(
+        self,
+        model,
+        role_user: str = "user",
+        role_model: str = "assistant",
+        context: str = "off",
+        stream: str = "on",
+    ):
         Chat.__init__(self)
 
         self._model = model
         self._context = True if context == "on" else False
         self._stream = True if stream == "on" else False
+        self._role_user = role_user
+        self._role_model = role_model
         self._messages = Messages()
 
     def start(self) -> None:
@@ -106,7 +115,7 @@ class ChatOpenai(Chat):
                     # build and add message to messages
                     if self.context is False:
                         self.messages = Messages()
-                    message = MessageFactory.create_message(role="user", content=user_input)
+                    message = MessageFactory.create_message(role=self.role_user, content=user_input)
                     self.messages.add_message(message)
 
                     # send message(s)
@@ -154,7 +163,7 @@ class ChatOpenai(Chat):
             print("")
             self._print_gptcli_message("KeyboardInterrupt detected")
 
-        message = MessageFactory.create_message(role="assistant", content=payload)
+        message = MessageFactory.create_message(role=self.role_model, content=payload)
 
         return message
 
@@ -163,7 +172,7 @@ class ChatOpenai(Chat):
         content = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(content)
 
-        message = MessageFactory.create_message(role="assistant", content=content)
+        message = MessageFactory.create_message(role=self.role_model, content=content)
 
         return message
 
@@ -187,6 +196,14 @@ class ChatOpenai(Chat):
     @property
     def context(self) -> str:
         return self._context
+
+    @property
+    def role_user(self):
+        return self._role_user
+
+    @property
+    def role_model(self):
+        return self._role_model
 
     @messages.setter
     def messages(self, value):

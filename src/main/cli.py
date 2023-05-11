@@ -54,6 +54,20 @@ class CommandLineInterface:
             help="The API key to use. Defaults to the one stored in gptcli or an empty string.",
         )
         self.parser.add_argument(
+            "-ru",
+            "--role-user",
+            type=str,
+            default="user",
+            help="Defaults to 'user'. It allows the LLMs to better act the role needed.",
+        )
+        self.parser.add_argument(
+            "-rm",
+            "--role-model",
+            type=str,
+            default="assistant",
+            help="Defaults to 'assistant'. It allows the LLMs to better act the role needed.",
+        )
+        self.parser.add_argument(
             "-c",
             "--context",
             type=str,
