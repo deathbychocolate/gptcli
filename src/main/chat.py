@@ -119,15 +119,15 @@ class ChatOpenai(Chat):
                 response = self._send_messages()
                 self._add_reply_to_messages(response)
 
-    def _add_message_to_messages(self, user_input):
+    def _add_message_to_messages(self, user_input) -> None:
         message = MessageFactory.create_message(role=self.role_user, content=user_input)
         self.messages.add_message(message)
 
-    def _send_messages(self):
+    def _send_messages(self) -> Response:
         response = OpenAIHelper(self._model, payload=self.messages.messages, stream=self.stream).send()
         return response
 
-    def _add_reply_to_messages(self, response):
+    def _add_reply_to_messages(self, response) -> None:
         message = self._reply(response, stream=self.stream)
         self.messages.add_message(message)
 
