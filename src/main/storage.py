@@ -5,7 +5,7 @@ import logging
 
 from uuid import uuid4
 from datetime import datetime
-from src.main.api_helper import Message
+from src.main.message import Message
 
 logger = logging.getLogger("__name__")
 
