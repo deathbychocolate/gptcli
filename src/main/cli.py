@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class CommandLineInterface:
-    """Class for the command line interface.
-    """
+    """Class for the command line interface."""
 
     LOGGING_MODE_ALL = [
         logging.DEBUG,
@@ -73,7 +72,7 @@ class CommandLineInterface:
             type=str,
             choices=["on", "off"],
             default="on",
-            help="Defaults to off to conserve tokens. If on, enables sending all previous messages to API.",
+            help="Defaults to 'on'. Enables sending all chat messages to API. Use 'off' to conserve tokens.",
         )
         self.parser.add_argument(
             "-s",
@@ -81,14 +80,13 @@ class CommandLineInterface:
             type=str,
             choices=["on", "off"],
             default="on",
-            help="Defaults to off. If on, enables streaming of text replies. Should be on for chat mode.",
+            help="Defaults to 'on'. Enables streaming mode for text replies in chat mode.",
         )
 
         self.args = self.parser.parse_args()
 
     def run(self) -> None:
-        """Run this method if you want to start a classic dialog with the AI
-        """
+        """Run this method if you want to start a classic dialog with the AI"""
         logger.info("Running cli")
         self._configure_logging_level()
 
