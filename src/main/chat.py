@@ -108,22 +108,28 @@ class ChatOpenai(Chat):
         exit_commands = set(["exit", "q"])
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
-            if len(user_input) != 0:
-                if user_input in exit_commands:
-                    break
-                else:
-                    # build and add message to messages
-                    if self.context is False:
-                        self.messages = Messages()
-                    message = MessageFactory.create_message(role=self.role_user, content=user_input)
-                    self.messages.add_message(message)
+            if len(user_input) == 0:
+                continue
+            elif user_input in exit_commands:
+                self._print_gptcli_message("Bye!")
+                break
+            else:
+                self.messages = Messages() if self.context is False else self.messages
+                self._add_message_to_messages(user_input)
+                response = self._send_messages()
+                self._add_reply_to_messages(response)
 
-                    # send message(s)
-                    response = OpenAIHelper(self._model, payload=self.messages.messages, stream=self.stream).send()
+    def _add_message_to_messages(self, user_input):
+        message = MessageFactory.create_message(role=self.role_user, content=user_input)
+        self.messages.add_message(message)
 
-                    # add reply
-                    message = self._reply(response, stream=self.stream)
-                    self.messages.add_message(message)
+    def _send_messages(self):
+        response = OpenAIHelper(self._model, payload=self.messages.messages, stream=self.stream).send()
+        return response
+
+    def _add_reply_to_messages(self, response):
+        message = self._reply(response, stream=self.stream)
+        self.messages.add_message(message)
 
     def _reply(self, response: Response, stream: bool) -> Message:
         logger.info("Selecting reply mode")
