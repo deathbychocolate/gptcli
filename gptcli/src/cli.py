@@ -4,7 +4,7 @@
 import logging
 import argparse
 
-from src.main.api_helper import OpenAIHelper
+from gptcli.src.api_helper import OpenAIHelper
 
 logger = logging.getLogger(__name__)
 

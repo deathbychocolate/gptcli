@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from src.main.install import Install
+from gptcli.src.install import Install
 
 
 class TestInstall:

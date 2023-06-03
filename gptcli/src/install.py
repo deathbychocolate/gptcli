@@ -4,9 +4,9 @@ Use this to install or configure the local machine environment
 import os
 import logging
 
-from src.main.api_helper import OpenAIHelper
-from src.main.chat import ChatInstall
-from src.main.message import Messages, MessageFactory
+from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.chat import ChatInstall
+from gptcli.src.message import Messages, MessageFactory
 
 logger = logging.getLogger(__name__)
 

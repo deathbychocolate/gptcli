@@ -5,7 +5,7 @@ File that contains all tests related to TextToSpeech
 import boto3
 import pytest
 
-from src.main.speech import TextToSpeech
+from gptcli.src.speech import TextToSpeech
 
 
 def test_should_generate_and_store_audio_stream_to_file():

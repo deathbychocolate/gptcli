@@ -4,8 +4,8 @@ Holds tests for chat sessions
 
 import pytest
 
-from src.main.api_helper import OpenAIHelper
-from src.main.chat import Chat
+from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.chat import Chat
 
 
 class TestHandleChatCommands:
