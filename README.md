@@ -9,7 +9,8 @@
     - Install pipenv using: ```python3 -m pip install pipenv```
     - Enter a pipenv shell using: ```pipenv shell```
     - Install dependencies using: ```pipenv install```
-    - Run ```gptcli``` in the project root directory.
+    - Make the project editable: ```pip install --editable .```
+    - Run ```gptcli```
 
 # How does it work?
 The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a MESSAGE-REPLY thread. You as the user send a message and the AI model replies. Meaning you will see something like this in your terminal:
