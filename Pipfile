@@ -10,6 +10,7 @@ boto3 = "~=1.26.129"
 sseclient-py = "~=1.7.2"
 requests = "~=2.31.0"
 tiktoken = "~=0.3.3"
+gptcli = {editable = true, path = "."}
 
 [dev-packages]
 pytest = "*"
