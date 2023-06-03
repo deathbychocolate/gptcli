@@ -21,6 +21,7 @@ class CommandLineInterface:
     ]
 
     def __init__(self) -> None:
+        # pylint: disable=line-too-long
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
             "-v",
@@ -50,21 +51,21 @@ class CommandLineInterface:
             "--key",
             type=str,
             default="",
-            help="The API key to use. Defaults to the one stored in gptcli or an empty string.",
+            help="The API key to use for the run. Defaults to the key stored in .gptcli in your home dir.",
         )
         self.parser.add_argument(
             "-ru",
             "--role-user",
             type=str,
             default="user",
-            help="Defaults to 'user'. It allows the LLMs to better act the role needed.",
+            help="Defaults to 'user'. Allows the user to assume a role other than 'user'.",
         )
         self.parser.add_argument(
             "-rm",
             "--role-model",
             type=str,
             default="assistant",
-            help="Defaults to 'assistant'. It allows the LLMs to better act the role needed.",
+            help="Defaults to 'assistant'. Allows the LLM to assume a role other than 'assistant'.",
         )
         self.parser.add_argument(
             "-c",
@@ -72,7 +73,7 @@ class CommandLineInterface:
             type=str,
             choices=["on", "off"],
             default="on",
-            help="Defaults to 'on'. Enables sending all chat messages to API. Use 'off' to conserve tokens.",
+            help="Defaults to 'on'. Enable or disable sending all chat messages to API to build a better reply. Use 'off' to conserve tokens.",
         )
         self.parser.add_argument(
             "-s",

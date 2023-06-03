@@ -26,9 +26,9 @@ class OpenAIHelper:
         GPT_3_5,
         GPT_3_5_301,
         GPT_4,
-        # GPT_4_32K, Documented in API docs but not supported. Uncomment when implemented.
         GPT_4_0314,
-        # GPT_4_32K_0314, Documented in API docs but not supported. Uncomment when implemented.
+        # GPT_4_32K,  # Documented in API docs but not supported. Uncomment when implemented.
+        # GPT_4_32K_0314,  # Documented in API docs but not supported. Uncomment when implemented.
     ]
 
     GPT_3_5_MAX_TOKENS = 4_096
