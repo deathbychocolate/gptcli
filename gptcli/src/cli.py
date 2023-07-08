@@ -1,12 +1,21 @@
 """Main command line interface.
 """
 
-import logging
 import argparse
+import configparser
+import logging
 
 from gptcli.src.api_helper import OpenAIHelper
 
 logger = logging.getLogger(__name__)
+
+
+def _get_project_version_number() -> str:
+    config = configparser.ConfigParser()
+    config.read("pyproject.toml")
+    project_version_number = config.get("project", "version")
+    project_version_number = project_version_number.strip('"')
+    return project_version_number
 
 
 class CommandLineInterface:
@@ -27,7 +36,7 @@ class CommandLineInterface:
             "-v",
             "--version",
             action="version",
-            version="0.0.0",
+            version=_get_project_version_number(),
             help="Print the version number and exit.",
         )
         self.parser.add_argument(
