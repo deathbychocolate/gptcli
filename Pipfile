@@ -14,6 +14,7 @@ gptcli = {editable = true, path = "."}
 
 [dev-packages]
 pytest = "*"
+commitizen = "*"
 
 [requires]
 python_version = "3.11"
