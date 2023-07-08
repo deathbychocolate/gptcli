@@ -4,9 +4,9 @@ This is the main file for the project
 """
 import logging
 
+from gptcli.src.chat import ChatOpenai
 from gptcli.src.cli import CommandLineInterface
 from gptcli.src.install import Install
-from gptcli.src.chat import ChatOpenai
 
 logger = logging.getLogger(__name__)
 

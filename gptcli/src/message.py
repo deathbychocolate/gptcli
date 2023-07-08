@@ -1,7 +1,7 @@
 """Will handle messages to and from Openai's API"""
 
 import logging
-from typing import List, Dict
+from typing import Dict, List
 
 import tiktoken
 

@@ -4,9 +4,7 @@ File to hold tests related to AskOpenAI
 
 import pytest
 
-from gptcli.src.api_helper import Message
-from gptcli.src.api_helper import MessageFactory
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.api_helper import Message, MessageFactory, OpenAIHelper
 
 
 class TestMessage:

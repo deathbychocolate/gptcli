@@ -2,13 +2,13 @@
 This file contains the TextToSpeech class
 """
 import io
-import os
 import logging
+import os
 import time
-import soundfile
-import sounddevice
-import boto3
 
+import boto3
+import sounddevice
+import soundfile
 
 logger = logging.getLogger(__name__)
 

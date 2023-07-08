@@ -1,10 +1,10 @@
 """Will handle access and storage of messages"""
-import os
 import json
 import logging
-
-from uuid import uuid4
+import os
 from datetime import datetime
+from uuid import uuid4
+
 from gptcli.src.message import Message
 
 logger = logging.getLogger("__name__")

@@ -5,18 +5,17 @@ It represents the same chat session body that you would see on the chatGPT websi
 """
 
 import json
-import sys
 import logging
 import readline
+import sys
+from typing import Dict, List
 
-from typing import List, Dict
-
+import sseclient
 from requests import Response
 from requests.exceptions import ChunkedEncodingError
-import sseclient
 
 from gptcli.src.api_helper import OpenAIHelper
-from gptcli.src.message import Message, Messages, MessageFactory
+from gptcli.src.message import Message, MessageFactory, Messages
 
 logger = logging.getLogger(__name__)
 
