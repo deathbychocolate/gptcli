@@ -1,3 +1,9 @@
+## 0.2.0 (2023-07-08)
+
+### Feat
+
+- **helper**: :sparkles: Get version number as defined in project toml file.
+
 ## 0.1.0 (2023-07-08)
 
 ### Feat
