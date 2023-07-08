@@ -1,3 +1,9 @@
+## 0.3.2 (2023-07-08)
+
+### Fix
+
+- **project**: :bug: Replace hardcoded version number.
+
 ## 0.3.1 (2023-07-08)
 
 ## 0.3.0 (2023-07-08)
