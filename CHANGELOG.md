@@ -1,3 +1,13 @@
+## 0.4.0 (2023-07-15)
+
+### Feat
+
+- **project**: Apply version number bump in root toml and in _version.py on cz bump.
+
+### Refactor
+
+- **project**: Simplify printing the version number.
+
 ## 0.3.2 (2023-07-08)
 
 ### Fix
