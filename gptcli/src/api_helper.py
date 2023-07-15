@@ -4,6 +4,9 @@ import logging
 import os
 from typing import Dict, List
 
+from .errors import HttpClientErrorCodes
+from .errors import HttpServerErrorCodes
+
 import requests
 from requests.exceptions import ReadTimeout
 
@@ -97,7 +100,7 @@ class OpenAIHelper:
                 json=request_body,
                 timeout=30,
             )
-        # TODO: FEATURE: handle all error codes here: https://platform.openai.com/docs/guides/error-codes/api-errors
+        # Python errors may be viewed here: https://platform.openai.com/docs/guides/error-codes/python-library-error-types
         except ReadTimeout:
             logger.exception("ReadTimeout error detected")
         except TimeoutError:
@@ -106,20 +109,32 @@ class OpenAIHelper:
             logger.exception("It seems you lack an internet connection, please manually resolve the issue")
         except KeyboardInterrupt:
             logger.exception("Keyboard intterupt detected")  # for when the user decides to exit during a POST
-        # Consider susing sys.exc_info()
-        # import sys
 
-        # def call_function(func):
-        #     try:
-        #         func()
-        #     except Exception as e:
-        #         ex_type, ex_value, ex_traceback = sys.exc_info()
-        #         if ex_type.__module__ == "your_target_module":
-        #             print("Caught an exception from the target module:", ex_type, ex_value)
-        #         else:
-        #             print("Caught an exception from a different module:", ex_type, ex_value)
+        # Http error codes may be viewed here: https://platform.openai.com/docs/guides/error-codes/api-errors
+        if response is not None:  # response retrieved
+            if response.status_code >= 400:
+                match response.status_code:
+                    case HttpClientErrorCodes.UNAUTHORIZED.value:  # 401
+                        logger.info("Received UNAUTHORIZED client error.")
+                    case HttpClientErrorCodes.NOT_FOUND.value:  # 404
+                        logger.info("Received NOT_FOUND client error.")
+                    case HttpClientErrorCodes.TOO_MANY_REQUESTS.value:  # 429
+                        logger.info("Received TOO_MANY_REQUESTS client error.")
+                    case _:
+                        logger.info("Received unexpected client error.")
+            elif response.status_code >= 500:
+                match response.status_code:
+                    case HttpServerErrorCodes.SERVICE_UNAVAILABLE.value:  # 503
+                        logger.info("Received SERVICE_UNAVAILABLE server error.")
+                    case _:
+                        logger.info("Received unexpected server error.")
 
-        # # Example of calling a function that may raise an exception and checking if it's from the target module
+            # response = Response()
+
+
+        else:
+            logger.warning("Response not retrieved. Replying with dummy Response object.")
+            # response = Response()
 
         return response
 
