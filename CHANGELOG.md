@@ -1,3 +1,9 @@
+## 0.4.1 (2023-07-15)
+
+### Fix
+
+- **chat**: Resolve issue where some keys other than the arrow keys are also bound to left and right movement.
+
 ## 0.4.0 (2023-07-15)
 
 ### Feat
