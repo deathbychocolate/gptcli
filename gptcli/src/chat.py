@@ -57,10 +57,10 @@ class Chat:
 
     def _add_arrow_key_support(self) -> None:
         logger.info("Adding arrow key support")
-        readline.parse_and_bind("'^[[A': history-search-backward")
-        readline.parse_and_bind("'^[[B': history-search-forward")
-        readline.parse_and_bind("'^[[C': forward-char")
-        readline.parse_and_bind("'^[[D': backward-char")
+        readline.parse_and_bind("'\e[A': history-search-backward")
+        readline.parse_and_bind("'\e[B': history-search-forward")
+        readline.parse_and_bind("'\e[C': forward-char")
+        readline.parse_and_bind("'\e[D': backward-char")
 
     def _print_gptcli_message(self, text: str) -> None:
         logger.info("Printing gptcli message")
