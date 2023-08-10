@@ -16,6 +16,7 @@ from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAIHelper
 from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.src.ingest import TextFile
 
 logger = logging.getLogger(__name__)
 
@@ -85,14 +86,17 @@ class ChatOpenai(Chat):
         role_model: str = "assistant",
         context: str = "off",
         stream: str = "on",
+        filepath: str = "",
     ):
         Chat.__init__(self)
 
         self._model = model
-        self._context = True if context == "on" else False
-        self._stream = True if stream == "on" else False
         self._role_user = role_user
         self._role_model = role_model
+        self._context = True if context == "on" else False
+        self._stream = True if stream == "on" else False
+        self._filepath = filepath
+        self._file_content = Message(self.role_user, TextFile(self.filepath).get_file_content()) if len(filepath) > 0 else None
         self._messages = Messages()
 
     def start(self) -> None:
@@ -104,7 +108,15 @@ class ChatOpenai(Chat):
         """
         logger.info("Starting chat")
 
+        # check if we should add file content to message
+        if self.file_content is not None:
+            self._print_gptcli_message(f"Loading '{self.filepath}' content to Messages.")
+            self.messages.add_message(self.file_content)
+
+        # in chat commands
         exit_commands = set(["exit", "q"])
+
+        # commence chat loop
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
             if len(user_input) == 0:
@@ -113,12 +125,12 @@ class ChatOpenai(Chat):
                 self._print_gptcli_message("Bye!")
                 break
             else:
-                self.messages = Messages() if self.context is False else self.messages
-                self._add_message_to_messages(user_input)
+                self._add_user_input_to_messages(user_input)
                 response = self._send_messages()
                 self._add_reply_to_messages(response)
+                self.messages = Messages() if self.context is False else self.messages
 
-    def _add_message_to_messages(self, user_input) -> None:
+    def _add_user_input_to_messages(self, user_input) -> None:
         message = MessageFactory.create_message(role=self.role_user, content=user_input)
         self.messages.add_message(message)
 
@@ -201,6 +213,14 @@ class ChatOpenai(Chat):
     @property
     def context(self) -> str:
         return self._context
+
+    @property
+    def filepath(self) -> str:
+        return self._filepath
+
+    @property
+    def file_content(self) -> str:
+        return self._file_content
 
     @property
     def role_user(self):

@@ -21,7 +21,7 @@ class Message:
     def __init__(self, role: str, content: str):
         self._role = role
         self._content = content
-        self._tokens = self._count_tokens()
+        # self._tokens = self._count_tokens()
 
     def _count_tokens(self) -> int:
         return self._num_tokens_from_message(self.to_dictionary())
@@ -42,6 +42,9 @@ class Message:
             logger.warning("Model '%s' not supported for token count", model)
 
         return number_of_tokens
+
+    def __len__(self) -> int:
+        return len(self.content)
 
     @property
     def role(self) -> str:
@@ -86,6 +89,7 @@ class Messages:
     def __init__(self) -> None:
         self._messages = list()
         self._tokens = self._count_tokens()
+
     def add_message(self, messsage: Message) -> None:
         """Add the dictionary form of the Message to Messages"""
         self.messages.append(messsage.to_dictionary())
