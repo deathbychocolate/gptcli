@@ -112,25 +112,28 @@ class OpenAIHelper:
 
         # Http error codes may be viewed here: https://platform.openai.com/docs/guides/error-codes/api-errors
         if response is not None:  # response retrieved
-            if response.status_code >= 400:
-                match response.status_code:
-                    case HttpClientErrorCodes.UNAUTHORIZED.value:  # 401
-                        logger.info("Received UNAUTHORIZED client error.")
-                    case HttpClientErrorCodes.NOT_FOUND.value:  # 404
-                        logger.info("Received NOT_FOUND client error.")
-                    case HttpClientErrorCodes.TOO_MANY_REQUESTS.value:  # 429
-                        logger.info("Received TOO_MANY_REQUESTS client error.")
-                    case _:
-                        logger.info("Received unexpected client error.")
-            elif response.status_code >= 500:
-                match response.status_code:
-                    case HttpServerErrorCodes.SERVICE_UNAVAILABLE.value:  # 503
-                        logger.info("Received SERVICE_UNAVAILABLE server error.")
-                    case _:
-                        logger.info("Received unexpected server error.")
+            code = response.status_code
+            match code:
+                case _ if code >= 400 and code < 500:
+                    match code:
+                        case HttpClientErrorCodes.UNAUTHORIZED.value:  # 401
+                            logger.warning("Received UNAUTHORIZED client error.")
+                        case HttpClientErrorCodes.NOT_FOUND.value:  # 404
+                            logger.warning("Received NOT_FOUND client error.")
+                        case HttpClientErrorCodes.TOO_MANY_REQUESTS.value:  # 429
+                            logger.warning("Received TOO_MANY_REQUESTS client error.")
+                        case _:
+                            logger.warning("Received unexpected client error.")
+                case _ if code >= 500 and code < 600:
+                    match code:
+                        case HttpServerErrorCodes.SERVICE_UNAVAILABLE.value:  # 503
+                            logger.warning("Received SERVICE_UNAVAILABLE server error.")
+                        case _:
+                            logger.warning("Received unexpected server error.")
+                case _:
+                    logger.warning("Response code not recongnized!")
 
             # response = Response()
-
 
         else:
             logger.warning("Response not retrieved. Replying with dummy Response object.")
