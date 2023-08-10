@@ -1,3 +1,13 @@
+## 0.5.1 (2023-08-11)
+
+### Fix
+
+- **helper**: Make exception logs more concise.
+
+### Refactor
+
+- **helper**: Remove custom error codes and fix log messages.
+
 ## 0.5.0 (2023-08-11)
 
 ### Feat
