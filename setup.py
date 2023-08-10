@@ -10,6 +10,6 @@ setup(
     description="A CLI tool for talking to the Openai API.",
     author="Damian Vonapartis",
     url="https://www.python.org/sigs/distutils-sig/",
-    packages=find_packages(),
+    packages=find_packages(exclude=["*tests*"]),
     entry_points={"console_scripts": ["gptcli = gptcli.main:main"]},
 )
