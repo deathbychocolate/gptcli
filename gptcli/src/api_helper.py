@@ -1,11 +1,9 @@
-"""Contains a wrapper for the openai SDK
-"""
+"""Contains a wrapper for the openai SDK"""
 import logging
 import os
 from typing import Dict, List
 
-from gptcli.src.errors import HttpClientErrorCodes
-from gptcli.src.errors import HttpServerErrorCodes
+from http import HTTPStatus
 
 import requests
 from requests.exceptions import ReadTimeout
@@ -100,43 +98,43 @@ class OpenAIHelper:
                 json=request_body,
                 timeout=30,
             )
-        # Python errors may be viewed here: https://platform.openai.com/docs/guides/error-codes/python-library-error-types
+        # Python errors reference: https://platform.openai.com/docs/guides/error-codes/python-library-error-types
         except ReadTimeout:
-            logger.exception("ReadTimeout error detected")
+            logger.exception("ReadTimeout error detected, the server did not send any data in the allotted amount of time")
         except TimeoutError:
-            logger.exception("Timeout error detected")
+            logger.exception("Timeout error detected, this likely an issue with the API")
         except requests.exceptions.ConnectionError:
-            logger.exception("It seems you lack an internet connection, please manually resolve the issue")
+            logger.exception("Internet connection error detected, this is likely a local issue")
         except KeyboardInterrupt:
             logger.exception("Keyboard intterupt detected")  # for when the user decides to exit during a POST
 
-        # Http error codes may be viewed here: https://platform.openai.com/docs/guides/error-codes/api-errors
+        # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
         if response is not None:  # response retrieved
             code = response.status_code
             match code:
                 case _ if code >= 400 and code < 500:
                     match code:
-                        case HttpClientErrorCodes.UNAUTHORIZED.value:  # 401
-                            logger.warning("Received UNAUTHORIZED client error.")
-                        case HttpClientErrorCodes.NOT_FOUND.value:  # 404
-                            logger.warning("Received NOT_FOUND client error.")
-                        case HttpClientErrorCodes.TOO_MANY_REQUESTS.value:  # 429
-                            logger.warning("Received TOO_MANY_REQUESTS client error.")
+                        case HTTPStatus.UNAUTHORIZED.value:  # 401
+                            logger.warning("Received UNAUTHORIZED client error")
+                        case HTTPStatus.NOT_FOUND.value:  # 404
+                            logger.warning("Received NOT_FOUND client error")
+                        case HTTPStatus.TOO_MANY_REQUESTS.value:  # 429
+                            logger.warning("Received TOO_MANY_REQUESTS client error")
                         case _:
-                            logger.warning("Received unexpected client error.")
+                            logger.warning("Received unexpected client error")
                 case _ if code >= 500 and code < 600:
                     match code:
-                        case HttpServerErrorCodes.SERVICE_UNAVAILABLE.value:  # 503
-                            logger.warning("Received SERVICE_UNAVAILABLE server error.")
+                        case HTTPStatus.SERVICE_UNAVAILABLE.value:  # 503
+                            logger.warning("Received SERVICE_UNAVAILABLE server error")
                         case _:
-                            logger.warning("Received unexpected server error.")
+                            logger.warning("Received unexpected server error")
                 case _:
                     logger.warning("Response code not recongnized!")
 
             # response = Response()
 
         else:
-            logger.warning("Response not retrieved. Replying with dummy Response object.")
+            logger.warning("Response not retrieved. Replying with dummy Response object")
             # response = Response()
 
         return response
