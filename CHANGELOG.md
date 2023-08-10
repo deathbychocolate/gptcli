@@ -1,3 +1,19 @@
+## 0.5.0 (2023-08-11)
+
+### Feat
+
+- **project**: Add version number to project package.
+- **project**: This will allow to pass text from files to the OpenAI API as if it was part of a previous message. Allowing us to ask questions about it.
+- **helper**: Improve pattern matching and replace info with warning.
+- **helper**: Add logic for handling HTTP errors.
+
+### Fix
+
+- **project**: Prettify the help output.
+- **project**: Ignore tests folder when building project.
+- **helper**: Use module pathing rather than relative pathing.
+- **chat**: Resolve issue where some keys other than the arrow keys are also bound to left and right movement.
+
 ## 0.4.1 (2023-07-15)
 
 ### Fix

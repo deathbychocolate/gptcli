@@ -2,11 +2,11 @@
 
 from setuptools import find_packages, setup
 
-_version = "0.4.1"
+__version__ = "0.5.0"
 
 setup(
     name="gptcli",
-    version=_version,
+    version=__version__,
     description="A CLI tool for talking to the Openai API.",
     author="Damian Vonapartis",
     url="https://www.python.org/sigs/distutils-sig/",
