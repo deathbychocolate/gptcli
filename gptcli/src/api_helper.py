@@ -4,8 +4,8 @@ import logging
 import os
 from typing import Dict, List
 
-from .errors import HttpClientErrorCodes
-from .errors import HttpServerErrorCodes
+from gptcli.src.errors import HttpClientErrorCodes
+from gptcli.src.errors import HttpServerErrorCodes
 
 import requests
 from requests.exceptions import ReadTimeout
