@@ -23,7 +23,14 @@ class CommandLineInterface:
 
     def __init__(self) -> None:
         # pylint: disable=line-too-long
-        self.parser = argparse.ArgumentParser()
+        self.parser = argparse.ArgumentParser(add_help=False)
+        self.parser.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=argparse.SUPPRESS,
+            help="Show this help message and exit.",
+        )
         self.parser.add_argument(
             "-v",
             "--version",
@@ -32,57 +39,60 @@ class CommandLineInterface:
             help="Print the version number and exit.",
         )
         self.parser.add_argument(
-            "-l",
             "--loglevel",
             type=int,
             choices=CommandLineInterface.LOGGING_MODE_ALL,
             default=logging.CRITICAL,
-            help="Set the log level of the application. Defaults to CRITICAL.",
+            help=f"Defaults to {logging.CRITICAL}. Set the log level of the application.",
         )
         self.parser.add_argument(
-            "-m",
             "--model",
             type=str,
             choices=OpenAIHelper.GPT_ALL,
             default=OpenAIHelper.GPT_DEFAULT,
-            help=f"The model to use. Defaults to {OpenAIHelper.GPT_DEFAULT}.",
+            help=f"Defaults to {OpenAIHelper.GPT_DEFAULT}. The model to use.",
         )
         self.parser.add_argument(
-            "-k",
             "--key",
             type=str,
             default="",
-            help="The API key to use for the run. Defaults to the key stored in .gptcli in your home dir.",
+            help="Defaults to the key stored in .gptcli in your home dir. The API key to use for the run.",
+            metavar="<string>",
         )
         self.parser.add_argument(
-            "-ru",
             "--role-user",
             type=str,
             default="user",
-            help="Defaults to 'user'. Allows the user to assume a role other than 'user'.",
+            help="Defaults to 'user'. The user may assume a role other than 'user'.",
+            metavar="<string>",
         )
         self.parser.add_argument(
-            "-rm",
             "--role-model",
             type=str,
             default="assistant",
-            help="Defaults to 'assistant'. Allows the LLM to assume a role other than 'assistant'.",
+            help="Defaults to 'assistant'. The language model may assume a role other than 'assistant'.",
+            metavar="<string>",
         )
         self.parser.add_argument(
-            "-c",
             "--context",
             type=str,
             choices=["on", "off"],
             default="on",
-            help="Defaults to 'on'. Enable or disable sending all chat messages to API to build a better reply. Use 'off' to conserve tokens.",
+            help="Defaults to 'on'. Send all chat messages to API to build a better reply. Use 'off' to conserve tokens.",
         )
         self.parser.add_argument(
-            "-s",
             "--stream",
             type=str,
             choices=["on", "off"],
             default="on",
-            help="Defaults to 'on'. Enables streaming mode for text replies in chat mode.",
+            help="Defaults to 'on'. Streaming mode for text replies in chat mode.",
+        )
+        self.parser.add_argument(
+            "--filepath",
+            type=str,
+            default="",
+            help="Select a file with text to ingest and use for context.",
+            metavar="<string>",
         )
 
         self.args = self.parser.parse_args()
