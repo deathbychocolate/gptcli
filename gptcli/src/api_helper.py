@@ -100,13 +100,13 @@ class OpenAIHelper:
             )
         # Python errors reference: https://platform.openai.com/docs/guides/error-codes/python-library-error-types
         except ReadTimeout:
-            logger.exception("ReadTimeout error detected, the server did not send any data in the allotted amount of time")
+            logger.exception("The server did not send any data in the allotted amount of time")
         except TimeoutError:
-            logger.exception("Timeout error detected, this likely an issue with the API")
+            logger.exception("This is likely an issue with the API")
         except requests.exceptions.ConnectionError:
-            logger.exception("Internet connection error detected, this is likely a local issue")
+            logger.exception("This is likely a local issue")
         except KeyboardInterrupt:
-            logger.exception("Keyboard intterupt detected")  # for when the user decides to exit during a POST
+            logger.exception("This likely manual user intervention")  # for when the user decides to exit during a POST
 
         # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
         if response is not None:  # response retrieved
