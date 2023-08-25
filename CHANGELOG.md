@@ -1,3 +1,9 @@
+## 0.5.2 (2023-08-26)
+
+### Fix
+
+- **helper**: Fix error where we try to add a None object to messages.
+
 ## 0.5.1 (2023-08-11)
 
 ### Fix
