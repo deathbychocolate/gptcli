@@ -86,13 +86,22 @@ class MessageFactory:
 
 
 class Messages:
+    """A class to represent the collection of Message objects.
+
+    The need for this class comes from the need of custom functionalities
+    that are not offered by Python dicitionaries or lists.
+    """
     def __init__(self) -> None:
         self._messages = list()
         self._tokens = self._count_tokens()
 
-    def add_message(self, messsage: Message) -> None:
+    def add_message(self, message: Message) -> None:
         """Add the dictionary form of the Message to Messages"""
-        self.messages.append(messsage.to_dictionary())
+        if message is None:
+            logger.warning("Tried to add message of class NoneType")
+            logger.warning("Skipping message")
+        else:
+            self.messages.append(message.to_dictionary())
 
     def _count_tokens(self) -> None:
         count = 0

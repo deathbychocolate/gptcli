@@ -112,30 +112,24 @@ class OpenAIHelper:
         if response is not None:  # response retrieved
             code = response.status_code
             match code:
-                case _ if code >= 400 and code < 500:
-                    match code:
-                        case HTTPStatus.UNAUTHORIZED.value:  # 401
-                            logger.warning("Received UNAUTHORIZED client error")
-                        case HTTPStatus.NOT_FOUND.value:  # 404
-                            logger.warning("Received NOT_FOUND client error")
-                        case HTTPStatus.TOO_MANY_REQUESTS.value:  # 429
-                            logger.warning("Received TOO_MANY_REQUESTS client error")
-                        case _:
-                            logger.warning("Received unexpected client error")
-                case _ if code >= 500 and code < 600:
-                    match code:
-                        case HTTPStatus.SERVICE_UNAVAILABLE.value:  # 503
-                            logger.warning("Received SERVICE_UNAVAILABLE server error")
-                        case _:
-                            logger.warning("Received unexpected server error")
+                case HTTPStatus.UNAUTHORIZED.value:  # 401
+                    logger.warning("Received UNAUTHORIZED client error")
+                case HTTPStatus.NOT_FOUND.value:  # 404
+                    logger.warning("Received NOT_FOUND client error")
+                case HTTPStatus.TOO_MANY_REQUESTS.value:  # 429
+                    logger.warning("Received TOO_MANY_REQUESTS client error")
+                case _ if code < 500:
+                    logger.warning("Received unexpected client error")
+                case HTTPStatus.SERVICE_UNAVAILABLE.value:  # 503
+                    logger.warning("Received SERVICE_UNAVAILABLE server error")
+                case _ if code < 600:
+                    logger.warning("Received unexpected server error")
                 case _:
                     logger.warning("Response code not recongnized!")
-
-            # response = Response()
-
+            response = None
         else:
-            logger.warning("Response not retrieved. Replying with dummy Response object")
-            # response = Response()
+            logger.warning("Response not retrieved. Replying with None")
+            response = None
 
         return response
 
