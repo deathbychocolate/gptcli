@@ -59,7 +59,10 @@ class OpenAIHelper:
         We expect a return of True if we have a valid key and false if not.
         """
         response = self._post_request(key=key)
-        is_valid = True if response.status_code == 200 else False
+        if response is None:
+            return False
+        else:
+            is_valid = True if response.status_code == 200 else False
 
         return is_valid
 
