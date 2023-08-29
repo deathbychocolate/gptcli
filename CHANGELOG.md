@@ -1,3 +1,9 @@
+## 0.6.0 (2023-08-29)
+
+### Feat
+
+- **project**: Add support for gpt-3.5-turbo-16k.
+
 ## 0.5.4 (2023-08-29)
 
 ### Fix
