@@ -1,6 +1,6 @@
 [project]
 name = "gptcli"
-version = "0.5.3"
+version = "0.5.4"
 
 [tool.black]
 line-length = 120

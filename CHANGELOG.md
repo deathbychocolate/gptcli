@@ -1,3 +1,9 @@
+## 0.5.4 (2023-08-29)
+
+### Fix
+
+- **helper**: Handle case where response is None.
+
 ## 0.5.3 (2023-08-26)
 
 ### Fix
