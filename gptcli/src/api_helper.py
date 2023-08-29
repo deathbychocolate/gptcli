@@ -17,6 +17,7 @@ class OpenAIHelper:
     # see here: https://platform.openai.com/docs/models/
     GPT_3_5 = "gpt-3.5-turbo"
     GPT_3_5_301 = "gpt-3.5-turbo-0301"
+    GPT_3_5_16K = "gpt-3.5-turbo-16k"
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
     GPT_4_0314 = "gpt-4-0314"
@@ -26,6 +27,7 @@ class OpenAIHelper:
     GPT_ALL = [
         GPT_3_5,
         GPT_3_5_301,
+        GPT_3_5_16K,
         GPT_4,
         GPT_4_0314,
         # GPT_4_32K,  # Documented in API docs but not supported. Uncomment when implemented.
@@ -109,7 +111,7 @@ class OpenAIHelper:
         except requests.exceptions.ConnectionError:
             logger.exception("This is likely a local issue")
         except KeyboardInterrupt:
-            logger.exception("This likely manual user intervention")  # for when the user decides to exit during a POST
+            logger.exception("This is likely manual user intervention")  # when the user decides to exit during a POST
 
         # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
         if response is not None:  # response retrieved
