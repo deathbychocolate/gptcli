@@ -1,3 +1,14 @@
+## 0.7.0 (2023-08-31)
+
+### Feat
+
+- **tests**: Use Docker to execute the tests with pytest.
+
+### Fix
+
+- **tests**: Execute unit tests the same way that Docker will.
+- **tests**: Resolve import issue.
+
 ## 0.6.0 (2023-08-29)
 
 ### Feat
