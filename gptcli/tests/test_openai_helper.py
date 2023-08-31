@@ -4,7 +4,8 @@ File to hold tests related to AskOpenAI
 
 import pytest
 
-from gptcli.src.api_helper import Message, MessageFactory, OpenAIHelper
+from gptcli.src.message import Message, MessageFactory
+from gptcli.src.api_helper import OpenAIHelper
 
 
 class TestMessage:
@@ -42,7 +43,7 @@ class TestMessageFactory:
 class TestOpenAIHelper:
     @pytest.fixture(scope="session")
     def setup(self):
-        helper = OpenAIHelper(OpenAIHelper.DEFAULT_ENGINE, "Good morning!")
+        helper = OpenAIHelper(OpenAIHelper.GPT_DEFAULT, "Good morning!")
         return helper
 
     def test_should_return_a_type_string(self, setup):
