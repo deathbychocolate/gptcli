@@ -14,11 +14,10 @@ logger = logging.getLogger(__name__)
 class Install:
     """Class to hold all the install tools for the local machine"""
 
-    def __init__(self, openai_api_key="", random_id="") -> None:
+    def __init__(self, openai_api_key="") -> None:
         self.openai_api_key = openai_api_key
-        self.random_id = random_id
         self.home_directory = os.path.expanduser("~")
-        self.gptcli_filepath = os.path.join(self.home_directory, f".gptcli{self.random_id}")
+        self.gptcli_filepath = os.path.join(self.home_directory, ".gptcli")
         self.install_successful_filepath = os.path.join(self.gptcli_filepath, ".install_successful")
         self.messages_filepath = os.path.join(self.gptcli_filepath, "messages")
         self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")

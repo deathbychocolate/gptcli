@@ -10,12 +10,11 @@ import pytest
 from gptcli.src.install import Install
 
 
-class TestInstall:
+class TestInstall:  # pylint:disable=missing-class-docstring,protected-access
     @pytest.fixture(scope="session")
     def setup_teardown(self):
-        random_id = "_".join(["test", str(uuid4()).split("-", 1)[0]])
-        install = Install(openai_api_key="invalid_key", random_id=random_id)
-        install._create_folders()
+        install = Install(openai_api_key="invalid_key")
+        install._create_folder_structure()
 
         yield install
 
@@ -23,10 +22,8 @@ class TestInstall:
 
     @pytest.fixture(scope="session")
     def setup_teardown_no_folders(self):
-        random_id = "_".join(["test", str(uuid4()).split("-", 1)[0]])
-        install = Install(random_id=random_id)
-
-        return install
+        install = Install()
+        yield install
 
     def test_should_detect_the_gptcli_folder_is_missing(self, setup_teardown_no_folders):
         install = setup_teardown_no_folders
