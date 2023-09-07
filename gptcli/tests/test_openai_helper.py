@@ -4,8 +4,8 @@ File to hold tests related to AskOpenAI
 
 import pytest
 
-from gptcli.src.message import Message, MessageFactory
 from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.message import Message, MessageFactory
 
 
 class TestMessage:
@@ -28,7 +28,6 @@ class TestMessage:
 
 
 class TestMessageFactory:
-
     @pytest.fixture(scope="session")
     def setup(self):
         factory = MessageFactory()

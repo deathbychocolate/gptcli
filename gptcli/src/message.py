@@ -91,6 +91,7 @@ class Messages:
     The need for this class comes from the need of custom functionalities
     that are not offered by Python dicitionaries or lists.
     """
+
     def __init__(self) -> None:
         self._messages = list()
         self._tokens = self._count_tokens()

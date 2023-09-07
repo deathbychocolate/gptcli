@@ -36,19 +36,19 @@ class TestPromptUser:
     def test_should_accept_keyboard_interrupt_and_perform_a_system_exit(self, setup, monkeypatch):
         chat_session = setup
         # TODO monkeypatch does not work this way, fix it
-        monkeypatch.setattr('builtins.input', lambda _: KeyboardInterrupt)
+        monkeypatch.setattr("builtins.input", lambda _: KeyboardInterrupt)
         with pytest.raises(SystemExit):
             chat_session._prompt_user()
 
     def test_should_accept_eof_error_and_perform_a_system_exit(self, setup, monkeypatch):
         chat_session = setup
         # TODO monkeypatch does not work this way, fix it
-        monkeypatch.setattr('builtins.input', lambda _: EOFError)
+        monkeypatch.setattr("builtins.input", lambda _: EOFError)
         with pytest.raises(SystemExit):
             chat_session._prompt_user()
 
     def test_should_accept_string_input_and_return_the_same_string_input(self, setup, monkeypatch):
         chat_session = setup
-        monkeypatch.setattr('builtins.input', lambda _: "this is test input")
+        monkeypatch.setattr("builtins.input", lambda _: "this is test input")
         text = chat_session._prompt_user()
         assert text == "this is test input"

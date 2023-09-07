@@ -1,9 +1,8 @@
 """Contains a wrapper for the openai SDK"""
 import logging
 import os
-from typing import Dict, List
-
 from http import HTTPStatus
+from typing import Dict, List
 
 import requests
 from requests.exceptions import ReadTimeout

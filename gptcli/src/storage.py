@@ -75,6 +75,7 @@ class Chat:
             ]
         }
         """
+
         def __init__(self) -> None:
             pass
 
@@ -82,7 +83,6 @@ class Chat:
             return ""
 
     class Storage:
-
         def __init__(self) -> None:
             self._home_directory = os.path.expanduser("~")
             self._messages_filepath = os.path.join(self._home_directory, "messages")

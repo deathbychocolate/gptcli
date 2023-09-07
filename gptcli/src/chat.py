@@ -15,8 +15,8 @@ from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAIHelper
-from gptcli.src.message import Message, MessageFactory, Messages
 from gptcli.src.ingest import TextFile
+from gptcli.src.message import Message, MessageFactory, Messages
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,9 @@ class ChatOpenai(Chat):
         self._context = True if context == "on" else False
         self._stream = True if stream == "on" else False
         self._filepath = filepath
-        self._file_content = Message(self.role_user, TextFile(self.filepath).get_file_content()) if len(filepath) > 0 else None
+        self._file_content = (
+            Message(self.role_user, TextFile(self.filepath).get_file_content()) if len(filepath) > 0 else None
+        )
         self._messages = Messages()
 
     def start(self) -> None:
@@ -108,7 +110,7 @@ class ChatOpenai(Chat):
         """
         logger.info("Starting chat")
 
-        # check if we should add file content to message
+        # check if we should add file content to message
         if self.file_content is not None:
             self._print_gptcli_message(f"Loading '{self.filepath}' content to Messages.")
             self.messages.add_message(self.file_content)
