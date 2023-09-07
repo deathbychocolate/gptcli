@@ -1,3 +1,14 @@
+## 0.7.1 (2023-09-07)
+
+### Fix
+
+- **project**: Remove funcionality for random id install and fix some erros in install test file.
+
+### Refactor
+
+- **project**: Run isort, pylint, and black formatter.
+- **tests**: Remove script as the newer one will be the default execution method for tests.
+
 ## 0.7.0 (2023-08-31)
 
 ### Feat
