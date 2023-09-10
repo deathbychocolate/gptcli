@@ -1,4 +1,5 @@
 """Contains a wrapper for the openai SDK"""
+import json
 import logging
 import os
 from http import HTTPStatus
@@ -29,7 +30,7 @@ class OpenAIHelper:
         GPT_3_5_16K,
         GPT_4,
         GPT_4_0314,
-        # GPT_4_32K,  # Documented in API docs but not supported. Uncomment when implemented.
+        GPT_4_32K,  # Documented in API docs but not supported. Uncomment when implemented.
         # GPT_4_32K_0314,  # Documented in API docs but not supported. Uncomment when implemented.
     ]
 
@@ -131,6 +132,15 @@ class OpenAIHelper:
                         logger.warning("Received unexpected server error")
                     case _ if code >= 600:
                         logger.warning("Response code not recongnized!")
+                error = json.loads(response.content)["error"]
+                log_message = ":".join(
+                    [
+                        error["message"],
+                        error["type"],
+                        error["code"],
+                    ]
+                )
+                logger.warning(log_message)
                 response = None
         else:
             logger.warning("Response not retrieved. Replying with None")

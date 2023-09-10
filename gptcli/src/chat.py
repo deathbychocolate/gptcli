@@ -159,7 +159,7 @@ class ChatOpenai(Chat):
 
     def _print_none(self) -> None:
         logger.info("Reply mode -> None")
-        self._print_gptcli_message("POST request was not completed successfully. Maybe try again.")
+        self._print_gptcli_message("POST request was not completed successfully. Turn on logging to see why.")
 
     def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
