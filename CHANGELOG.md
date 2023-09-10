@@ -1,3 +1,9 @@
+## 0.8.0 (2023-09-10)
+
+### Feat
+
+- **helper**: Add error information retrieved from server to logs.
+
 ## 0.7.1 (2023-09-07)
 
 ### Fix
