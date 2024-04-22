@@ -1,3 +1,14 @@
+## 0.9.0 (2024-04-22)
+
+### Feat
+
+- **chat**: Add multiline support.
+
+### Refactor
+
+- **chat**: Extract multine line support to private method.
+- **chat**: Move the related private methods closer together.
+
 ## 0.8.0 (2023-09-10)
 
 ### Feat
