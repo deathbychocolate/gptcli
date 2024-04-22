@@ -52,13 +52,7 @@ class Chat:
         """
         try:
             user_input = str(input(prompt_text))
-            if user_input == '"""':  # multiline support in prompt
-                user_input_multiline: List[str] = list()
-                user_input_single_line = str(input(prompt_text))
-                while user_input_single_line != '"""':
-                    user_input_multiline.append(user_input_single_line)
-                    user_input_single_line = str(input(prompt_text))
-                user_input = "\n".join(user_input_multiline)
+            user_input = self._check_for_multiline_input(user_input)
         except KeyboardInterrupt as exception:
             logger.info("Keyboard interrupt detected")
             logger.exception(exception)
@@ -67,6 +61,22 @@ class Chat:
             logger.info("EOF detected")
             logger.exception(exception)
             sys.exit()
+
+        return user_input
+
+    def _check_for_multiline_input(self, user_input: str) -> str:
+
+        if user_input == '"""':
+
+            user_input_multiline: List[str] = list()
+            user_input_single_line = str(input("... "))
+
+            while user_input_single_line != '"""':
+                user_input_multiline.append(user_input_single_line)
+                user_input_single_line = str(input("... "))
+            user_input = "\n".join(user_input_multiline)
+        else:
+            return user_input
 
         return user_input
 
