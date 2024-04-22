@@ -36,6 +36,13 @@ class Chat:
         """
         try:
             user_input = str(input(prompt_text))
+            if user_input == '"""':  # multiline support in prompt
+                user_input_multiline: List[str] = list()
+                user_input_single_line = str(input(prompt_text))
+                while user_input_single_line != '"""':
+                    user_input_multiline.append(user_input_single_line)
+                    user_input_single_line = str(input(prompt_text))
+                user_input = "\n".join(user_input_multiline)
         except KeyboardInterrupt as exception:
             logger.info("Keyboard interrupt detected")
             logger.exception(exception)
