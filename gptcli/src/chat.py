@@ -27,6 +27,22 @@ class Chat:
     def __init__(self):
         self._configure_chat()
 
+    def _configure_chat(self) -> None:
+        logger.info("Configuring chat")
+        self._clear_history()
+        self._add_arrow_key_support()
+
+    def _clear_history(self) -> None:
+        logger.info("Clearing chat history")
+        readline.clear_history()
+
+    def _add_arrow_key_support(self) -> None:
+        logger.info("Adding arrow key support")
+        readline.parse_and_bind(r"'\e[A': history-search-backward")
+        readline.parse_and_bind(r"'\e[B': history-search-forward")
+        readline.parse_and_bind(r"'\e[C': forward-char")
+        readline.parse_and_bind(r"'\e[D': backward-char")
+
     def prompt(self, prompt_text: str) -> str:
         """Prompt user with specified text.
 
@@ -53,22 +69,6 @@ class Chat:
             sys.exit()
 
         return user_input
-
-    def _configure_chat(self) -> None:
-        logger.info("Configuring chat")
-        self._clear_history()
-        self._add_arrow_key_support()
-
-    def _clear_history(self) -> None:
-        logger.info("Clearing chat history")
-        readline.clear_history()
-
-    def _add_arrow_key_support(self) -> None:
-        logger.info("Adding arrow key support")
-        readline.parse_and_bind(r"'\e[A': history-search-backward")
-        readline.parse_and_bind(r"'\e[B': history-search-forward")
-        readline.parse_and_bind(r"'\e[C': forward-char")
-        readline.parse_and_bind(r"'\e[D': backward-char")
 
     def _print_gptcli_message(self, text: str) -> None:
         logger.info("Printing gptcli message")
