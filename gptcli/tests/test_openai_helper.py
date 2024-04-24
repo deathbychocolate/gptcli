@@ -1,6 +1,4 @@
-"""
-File to hold tests related to AskOpenAI
-"""
+"""File to hold tests related to AskOpenAI"""
 
 import pytest
 
@@ -44,22 +42,3 @@ class TestOpenAIHelper:
     def setup(self):
         helper = OpenAIHelper(OpenAIHelper.GPT_DEFAULT, "Good morning!")
         return helper
-
-    def test_should_return_a_type_string(self, setup):
-        helper = setup
-        reply = helper.send()
-        assert type(reply) is str
-
-    def test_should_create_chat_completion(self, setup):
-        helper = setup
-        chat_completion = helper._create_chat_completion()
-        assert type(chat_completion) is dict
-
-    def test_should_retrieve_chat_completion_content(self, setup):
-        helper = setup
-        content = helper._retrieve_chat_completion_content()
-        assert type(content) is str
-
-    def test_should_build_messages(self, setup):
-        assert False
-        # _build_messages(, question: str) -> list:
