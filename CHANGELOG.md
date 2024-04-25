@@ -1,3 +1,17 @@
+## 0.10.0 (2024-04-26)
+
+### Feat
+
+- **project**: Add PDF support and extend Text file support by checking if it is indeed a text file.
+
+### Fix
+
+- **install**: Remove the install checks preformed at program launch and rely only on .install_succesful file being present.
+
+### Refactor
+
+- **chat**: Remove mutiline input from all chats and enabale it only for the Openai chat.
+
 ## 0.9.0 (2024-04-22)
 
 ### Feat
