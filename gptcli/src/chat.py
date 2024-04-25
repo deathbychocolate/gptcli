@@ -15,7 +15,7 @@ from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAIHelper
-from gptcli.src.ingest import TextFile
+from gptcli.src.ingest import Text, PDF
 from gptcli.src.message import Message, MessageFactory, Messages
 
 logger = logging.getLogger(__name__)
@@ -96,9 +96,6 @@ class ChatOpenai(Chat):
         self._context = True if context == "on" else False
         self._stream = True if stream == "on" else False
         self._filepath = filepath
-        self._file_content = (
-            Message(self.role_user, TextFile(self.filepath).get_file_content()) if len(filepath) > 0 else None
-        )
         self._messages = Messages()
 
     def start(self) -> None:
@@ -111,9 +108,14 @@ class ChatOpenai(Chat):
         logger.info("Starting chat")
 
         # check if we should add file content to message
-        if self.file_content is not None:
-            self._print_gptcli_message(f"Loading '{self.filepath}' content to Messages.")
-            self.messages.add_message(self.file_content)
+        if self.filepath is not None and len(self.filepath) > 0:
+            self._print_gptcli_message(f"Loading '{self.filepath}' content as context.")
+            message = Message(role=self.role_user, content="")
+            if Text.is_text(filepath=self.filepath):
+                message = Message(role=self.role_user, content=Text(filepath=self.filepath).extract_text())
+            elif PDF.is_pdf(filepath=self.filepath):
+                message = Message(role=self.role_user, content=PDF(filepath=self.filepath).extract_text())
+            self.messages.add_message(message)
 
         # in chat commands
         exit_commands = set(["exit", "q"])
@@ -133,7 +135,6 @@ class ChatOpenai(Chat):
                 self._add_reply_to_messages(response)
                 self.messages = Messages() if self.context is False else self.messages
 
-    
     def _check_for_multiline_input(self, user_input: str) -> str:
 
         if user_input == '"""':
@@ -238,10 +239,6 @@ class ChatOpenai(Chat):
     @property
     def filepath(self) -> str:
         return self._filepath
-
-    @property
-    def file_content(self) -> str:
-        return self._file_content
 
     @property
     def role_user(self):
