@@ -38,6 +38,27 @@ class TestText:
             length = len(text)
             assert length == 0
 
+    class TestExists:
+        """Test the _exists method."""
+
+        @pytest.fixture(scope="session")
+        def setup_teardown(self):
+            filepath_exists = os.path.join(PROJECT_ROOT_DIRECTORY, "gptcli/tests/data/ingest/true-pdf-sample-1.pdf")
+            filepath_exists_not = os.path.join(PROJECT_ROOT_DIRECTORY, "gptcli/tests/data/ingest/true-pdf-sample-z.pdf")
+            txt_file_exists = Text(filepath=filepath_exists)
+            txt_file_exists_not = Text(filepath=filepath_exists_not)
+            yield txt_file_exists, txt_file_exists_not
+
+        def test_should_return_true(self, setup_teardown):
+            txt_file_exists, _ = setup_teardown
+            exists = txt_file_exists._exists()  # pylint: disable=protected-access
+            assert exists is True
+
+        def test_should_return_false(self, setup_teardown):
+            _, txt_file_exists_not = setup_teardown
+            exists = txt_file_exists_not._exists()  # pylint: disable=protected-access
+            assert exists is False
+
     class TestIsText:
         """Test the is_text method."""
 
@@ -82,6 +103,27 @@ class TestPDF:
             text = pdf.extract_text()
             length = len(text)
             assert length > 0
+
+    class TestExists:
+        """Test the _exists method."""
+
+        @pytest.fixture(scope="session")
+        def setup_teardown(self):
+            filepath_exists = os.path.join(PROJECT_ROOT_DIRECTORY, "gptcli/tests/data/ingest/true-pdf-sample-1.pdf")
+            filepath_exists_not = os.path.join(PROJECT_ROOT_DIRECTORY, "gptcli/tests/data/ingest/true-pdf-sample-z.pdf")
+            pdf_file_exists = PDF(filepath=filepath_exists)
+            pdf_file_exists_not = PDF(filepath=filepath_exists_not)
+            yield pdf_file_exists, pdf_file_exists_not
+
+        def test_should_return_true(self, setup_teardown):
+            pdf_file_exists, _ = setup_teardown
+            exists = pdf_file_exists._exists()  # pylint: disable=protected-access
+            assert exists is True
+
+        def test_should_return_false(self, setup_teardown):
+            _, pdf_file_exists_not = setup_teardown
+            exists = pdf_file_exists_not._exists()  # pylint: disable=protected-access
+            assert exists is False
 
     class TestIsPDF:
         """Test the is_pdf method"""

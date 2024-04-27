@@ -2,6 +2,7 @@
 Such as text from the terminal, or a text file.
 """
 
+import os
 import logging
 import mimetypes
 from abc import ABC, abstractmethod
@@ -22,6 +23,12 @@ class File(ABC):
     @abstractmethod
     def extract_text(self) -> str: ...
 
+    def _is_file(self) -> bool:
+        return os.path.isfile(self.filepath)
+
+    def _exists(self) -> bool:
+        return os.path.exists(self.filepath)
+
 
 class Text(File):
     """Meant to ingest text from a file"""
@@ -39,12 +46,15 @@ class Text(File):
         Returns:
             str: A string of text found in the file that of the filepath.
         """
+        logger.info("Extracting text from Text file '%s'.", self.filepath)
+
         text = ""
-        try:
+        if self._exists() and self._is_file():
             with open(self.filepath, "r", encoding="utf8") as filepointer:
                 text = filepointer.read()
-        except FileNotFoundError:
-            logger.warning("File %s not found. Returning empty value.", self.filepath)
+        else:
+            logger.warning("File '%s' not found. Returning empty value.", self.filepath)
+            print(f">>> [GPTCLI]: No file detected at filepath '{self.filepath}'. Proceeding without it...")
 
         return text
 
@@ -55,8 +65,17 @@ class Text(File):
         Returns:
             bool: True if it is a text file and False otherwise
         """
-        mime_type, _ = mimetypes.guess_type(filepath)
-        is_text = mime_type is not None and mime_type.split("/", maxsplit=2)[0] == "text"
+        logger.info("Checking if %s is indeed a text file.", filepath)
+
+        is_text = False
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+            mime_type, _ = mimetypes.guess_type(filepath)
+            is_text = mime_type is not None and mime_type.split("/", maxsplit=2)[0] == "text"
+        else:
+            logger.warning("File '%s' not found. Returning False.", filepath)
+            print(f">>> [GPTCLI]: No file detected at filepath '{filepath}'. Proceeding without it...")
+            is_text = False
+
         return is_text
 
 
@@ -73,8 +92,15 @@ class PDF(File):
         Returns:
             str: A string of text found in the file that of the filepath.
         """
-        reader = PdfReader(self.filepath)
-        text = " ".join([page.extract_text() for page in reader.pages])
+        logger.info("Extracting text from PDF file '%s'.", self.filepath)
+
+        text = ""
+        if self._exists() and self._is_file():
+            reader = PdfReader(self.filepath)
+            text = " ".join([page.extract_text() for page in reader.pages])
+        else:
+            logger.warning("File '%s' not found. Returning empty value.", self.filepath)
+            print(f">>> [GPTCLI]: No file detected at filepath '{self.filepath}'. Proceeding without it...")
 
         return text
 
@@ -85,13 +111,20 @@ class PDF(File):
         Returns:
             bool: True if it is a PDF | False if it is not a PDF | False if it is not supported
         """
-        kind = filetype.guess(filepath)
+        logger.info("Checking if '%s' is indeed a text file.", filepath)
 
-        if kind is None:  # filetype not supported
-            is_pdf = False
-        elif kind.extension == "pdf" and kind.mime == "application/pdf":
-            is_pdf = True
+        is_pdf = False
+        if os.path.exists(filepath) and os.path.isfile(filepath):
+
+            kind = filetype.guess(filepath)
+
+            if kind is None:  # filetype not supported
+                is_pdf = False
+            elif kind.extension == "pdf" and kind.mime == "application/pdf":
+                is_pdf = True
         else:
+            logger.warning("File '%s' not found. Returning False.", filepath)
+            print(f">>> [GPTCLI]: No file detected at filepath '{filepath}'. Proceeding without it...")
             is_pdf = False
 
         return is_pdf
