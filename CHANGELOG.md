@@ -1,3 +1,10 @@
+## 0.11.0 (2024-05-03)
+
+### Refactor
+
+- **project**: Move KeyboardInterrupt and EOFError cases to a decorator.
+- **ingest**: Add some checks for Text and PDF to make sure the files exist before performing operations.
+
 ## 0.10.0 (2024-04-26)
 
 ### Feat
