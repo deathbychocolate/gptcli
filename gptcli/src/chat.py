@@ -7,7 +7,6 @@ It represents the same chat session body that you would see on the chatGPT websi
 import json
 import logging
 import readline
-import sys
 from typing import Dict, List
 
 import sseclient
@@ -15,6 +14,7 @@ from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.decorators import user_triggered_abort
 from gptcli.src.ingest import Text, PDF
 from gptcli.src.message import Message, MessageFactory, Messages
 
@@ -43,23 +43,10 @@ class Chat:
         readline.parse_and_bind(r"'\e[C': forward-char")
         readline.parse_and_bind(r"'\e[D': backward-char")
 
+    @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:
-        """Prompt user with specified text.
-
-        Handles exceptions such as:
-        - KeyboardInterrupt
-        - EOFError
-        """
-        try:
-            user_input = str(input(prompt_text))
-        except KeyboardInterrupt as exception:
-            logger.info("Keyboard interrupt detected")
-            logger.exception(exception)
-            sys.exit()
-        except EOFError as exception:
-            logger.info("EOF detected")
-            logger.exception(exception)
-            sys.exit()
+        """Prompt user with specified text"""
+        user_input = str(input(prompt_text))
 
         return user_input
 
@@ -98,6 +85,7 @@ class ChatOpenai(Chat):
         self._filepath = filepath
         self._messages = Messages()
 
+    @user_triggered_abort
     def start(self) -> None:
         """Start a chat session. Expect to see the following output to terminal:
 
@@ -198,9 +186,6 @@ class ChatOpenai(Chat):
         except ChunkedEncodingError:
             print("")
             self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
-        except KeyboardInterrupt:
-            print("")
-            self._print_gptcli_message("KeyboardInterrupt detected")
 
         message = MessageFactory.create_message(role=self.role_model, content=payload)
 
