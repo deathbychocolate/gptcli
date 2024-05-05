@@ -2,9 +2,9 @@
 Such as text from the terminal, or a text file.
 """
 
-import os
 import logging
 import mimetypes
+import os
 from abc import ABC, abstractmethod
 
 import filetype

@@ -1,4 +1,5 @@
 """Contains a wrapper for the openai SDK"""
+
 import json
 import logging
 import os
@@ -12,27 +13,26 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIHelper:
-    """A wrapper for the openai python library"""
+    """A helper for OpenAI's API
+    
+    It includes information and tools specifically for interacting with OpenAI's API.
+    """
 
     # see here: https://platform.openai.com/docs/models/
     GPT_3_5 = "gpt-3.5-turbo"
     GPT_3_5_301 = "gpt-3.5-turbo-0301"
     GPT_3_5_16K = "gpt-3.5-turbo-16k"
+    GPT_3_5_ALL = [GPT_3_5, GPT_3_5_301, GPT_3_5_16K]
+
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
     GPT_4_0314 = "gpt-4-0314"
     GPT_4_32K_0314 = "gpt-4-32k-0314"
+    GPT_4_ALL = [GPT_4, GPT_4_32K, GPT_4_0314, GPT_4_32K_0314]
+
     GPT_DEFAULT = GPT_3_5
 
-    GPT_ALL = [
-        GPT_3_5,
-        GPT_3_5_301,
-        GPT_3_5_16K,
-        GPT_4,
-        GPT_4_0314,
-        GPT_4_32K,  # Documented in API docs but not supported. Uncomment when implemented.
-        # GPT_4_32K_0314,  # Documented in API docs but not supported. Uncomment when implemented.
-    ]
+    GPT_ALL = [*GPT_3_5_ALL, *GPT_4_ALL]
 
     GPT_3_5_MAX_TOKENS = 4_096
     GPT_4_MAX_TOKENS = 8_192
@@ -81,7 +81,7 @@ class OpenAIHelper:
 
     def _post_request(self, key: str) -> requests.Response:
         logger.info("POSTing request to openai API")
-        messages = self.payload
+        messages = self._payload
 
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
@@ -89,8 +89,8 @@ class OpenAIHelper:
             "Authorization": "Bearer " + key,
         }
         request_body = {
-            "model": self.model,
-            "stream": self.stream,
+            "model": self._model,
+            "stream": self._stream,
             "messages": messages,
         }
 
@@ -147,15 +147,3 @@ class OpenAIHelper:
             response = None
 
         return response
-
-    @property
-    def model(self) -> str:
-        return self._model
-
-    @property
-    def payload(self) -> List[Dict]:
-        return self._payload
-
-    @property
-    def stream(self) -> bool:
-        return self._stream

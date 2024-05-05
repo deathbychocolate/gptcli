@@ -15,7 +15,7 @@ from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAIHelper
 from gptcli.src.decorators import user_triggered_abort
-from gptcli.src.ingest import Text, PDF
+from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
 
 logger = logging.getLogger(__name__)
@@ -96,21 +96,34 @@ class ChatOpenai(Chat):
         logger.info("Starting chat")
 
         # check if we should add file content to message
-        if self.filepath is not None and len(self.filepath) > 0:
-            self._print_gptcli_message(f"Loading '{self.filepath}' content as context.")
-            message = Message(role=self.role_user, content="")
-            if Text.is_text(filepath=self.filepath):
-                message = Message(role=self.role_user, content=Text(filepath=self.filepath).extract_text())
-            elif PDF.is_pdf(filepath=self.filepath):
-                message = Message(role=self.role_user, content=PDF(filepath=self.filepath).extract_text())
-            self.messages.add_message(message)
+        if self._filepath is not None and len(self._filepath) > 0:
+
+            self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
+
+            message: Message = None
+            if Text.is_text(filepath=self._filepath):
+                message = MessageFactory.create_user_message(
+                    role=self._role_user,
+                    content=Text(filepath=self._filepath).extract_text(),
+                    model=self._model,
+                )
+            elif PDF.is_pdf(filepath=self._filepath):
+                message = MessageFactory.create_user_message(
+                    role=self._role_user,
+                    content=PDF(filepath=self._filepath).extract_text(),
+                    model=self._model,
+                )
+            else:
+                message = MessageFactory.create_user_message(role=self._role_user, content="", model=self._user)
+
+            self._messages.add_message(message)
 
         # in chat commands
         exit_commands = set(["exit", "q"])
 
         # commence chat loop
         while True:
-            user_input = self.prompt(">>> [MESSAGE]: ")
+            user_input = self.prompt(f">>> [MESSAGE, tokens={self._messages.tokens}]: ")
             if len(user_input) == 0:
                 continue
             elif user_input in exit_commands:
@@ -121,7 +134,7 @@ class ChatOpenai(Chat):
                 self._add_user_input_to_messages(user_input)
                 response = self._send_messages()
                 self._add_reply_to_messages(response)
-                self.messages = Messages() if self.context is False else self.messages
+                self._messages = Messages() if self._context is False else self._messages
 
     def _check_for_multiline_input(self, user_input: str) -> str:
 
@@ -141,16 +154,17 @@ class ChatOpenai(Chat):
         return user_input
 
     def _add_user_input_to_messages(self, user_input) -> None:
-        message = MessageFactory.create_message(role=self.role_user, content=user_input)
-        self.messages.add_message(message)
+        message = MessageFactory.create_user_message(role=self._role_user, content=user_input, model=self._model)
+        self._messages.add_message(message)
 
     def _send_messages(self) -> Response:
-        response = OpenAIHelper(self._model, payload=self.messages.messages, stream=self.stream).send()
+        payload: List[Dict] = [message.to_dictionary_reduced_context() for message in self._messages.messages]
+        response = OpenAIHelper(self._model, payload=payload, stream=self._stream).send()
         return response
 
     def _add_reply_to_messages(self, response) -> None:
-        message = self._reply(response, stream=self.stream)
-        self.messages.add_message(message)
+        message = self._reply(response, stream=self._stream)
+        self._messages.add_message(message)
 
     def _reply(self, response: Response, stream: bool) -> Message:
         logger.info("Selecting reply mode")
@@ -187,7 +201,7 @@ class ChatOpenai(Chat):
             print("")
             self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
 
-        message = MessageFactory.create_message(role=self.role_model, content=payload)
+        message = MessageFactory.create_reply_message(role=self._role_model, content=payload, model=self._model)
 
         return message
 
@@ -196,45 +210,11 @@ class ChatOpenai(Chat):
         content = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(content)
 
-        message = MessageFactory.create_message(role=self.role_model, content=content)
+        message = MessageFactory.create_reply_message(role=self._role_model, content=content, model=self._model)
 
         return message
 
     def _print_reply(self, text: str, end="\n") -> None:
         logger.info("Printing reply")
-        reply = "".join([f">>> [REPLY, model={self.model}]: ", text])
+        reply = "".join([f">>> [REPLY, model={self._model}, tokens={self._messages.tokens}]: ", text])
         print(reply, end=end)
-
-    @property
-    def model(self) -> str:
-        return self._model
-
-    @property
-    def stream(self) -> bool:
-        return self._stream
-
-    @property
-    def messages(self) -> List[Dict]:
-        return self._messages
-
-    @property
-    def context(self) -> str:
-        return self._context
-
-    @property
-    def filepath(self) -> str:
-        return self._filepath
-
-    @property
-    def role_user(self):
-        return self._role_user
-
-    @property
-    def role_model(self):
-        return self._role_model
-
-    @messages.setter
-    def messages(self, value):
-        if not isinstance(value, Messages):
-            raise ValueError("Was expecting type Messages")
-        self._messages = value
