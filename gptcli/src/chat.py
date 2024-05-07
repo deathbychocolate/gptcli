@@ -123,7 +123,7 @@ class ChatOpenai(Chat):
 
         # commence chat loop
         while True:
-            user_input = self.prompt(f">>> [MESSAGE, tokens={self._messages.tokens}]: ")
+            user_input = self.prompt(">>> [MESSAGE]: ")
             if len(user_input) == 0:
                 continue
             elif user_input in exit_commands:
@@ -216,5 +216,5 @@ class ChatOpenai(Chat):
 
     def _print_reply(self, text: str, end="\n") -> None:
         logger.info("Printing reply")
-        reply = "".join([f">>> [REPLY, model={self._model}, tokens={self._messages.tokens}]: ", text])
+        reply = "".join([f">>> [REPLY, model={self._model}]: ", text])
         print(reply, end=end)
