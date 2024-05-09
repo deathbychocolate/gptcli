@@ -1,3 +1,20 @@
+## 0.12.0 (2024-05-09)
+
+### Feat
+
+- **chat**: Improve multiline and single line messages.
+- **message**: Expand Message functionality.
+- **project**: Completely revamp how Message and Messages work. Add minor improvements to File tpye checks. Remove unnecessary property variables from classes as they can be confusing when using them in the same class.
+
+### Fix
+
+- **message**: Remove what can be considered dead code.
+- **chat**: Remove live token count from chat as it is too computationally expensive (slow).
+
+### Refactor
+
+- **project**: Remove unused profiles file.
+
 ## 0.11.0 (2024-05-03)
 
 ### Refactor
