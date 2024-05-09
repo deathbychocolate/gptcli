@@ -4,6 +4,7 @@ TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website
 """
 
+import os
 import json
 import logging
 import readline
@@ -120,36 +121,45 @@ class ChatOpenai(Chat):
 
         # in chat commands
         exit_commands = set(["exit", "q"])
+        clear_screen_commands = set(["clear", "cls"])
 
         # commence chat loop
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
-            if len(user_input) == 0:
+            if user_input == '"""':
+                user_input = self._scan_multiline_input()
+                if len(user_input) == 0 or user_input.isspace():
+                    continue
+                else:
+                    self._process_user_and_reply_messages(user_input)
+                    continue
+            elif len(user_input) == 0 or user_input.isspace():
                 continue
             elif user_input in exit_commands:
                 self._print_gptcli_message("Bye!")
                 break
+            elif user_input in clear_screen_commands:
+                os.system("cls" if os.name == "nt" else "clear")
+                continue
             else:
-                user_input = self._check_for_multiline_input(user_input)
-                self._add_user_input_to_messages(user_input)
-                response = self._send_messages()
-                self._add_reply_to_messages(response)
-                self._messages = Messages() if self._context is False else self._messages
+                self._process_user_and_reply_messages(user_input)
+                continue
 
-    def _check_for_multiline_input(self, user_input: str) -> str:
+    def _process_user_and_reply_messages(self, user_input: str) -> None:
+        self._add_user_input_to_messages(user_input)
+        response = self._send_messages()
+        self._add_reply_to_messages(response)
+        self._messages = Messages() if self._context is False else self._messages
 
-        if user_input == '"""':
-            user_input_multiline: List[str] = list()
+    def _scan_multiline_input(self) -> str:
+        user_input_multiline: List[str] = list()
+        user_input_single_line = str(input("... "))
+
+        while user_input_single_line != '"""':
+            user_input_multiline.append(user_input_single_line)
             user_input_single_line = str(input("... "))
 
-            while user_input_single_line != '"""':
-                user_input_multiline.append(user_input_single_line)
-                user_input_single_line = str(input("... "))
-
-            user_input = "\n".join(user_input_multiline)
-
-        else:
-            return user_input
+        user_input = "\n".join(user_input_multiline)
 
         return user_input
 
