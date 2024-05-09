@@ -1,7 +1,7 @@
 """Will handle messages to and from Openai's API"""
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import tiktoken
 
@@ -12,16 +12,16 @@ logger = logging.getLogger(__name__)
 
 class Message:
     """A message can be created by a user or by an API.
-    The idea is we need a blueprint to express the message
-    contents and metadata to, among other things, count tokens,
+    Message serves as a blueprint to express the message
+    contents and metadata to (among other things) count tokens,
     store the message locally as a dictionary/JSON object etc.
 
     Attributes:
-        role (str): The role of the message.
-        content (str): The content of the message.
+        role (str): The role of the entity who created the message (ie: user or assistant [usually])
+        content (str): The content of the message that is meant to be read by the LLM.
         model (str): The LLM model requested for this message.
-        is_reply (bool): False if it is a message sent by the user, and False if it is sent by the external API
-        tokens (int): The token count estimated that will be needed to read this message by the OpenAI API.
+        is_reply (bool): False if it is a message sent by the user, and False if it is sent by the external LLM.
+        tokens (int): The token count estimated that will be needed to read this message by the LLM.
 
     Methods:
         number_of_tokens_from_message:
@@ -53,7 +53,7 @@ class Message:
         """
 
         logger.info("Counting tokens for message")
-        supported_models = set([*(OpenAIHelper.GPT_3_5_ALL), *(OpenAIHelper.GPT_4_ALL)])
+        supported_models: Set[str] = set([*(OpenAIHelper.GPT_3_5_ALL), *(OpenAIHelper.GPT_4_ALL)])
         if self._model not in supported_models:
             raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
         else:
@@ -109,33 +109,33 @@ class Message:
 
 
 class MessageFactory:
-    """A factory for creating messages"""
+    """A factory for creating messages."""
 
     @staticmethod
     def create_user_message(role: str, content: str, model: str) -> Message:
-        """Creates a message, you may specify the role and the content
+        """Creates a message, you may specify the role and the content.
 
         Args:
-            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc)
-            content (str): The content of the message body
-            model (str): The LLM used for this message
+            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc).
+            content (str): The content of the message body.
+            model (str): The LLM used for this message.
 
         Returns:
-            Message: A Message object specially suited for user generated messages
+            Message: A Message object specially suited for user generated messages.
         """
         return Message(role=role, content=content, model=model, is_reply=False)
 
     @staticmethod
     def create_reply_message(role: str, content: str, model: str) -> Message:
-        """Creates a message, you may specify the role and the content
+        """Creates a message, you may specify the role and the content.
 
         Args:
-            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc)
-            content (str): The content of the message body
-            model (str): The LLM used for this message
+            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc).
+            content (str): The content of the message body.
+            model (str): The LLM used for this message.
 
         Returns:
-            Message: A Message object specially suited for user generated messages
+            Message: A Message object specially suited for user generated messages.
         """
         return Message(role=role, content=content, model=model, is_reply=True)
 
@@ -147,8 +147,8 @@ class Messages:
     that are not offered by Python dicitionaries or lists.
     """
 
-    def __init__(self) -> None:
-        self._messages: List[Message] = list()
+    def __init__(self, messages: List[Message] | None = None) -> None:
+        self._messages: List[Message] = messages if messages is not None else list()
         self._tokens = self._count_tokens()
 
     def add_message(self, message: Message) -> None:
@@ -157,17 +157,20 @@ class Messages:
         Args:
             message (Message): A simple Message object.
         """
-        logger.info("Adding message %s to messages.", message.to_dictionary_reduced_context())
+        logger.info("Adding Message object to Messages object.")
         if message is None:
-            logger.warning("Tried to add message of class NoneType")
-            logger.warning("Skipping message")
+            logger.warning("Tried to add message of class NoneType.")
+            logger.warning("Skipping message.")
         else:
             self._messages.append(message)
             self._tokens += message.tokens
 
-    def _count_tokens(self) -> None:
+    def __len__(self) -> int:
+        return len(self._messages)
+
+    def _count_tokens(self) -> int:
         logger.info("Counting total number of used in messages.")
-        count = 0
+        count: int = 0
         for message in self.messages:
             count = count + message.tokens
         return count
