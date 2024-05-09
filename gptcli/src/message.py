@@ -57,13 +57,7 @@ class Message:
         if self._model not in supported_models:
             raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
         else:
-            try:
-                encoding = tiktoken.encoding_for_model(self._model)
-            except KeyError as exception:
-                logger.info("It seems the encoding for '%s' was not found. Switching to 'cl100k_base'.", self._model)
-                logger.exception(exception)
-                encoding = tiktoken.get_encoding("cl100k_base")
-
+            encoding = tiktoken.encoding_for_model(self._model)
             num_tokens: int = 0
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             num_tokens += len(encoding.encode(self._content))
