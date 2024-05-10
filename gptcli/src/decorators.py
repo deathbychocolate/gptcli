@@ -14,13 +14,31 @@ def user_triggered_abort(function):
             return function(*args, **kwargs)
         except KeyboardInterrupt as exception:
             print()
-            logger.info("'KeyboardInterrupt' detected, exiting program")
+            logger.info("'KeyboardInterrupt' detected, exiting program.")
             logger.exception(exception)
             sys.exit()
         except EOFError as exception:
             print()
-            logger.info("'EOFError' detected, exiting program")
+            logger.info("'EOFError' detected, exiting program.")
             logger.exception(exception)
             sys.exit()
+
+    return decorator
+
+
+def allow_graceful_chat_exit(function):
+
+    def decorator(*args, **kwargs):
+        logger.info("Calling '%s', with args '%s', and kwargs '%s'", function.__qualname__, args, kwargs)
+        try:
+            return function(*args, **kwargs)
+        except KeyboardInterrupt as exception:
+            print()
+            logger.info("'KeyboardInterrupt' detected, exiting chat.")
+            logger.exception(exception)
+        except EOFError as exception:
+            print()
+            logger.info("'EOFError' detected, exiting chat.")
+            logger.exception(exception)
 
     return decorator

@@ -15,7 +15,7 @@ from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.api_helper import OpenAiHelper
-from gptcli.src.decorators import user_triggered_abort
+from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
 
@@ -175,6 +175,7 @@ class ChatOpenai(Chat):
         message = self._reply(response, stream=self._stream)
         self._messages.add_message(message)
 
+    @allow_graceful_chat_exit
     def _reply(self, response: Response, stream: bool) -> Message:
         logger.info("Selecting reply mode")
         message: Message = None
