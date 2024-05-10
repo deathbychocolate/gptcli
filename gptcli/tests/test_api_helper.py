@@ -12,7 +12,7 @@ class TestOpenAiHelper:
 
     @pytest.fixture(scope="session")
     def setup_teardown(self):
-        message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model="gpt-4")
+        message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model="gpt-4-turbo")
         messages: Messages = Messages(messages=[message])
         helper = OpenAiHelper(model="gpt-3.5-turbo", messages=messages, stream=False)
         yield helper
