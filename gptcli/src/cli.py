@@ -49,8 +49,8 @@ class CommandLineInterface:
             "--model",
             type=str,
             choices=openai.values(),
-            default=openai["GPT_3_5"],
-            help=f"Defaults to {openai['GPT_3_5']}. The model to use.",
+            default=openai["GPT_4_TURBO"],
+            help=f"Defaults to {openai['GPT_4_TURBO']}. The model to use.",
         )
         self.parser.add_argument(
             "--key",
