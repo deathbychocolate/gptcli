@@ -35,9 +35,8 @@ class OpenAiHelper:
         :return: The response string from openai
         """
         logger.info("Sending message to openai")
-        self._set_api_key()
-
-        key = os.environ["OPENAI_API_KEY"]
+        self._export_api_key_to_environment_variable()
+        key: str = os.environ["OPENAI_API_KEY"]
         response = self._post_request(key=key)
 
         return response
@@ -54,7 +53,7 @@ class OpenAiHelper:
 
         return is_valid
 
-    def _set_api_key(self) -> None:
+    def _export_api_key_to_environment_variable(self) -> None:
         if "OPENAI_API_KEY" not in os.environ:
             logger.info("Exporting API key to environment variable")
 
