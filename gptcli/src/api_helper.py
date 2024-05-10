@@ -9,39 +9,25 @@ from typing import Dict, List
 import requests
 from requests.exceptions import ReadTimeout
 
+from gptcli.src.message import Messages
+
 logger = logging.getLogger(__name__)
 
 
 class OpenAIHelper:
     """A helper for OpenAI's API
-    
+
     It includes information and tools specifically for interacting with OpenAI's API.
     """
-
-    # see here: https://platform.openai.com/docs/models/
-    GPT_3_5 = "gpt-3.5-turbo"
-    GPT_3_5_301 = "gpt-3.5-turbo-0301"
-    GPT_3_5_16K = "gpt-3.5-turbo-16k"
-    GPT_3_5_ALL = [GPT_3_5, GPT_3_5_301, GPT_3_5_16K]
-
-    GPT_4 = "gpt-4"
-    GPT_4_32K = "gpt-4-32k"
-    GPT_4_0314 = "gpt-4-0314"
-    GPT_4_32K_0314 = "gpt-4-32k-0314"
-    GPT_4_ALL = [GPT_4, GPT_4_32K, GPT_4_0314, GPT_4_32K_0314]
-
-    GPT_DEFAULT = GPT_3_5
-
-    GPT_ALL = [*GPT_3_5_ALL, *GPT_4_ALL]
 
     GPT_3_5_MAX_TOKENS = 4_096
     GPT_4_MAX_TOKENS = 8_192
     GPT_4_32K_MAX_TOKENS = 32_768
 
-    def __init__(self, model: str, payload: List[Dict], stream=False):
-        self._model = model
-        self._payload = payload
-        self._stream = stream
+    def __init__(self, model: str, messages: Messages, stream=False):
+        self._model: str = model
+        self._messages: List[Dict] = [message.to_dictionary_reduced_context() for message in messages.messages]
+        self._stream: bool = stream
 
     def send(self) -> requests.Response:
         """Sends message(s) to openai
@@ -56,11 +42,11 @@ class OpenAIHelper:
 
         return response
 
-    def is_valid_api_key(self, key) -> bool:
+    def is_valid_api_key(self, key: str) -> bool:
         """Sends a POST request to the Openai API.
         We expect a return of True if we have a valid key and false if not.
         """
-        response = self._post_request(key=key)
+        response: requests.Response = self._post_request(key=key)
         if response is None:
             return False
         else:
@@ -79,9 +65,8 @@ class OpenAIHelper:
         else:
             logger.info("API key already in environment variable")
 
-    def _post_request(self, key: str) -> requests.Response:
+    def _post_request(self, key: str) -> requests.Response | None:
         logger.info("POSTing request to openai API")
-        messages = self._payload
 
         request_url = "https://api.openai.com/v1/chat/completions"
         request_headers = {
@@ -91,7 +76,7 @@ class OpenAIHelper:
         request_body = {
             "model": self._model,
             "stream": self._stream,
-            "messages": messages,
+            "messages": self._messages,
         }
 
         response = None  # return None rather than uninitiated variable

@@ -8,7 +8,7 @@ import os
 import json
 import logging
 import readline
-from typing import Dict, List
+from typing import List
 
 import sseclient
 from requests import Response
@@ -168,8 +168,7 @@ class ChatOpenai(Chat):
         self._messages.add_message(message)
 
     def _send_messages(self) -> Response:
-        payload: List[Dict] = [message.to_dictionary_reduced_context() for message in self._messages.messages]
-        response = OpenAIHelper(self._model, payload=payload, stream=self._stream).send()
+        response = OpenAIHelper(self._model, messages=self._messages, stream=self._stream).send()
         return response
 
     def _add_reply_to_messages(self, response) -> None:

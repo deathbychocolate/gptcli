@@ -106,10 +106,10 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai API key is valid")
-        messages = Messages()
         message = MessageFactory.create_user_message(role="user", content="Hi!", model=OpenAIHelper.GPT_3_5)
+        messages = Messages()
         messages.add_message(message)
-        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, payload=messages.messages).is_valid_api_key(key)
+        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, messages=messages.messages).is_valid_api_key(key)
 
         return is_valid
 

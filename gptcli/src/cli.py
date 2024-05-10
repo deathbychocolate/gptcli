@@ -5,7 +5,7 @@ import argparse
 import logging
 
 from gptcli._version import __version__
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.supported_models import openai
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,9 @@ class CommandLineInterface:
         self.parser.add_argument(
             "--model",
             type=str,
-            choices=OpenAIHelper.GPT_ALL,
-            default=OpenAIHelper.GPT_DEFAULT,
-            help=f"Defaults to {OpenAIHelper.GPT_DEFAULT}. The model to use.",
+            choices=openai.values(),
+            default=openai["GPT_3_5"],
+            help=f"Defaults to {openai['GPT_3_5']}. The model to use.",
         )
         self.parser.add_argument(
             "--key",

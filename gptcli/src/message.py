@@ -1,11 +1,11 @@
 """Will handle messages to and from Openai's API"""
 
 import logging
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import tiktoken
 
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.supported_models import openai
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +53,7 @@ class Message:
         """
 
         logger.info("Counting tokens for message")
-        supported_models: Set[str] = set([*(OpenAIHelper.GPT_3_5_ALL), *(OpenAIHelper.GPT_4_ALL)])
-        if self._model not in supported_models:
+        if self._model not in openai.values():
             raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
         else:
             encoding = tiktoken.encoding_for_model(self._model)
