@@ -1,7 +1,6 @@
 """Holds the tests for api_helper.py"""
 
 import pytest
-
 import requests
 
 from gptcli.src.api_helper import OpenAiHelper

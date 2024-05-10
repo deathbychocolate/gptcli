@@ -4,9 +4,9 @@ TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website
 """
 
-import os
 import json
 import logging
+import os
 import readline
 from typing import List
 
