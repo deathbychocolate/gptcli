@@ -14,7 +14,7 @@ from gptcli.src.message import Messages
 logger = logging.getLogger(__name__)
 
 
-class OpenAIHelper:
+class OpenAiHelper:
     """A helper for OpenAI's API
 
     It includes information and tools specifically for interacting with OpenAI's API.

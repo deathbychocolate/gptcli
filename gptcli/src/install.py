@@ -4,7 +4,7 @@ Use this to install or configure the local machine environment
 import logging
 import os
 
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
 from gptcli.src.message import MessageFactory, Messages
 
@@ -106,10 +106,10 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai API key is valid")
-        message = MessageFactory.create_user_message(role="user", content="Hi!", model=OpenAIHelper.GPT_3_5)
+        message = MessageFactory.create_user_message(role="user", content="Hi!", model=OpenAiHelper.GPT_3_5)
         messages = Messages()
         messages.add_message(message)
-        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, messages=messages.messages).is_valid_api_key(key)
+        is_valid = OpenAiHelper(model=OpenAiHelper.GPT_3_5, messages=messages.messages).is_valid_api_key(key)
 
         return is_valid
 

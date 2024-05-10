@@ -14,7 +14,7 @@ import sseclient
 from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.decorators import user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
@@ -168,7 +168,7 @@ class ChatOpenai(Chat):
         self._messages.add_message(message)
 
     def _send_messages(self) -> Response:
-        response = OpenAIHelper(self._model, messages=self._messages, stream=self._stream).send()
+        response = OpenAiHelper(self._model, messages=self._messages, stream=self._stream).send()
         return response
 
     def _add_reply_to_messages(self, response) -> None:
