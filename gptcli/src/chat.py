@@ -128,25 +128,27 @@ class ChatOpenai(Chat):
 
     def _extract_file_content_to_message(self) -> None:
         logger.info("Extracting file content from '%s' to add to message.", self._filepath)
+
         self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
-        message: Message = None
 
+        # check if file exists and is supported
+        content: str = ""
         if Text.is_text(filepath=self._filepath):
-            message = MessageFactory.create_user_message(
-                role=self._role_user,
-                content=Text(filepath=self._filepath).extract_text(),
-                model=self._model,
-            )
+            content = Text(filepath=self._filepath).extract_text()
         elif PDF.is_pdf(filepath=self._filepath):
-            message = MessageFactory.create_user_message(
+            content = PDF(filepath=self._filepath).extract_text()
+        else:
+            self._print_gptcli_message("File not supported or does not exist.")
+            self._print_gptcli_message(f"Make sure the filepath you provided is correct: '{self._filepath}'")
+
+        # add content to message for context if content is populated with text
+        if len(content) > 0 and not content.isspace():
+            message: Message = MessageFactory.create_user_message(
                 role=self._role_user,
-                content=PDF(filepath=self._filepath).extract_text(),
+                content=content,
                 model=self._model,
             )
-        else:
-            message = MessageFactory.create_user_message(role=self._role_user, content="", model=self._user)
-
-        self._messages.add_message(message)
+            self._messages.add_message(message)
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
