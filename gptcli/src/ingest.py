@@ -65,7 +65,7 @@ class Text(File):
         Returns:
             bool: True if it is a text file and False otherwise
         """
-        logger.info("Checking if %s is indeed a text file.", filepath)
+        logger.info("Checking if '%s' is indeed a TXT file.", filepath)
 
         is_text = False
         if os.path.exists(filepath) and os.path.isfile(filepath):
@@ -111,7 +111,7 @@ class PDF(File):
         Returns:
             bool: True if it is a PDF | False if it is not a PDF | False if it is not supported
         """
-        logger.info("Checking if '%s' is indeed a text file.", filepath)
+        logger.info("Checking if '%s' is indeed a PDF file.", filepath)
 
         is_pdf = False
         if os.path.exists(filepath) and os.path.isfile(filepath):
