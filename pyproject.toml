@@ -8,6 +8,9 @@ line-length = 120
 [tool.isort]
 line_length = 120
 
+[tool.mypy]
+ignore_missing_imports = true
+
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "$version"

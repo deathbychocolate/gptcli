@@ -2,8 +2,9 @@
 
 import logging
 import sys
+from logging import Logger
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 def user_triggered_abort(function):

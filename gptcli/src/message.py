@@ -1,13 +1,14 @@
 """Will handle messages to and from Openai's API"""
 
 import logging
-from typing import Dict, List
+from logging import Logger
 
 import tiktoken
+from tiktoken import Encoding
 
 from gptcli.src.supported_models import openai
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class Message:
@@ -56,7 +57,7 @@ class Message:
         if self._model not in openai.values():
             raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
         else:
-            encoding = tiktoken.encoding_for_model(self._model)
+            encoding: Encoding = tiktoken.encoding_for_model(self._model)
             num_tokens: int = 0
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             num_tokens += len(encoding.encode(self._content))
@@ -140,8 +141,8 @@ class Messages:
     that are not offered by Python dicitionaries or lists.
     """
 
-    def __init__(self, messages: List[Message] | None = None) -> None:
-        self._messages: List[Message] = messages if messages is not None else list()
+    def __init__(self, messages: list[Message] | None = None) -> None:
+        self._messages: list[Message] = messages if messages is not None else list()
         self._tokens = self._count_tokens()
 
     def add_message(self, message: Message) -> None:
@@ -164,12 +165,12 @@ class Messages:
     def _count_tokens(self) -> int:
         logger.info("Counting total number of used in messages.")
         count: int = 0
-        for message in self.messages:
+        for message in self._messages:
             count = count + message.tokens
         return count
 
     @property
-    def messages(self) -> List[Dict]:
+    def messages(self) -> list[Message]:
         return self._messages
 
     @property

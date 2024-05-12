@@ -4,14 +4,16 @@ import json
 import logging
 import os
 from http import HTTPStatus
-from typing import Dict, List
+from logging import Logger
+from typing import Union
 
 import requests
+from requests import Response
 from requests.exceptions import ReadTimeout
 
 from gptcli.src.message import Messages
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class OpenAiHelper:
@@ -26,10 +28,10 @@ class OpenAiHelper:
 
     def __init__(self, model: str, messages: Messages, stream=False):
         self._model: str = model
-        self._messages: List[Dict] = [message.to_dictionary_reduced_context() for message in messages.messages]
+        self._messages: list[dict] = [message.to_dictionary_reduced_context() for message in messages.messages]
         self._stream: bool = stream
 
-    def send(self) -> requests.Response:
+    def send(self) -> Union[Response | None]:
         """Sends message(s) to openai
 
         :return: The response string from openai
@@ -37,7 +39,7 @@ class OpenAiHelper:
         logger.info("Sending message to openai")
         self._export_api_key_to_environment_variable()
         key: str = os.environ["OPENAI_API_KEY"]
-        response = self._post_request(key=key)
+        response: Response = self._post_request(key=key)
 
         return response
 
@@ -45,7 +47,7 @@ class OpenAiHelper:
         """Sends a POST request to the Openai API.
         We expect a return of True if we have a valid key and false if not.
         """
-        response: requests.Response = self._post_request(key=key)
+        response: Union[Response | None] = self._post_request(key=key)
         if response is None:
             return False
         else:
@@ -64,7 +66,7 @@ class OpenAiHelper:
         else:
             logger.info("API key already in environment variable")
 
-    def _post_request(self, key: str) -> requests.Response | None:
+    def _post_request(self, key: str) -> Response | None:
         logger.info("POSTing request to openai API")
 
         request_url = "https://api.openai.com/v1/chat/completions"
@@ -78,9 +80,9 @@ class OpenAiHelper:
             "messages": self._messages,
         }
 
-        response = None  # return None rather than uninitiated variable
+        response: Union[Response | None] = None  # return None rather than uninitiated variable
         try:
-            response = requests.post(
+            response: Response = requests.post(
                 request_url,
                 headers=request_headers,
                 stream=self._stream,
@@ -99,7 +101,7 @@ class OpenAiHelper:
 
         # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
         if response is not None:  # response retrieved
-            code = response.status_code
+            code: int = response.status_code
             if code >= 400:
                 match code:
                     case HTTPStatus.UNAUTHORIZED.value:  # 401

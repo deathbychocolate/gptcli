@@ -18,6 +18,10 @@ filetype = "~=1.2.0"
 pytest = "*"
 commitizen = "*"
 pytest-cov = "*"
+mypy = "*"  # make sure to also install types: mypy --install-types
+pylint = "*"
+black = "*"
+isort = "*"
 
 [requires]
 python_version = "3.11"

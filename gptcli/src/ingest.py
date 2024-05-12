@@ -6,11 +6,12 @@ import logging
 import mimetypes
 import os
 from abc import ABC, abstractmethod
+from logging import Logger
 
 import filetype
 from pypdf import PdfReader
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class File(ABC):
@@ -48,7 +49,7 @@ class Text(File):
         """
         logger.info("Extracting text from Text file '%s'.", self.filepath)
 
-        text = ""
+        text: str = ""
         if self._exists() and self._is_file():
             with open(self.filepath, "r", encoding="utf8") as filepointer:
                 text = filepointer.read()
@@ -94,7 +95,7 @@ class PDF(File):
         """
         logger.info("Extracting text from PDF file '%s'.", self.filepath)
 
-        text = ""
+        text: str = ""
         if self._exists() and self._is_file():
             reader = PdfReader(self.filepath)
             text = " ".join([page.extract_text() for page in reader.pages])

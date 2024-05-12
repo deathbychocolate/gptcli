@@ -8,7 +8,8 @@ import json
 import logging
 import os
 import readline
-from typing import List
+from logging import Logger
+from typing import Union
 
 import sseclient
 from requests import Response
@@ -19,7 +20,7 @@ from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class Chat:
@@ -47,13 +48,13 @@ class Chat:
     @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:
         """Prompt user with specified text"""
-        user_input = str(input(prompt_text))
+        user_input: str = str(input(prompt_text))
 
         return user_input
 
     def _print_gptcli_message(self, text: str) -> None:
         logger.info("Printing gptcli message")
-        message = "".join([">>> [GPTCLI]: ", text])
+        message: str = "".join([">>> [GPTCLI]: ", text])
         print(message)
 
 
@@ -152,12 +153,12 @@ class ChatOpenai(Chat):
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
-        response = self._send_messages()
+        response: Response = self._send_messages()
         self._add_reply_to_messages(response)
         self._messages = Messages() if self._context is False else self._messages
 
     def _scan_multiline_input(self) -> str:
-        user_input_multiline: List[str] = list()
+        user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
 
         while user_input_single_line != '"""':
@@ -169,21 +170,29 @@ class ChatOpenai(Chat):
         return user_input
 
     def _add_user_input_to_messages(self, user_input) -> None:
-        message = MessageFactory.create_user_message(role=self._role_user, content=user_input, model=self._model)
+        message: Message = MessageFactory.create_user_message(
+            role=self._role_user,
+            content=user_input,
+            model=self._model,
+        )
         self._messages.add_message(message)
 
-    def _send_messages(self) -> Response:
-        response = OpenAiHelper(self._model, messages=self._messages, stream=self._stream).send()
+    def _send_messages(self) -> Union[Response | None]:
+        response: Union[Response | None] = OpenAiHelper(
+            self._model,
+            messages=self._messages,
+            stream=self._stream,
+        ).send()
         return response
 
     def _add_reply_to_messages(self, response) -> None:
-        message = self._reply(response, stream=self._stream)
+        message: Union[Message | None] = self._reply(response, stream=self._stream)
         self._messages.add_message(message)
 
     @allow_graceful_chat_exit
-    def _reply(self, response: Response, stream: bool) -> Message:
+    def _reply(self, response: Response, stream: bool) -> Union[Message | None]:
         logger.info("Selecting reply mode")
-        message: Message = None
+        message: Union[Message | None] = None
         if response is None:
             self._print_none()
         else:
@@ -200,7 +209,7 @@ class ChatOpenai(Chat):
 
     def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
-        payload = ""
+        payload: str = ""
         try:
             self._print_reply("", end="")
             client = sseclient.SSEClient(response)
@@ -216,20 +225,28 @@ class ChatOpenai(Chat):
             print("")
             self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
 
-        message = MessageFactory.create_reply_message(role=self._role_model, content=payload, model=self._model)
+        message: Message = MessageFactory.create_reply_message(
+            role=self._role_model,
+            content=payload,
+            model=self._model,
+        )
 
         return message
 
     def _print_simple(self, response: Response) -> Message:
         logger.info("Reply mode -> Simple")
-        content = json.loads(response.content)["choices"][0]["message"]["content"]
+        content: str = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(content)
 
-        message = MessageFactory.create_reply_message(role=self._role_model, content=content, model=self._model)
+        message: Message = MessageFactory.create_reply_message(
+            role=self._role_model,
+            content=content,
+            model=self._model,
+        )
 
         return message
 
     def _print_reply(self, text: str, end="\n") -> None:
         logger.info("Printing reply")
-        reply = "".join([f">>> [REPLY, model={self._model}]: ", text])
+        reply: str = "".join([f">>> [REPLY, model={self._model}]: ", text])
         print(reply, end=end)

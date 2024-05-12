@@ -3,11 +3,12 @@
 
 import argparse
 import logging
+from logging import Logger
 
 from gptcli._version import __version__
 from gptcli.src.supported_models import openai
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class CommandLineInterface:
