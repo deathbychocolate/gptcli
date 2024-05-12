@@ -145,7 +145,7 @@ class Messages:
         self._messages: list[Message] = messages if messages is not None else list()
         self._tokens = self._count_tokens()
 
-    def add_message(self, message: Message) -> None:
+    def add_message(self, message: Message | None) -> None:
         """Add a Message object to Messages.
 
         Args:

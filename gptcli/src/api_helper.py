@@ -39,7 +39,7 @@ class OpenAiHelper:
         logger.info("Sending message to openai")
         self._export_api_key_to_environment_variable()
         key: str = os.environ["OPENAI_API_KEY"]
-        response: Response = self._post_request(key=key)
+        response: Union[Response | None] = self._post_request(key=key)
 
         return response
 
@@ -82,7 +82,7 @@ class OpenAiHelper:
 
         response: Union[Response | None] = None  # return None rather than uninitiated variable
         try:
-            response: Response = requests.post(
+            response = requests.post(
                 request_url,
                 headers=request_headers,
                 stream=self._stream,

@@ -79,13 +79,13 @@ class ChatOpenai(Chat):
     ):
         Chat.__init__(self)
 
-        self._model = model
-        self._role_user = role_user
-        self._role_model = role_model
-        self._context = True if context == "on" else False
-        self._stream = True if stream == "on" else False
-        self._filepath = filepath
-        self._messages = Messages()
+        self._model: str = model
+        self._role_user: str = role_user
+        self._role_model: str = role_model
+        self._context: bool = True if context == "on" else False
+        self._stream: bool = True if stream == "on" else False
+        self._filepath: str = filepath
+        self._messages: Messages = Messages()
 
     @user_triggered_abort
     def start(self) -> None:
@@ -153,7 +153,7 @@ class ChatOpenai(Chat):
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
-        response: Response = self._send_messages()
+        response: Union[Response | None] = self._send_messages()
         self._add_reply_to_messages(response)
         self._messages = Messages() if self._context is False else self._messages
 
