@@ -12,6 +12,11 @@
     - Make the project editable: `pip install --editable .`
     - Run `gptcli`
 
+# How do I run the tests?
+- Developers:
+    - Follow the `How do I run it?` above.
+    - Run the following command in the root of the project: `pytest --cov=gptcli/src/ --cov-report html --log-cli-level=ERROR`. This will generate a coverage report named htmlcov at the root of the project.
+
 # How does it work?
 The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a MESSAGE-REPLY thread. You as the user send a message and the AI model replies. Meaning you will see something like this in your terminal:
 ```text

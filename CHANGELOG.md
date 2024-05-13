@@ -1,3 +1,24 @@
+## 0.13.0 (2024-05-13)
+
+### Feat
+
+- **project**: Add support for gpt-4o.
+- **project**: Add variable and return types to project.
+- **project**: Add support for GPT4 turbo. Also adjust the name of the gpt-3.5-turbo.
+
+### Fix
+
+- **ingest**: Fix log messages when checking file type.
+
+### Refactor
+
+- **project**: Fix errors outputted by mypy.
+- **chat**: Refactor the context feature further.
+- **chat**: Extract large chuck of logic that checks for file content and adding it to message.
+- **api**: Make improvements by adding variable and renaming variables and add some initial tests.
+- **project**: Rename OpenAIHelper to OpenAiHelper.
+- **project**: Resolve circular import issues with message.py and api_helper.py.
+
 ## 0.12.0 (2024-05-09)
 
 ### Feat

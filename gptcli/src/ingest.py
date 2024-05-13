@@ -6,11 +6,12 @@ import logging
 import mimetypes
 import os
 from abc import ABC, abstractmethod
+from logging import Logger
 
 import filetype
 from pypdf import PdfReader
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class File(ABC):
@@ -48,7 +49,7 @@ class Text(File):
         """
         logger.info("Extracting text from Text file '%s'.", self.filepath)
 
-        text = ""
+        text: str = ""
         if self._exists() and self._is_file():
             with open(self.filepath, "r", encoding="utf8") as filepointer:
                 text = filepointer.read()
@@ -65,7 +66,7 @@ class Text(File):
         Returns:
             bool: True if it is a text file and False otherwise
         """
-        logger.info("Checking if %s is indeed a text file.", filepath)
+        logger.info("Checking if '%s' is indeed a TXT file.", filepath)
 
         is_text = False
         if os.path.exists(filepath) and os.path.isfile(filepath):
@@ -94,7 +95,7 @@ class PDF(File):
         """
         logger.info("Extracting text from PDF file '%s'.", self.filepath)
 
-        text = ""
+        text: str = ""
         if self._exists() and self._is_file():
             reader = PdfReader(self.filepath)
             text = " ".join([page.extract_text() for page in reader.pages])
@@ -111,7 +112,7 @@ class PDF(File):
         Returns:
             bool: True if it is a PDF | False if it is not a PDF | False if it is not supported
         """
-        logger.info("Checking if '%s' is indeed a text file.", filepath)
+        logger.info("Checking if '%s' is indeed a PDF file.", filepath)
 
         is_pdf = False
         if os.path.exists(filepath) and os.path.isfile(filepath):

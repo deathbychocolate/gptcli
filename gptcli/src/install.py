@@ -1,27 +1,30 @@
 """
 Use this to install or configure the local machine environment
 """
+
 import logging
 import os
+from logging import Logger
 
-from gptcli.src.api_helper import OpenAIHelper
+from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
-from gptcli.src.message import MessageFactory, Messages
+from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.src.supported_models import openai
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class Install:
     """Class to hold all the install tools for the local machine"""
 
     def __init__(self, openai_api_key="") -> None:
-        self.openai_api_key = openai_api_key
-        self.home_directory = os.path.expanduser("~")
-        self.gptcli_filepath = os.path.join(self.home_directory, ".gptcli")
-        self.install_successful_filepath = os.path.join(self.gptcli_filepath, ".install_successful")
-        self.messages_filepath = os.path.join(self.gptcli_filepath, "messages")
-        self.keys_filepath = os.path.join(self.gptcli_filepath, "keys")
-        self.openai_filepath = os.path.join(self.keys_filepath, "openai")
+        self.openai_api_key: str = openai_api_key
+        self.home_directory: str = os.path.expanduser("~")
+        self.gptcli_filepath: str = os.path.join(self.home_directory, ".gptcli")
+        self.install_successful_filepath: str = os.path.join(self.gptcli_filepath, ".install_successful")
+        self.messages_filepath: str = os.path.join(self.gptcli_filepath, "messages")
+        self.keys_filepath: str = os.path.join(self.gptcli_filepath, "keys")
+        self.openai_filepath: str = os.path.join(self.keys_filepath, "openai")
 
     def standard_install(self) -> None:
         """Performs standard install by creating local file directory with needed config files"""
@@ -65,7 +68,7 @@ class Install:
 
     def _setup_api_key(self) -> None:
         logger.info("Asking user for openai API key")
-        chat = ChatInstall()
+        chat: ChatInstall = ChatInstall()
         while True:
             self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
             if self._is_valid_openai_api_key(self.openai_api_key):
@@ -106,10 +109,10 @@ class Install:
 
     def _is_valid_openai_api_key(self, key: str) -> bool:
         logger.info("Checking if openai API key is valid")
-        messages = Messages()
-        message = MessageFactory.create_user_message(role="user", content="Hi!", model=OpenAIHelper.GPT_3_5)
+        message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model=openai["GPT_3_5_TURBO"])
+        messages: Messages = Messages()
         messages.add_message(message)
-        is_valid = OpenAIHelper(model=OpenAIHelper.GPT_3_5, payload=messages.messages).is_valid_api_key(key)
+        is_valid = OpenAiHelper(model=openai["GPT_3_5_TURBO"], messages=messages).is_valid_api_key(key)
 
         return is_valid
 

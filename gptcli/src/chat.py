@@ -4,22 +4,23 @@ TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website
 """
 
-import os
 import json
 import logging
+import os
 import readline
-from typing import Dict, List
+from logging import Logger
+from typing import Union
 
 import sseclient
 from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
-from gptcli.src.api_helper import OpenAIHelper
-from gptcli.src.decorators import user_triggered_abort
+from gptcli.src.api_helper import OpenAiHelper
+from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class Chat:
@@ -47,13 +48,13 @@ class Chat:
     @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:
         """Prompt user with specified text"""
-        user_input = str(input(prompt_text))
+        user_input: str = str(input(prompt_text))
 
         return user_input
 
     def _print_gptcli_message(self, text: str) -> None:
         logger.info("Printing gptcli message")
-        message = "".join([">>> [GPTCLI]: ", text])
+        message: str = "".join([">>> [GPTCLI]: ", text])
         print(message)
 
 
@@ -78,13 +79,13 @@ class ChatOpenai(Chat):
     ):
         Chat.__init__(self)
 
-        self._model = model
-        self._role_user = role_user
-        self._role_model = role_model
-        self._context = True if context == "on" else False
-        self._stream = True if stream == "on" else False
-        self._filepath = filepath
-        self._messages = Messages()
+        self._model: str = model
+        self._role_user: str = role_user
+        self._role_model: str = role_model
+        self._context: bool = True if context == "on" else False
+        self._stream: bool = True if stream == "on" else False
+        self._filepath: str = filepath
+        self._messages: Messages = Messages()
 
     @user_triggered_abort
     def start(self) -> None:
@@ -98,26 +99,7 @@ class ChatOpenai(Chat):
 
         # check if we should add file content to message
         if self._filepath is not None and len(self._filepath) > 0:
-
-            self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
-
-            message: Message = None
-            if Text.is_text(filepath=self._filepath):
-                message = MessageFactory.create_user_message(
-                    role=self._role_user,
-                    content=Text(filepath=self._filepath).extract_text(),
-                    model=self._model,
-                )
-            elif PDF.is_pdf(filepath=self._filepath):
-                message = MessageFactory.create_user_message(
-                    role=self._role_user,
-                    content=PDF(filepath=self._filepath).extract_text(),
-                    model=self._model,
-                )
-            else:
-                message = MessageFactory.create_user_message(role=self._role_user, content="", model=self._user)
-
-            self._messages.add_message(message)
+            self._extract_file_content_to_message()
 
         # in chat commands
         exit_commands = set(["exit", "q"])
@@ -145,14 +127,38 @@ class ChatOpenai(Chat):
                 self._process_user_and_reply_messages(user_input)
                 continue
 
+    def _extract_file_content_to_message(self) -> None:
+        logger.info("Extracting file content from '%s' to add to message.", self._filepath)
+
+        self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
+
+        # check if file exists and is supported
+        content: str = ""
+        if Text.is_text(filepath=self._filepath):
+            content = Text(filepath=self._filepath).extract_text()
+        elif PDF.is_pdf(filepath=self._filepath):
+            content = PDF(filepath=self._filepath).extract_text()
+        else:
+            self._print_gptcli_message("File not supported or does not exist.")
+            self._print_gptcli_message(f"Make sure the filepath you provided is correct: '{self._filepath}'")
+
+        # add content to message for context if content is populated with text
+        if len(content) > 0 and not content.isspace():
+            message: Message = MessageFactory.create_user_message(
+                role=self._role_user,
+                content=content,
+                model=self._model,
+            )
+            self._messages.add_message(message)
+
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
-        response = self._send_messages()
+        response: Union[Response | None] = self._send_messages()
         self._add_reply_to_messages(response)
         self._messages = Messages() if self._context is False else self._messages
 
     def _scan_multiline_input(self) -> str:
-        user_input_multiline: List[str] = list()
+        user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
 
         while user_input_single_line != '"""':
@@ -164,21 +170,29 @@ class ChatOpenai(Chat):
         return user_input
 
     def _add_user_input_to_messages(self, user_input) -> None:
-        message = MessageFactory.create_user_message(role=self._role_user, content=user_input, model=self._model)
+        message: Message = MessageFactory.create_user_message(
+            role=self._role_user,
+            content=user_input,
+            model=self._model,
+        )
         self._messages.add_message(message)
 
-    def _send_messages(self) -> Response:
-        payload: List[Dict] = [message.to_dictionary_reduced_context() for message in self._messages.messages]
-        response = OpenAIHelper(self._model, payload=payload, stream=self._stream).send()
+    def _send_messages(self) -> Union[Response | None]:
+        response: Union[Response | None] = OpenAiHelper(
+            self._model,
+            messages=self._messages,
+            stream=self._stream,
+        ).send()
         return response
 
     def _add_reply_to_messages(self, response) -> None:
-        message = self._reply(response, stream=self._stream)
+        message: Union[Message | None] = self._reply(response, stream=self._stream)
         self._messages.add_message(message)
 
-    def _reply(self, response: Response, stream: bool) -> Message:
+    @allow_graceful_chat_exit
+    def _reply(self, response: Response, stream: bool) -> Union[Message | None]:
         logger.info("Selecting reply mode")
-        message: Message = None
+        message: Union[Message | None] = None
         if response is None:
             self._print_none()
         else:
@@ -195,7 +209,7 @@ class ChatOpenai(Chat):
 
     def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
-        payload = ""
+        payload: str = ""
         try:
             self._print_reply("", end="")
             client = sseclient.SSEClient(response)
@@ -211,20 +225,28 @@ class ChatOpenai(Chat):
             print("")
             self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
 
-        message = MessageFactory.create_reply_message(role=self._role_model, content=payload, model=self._model)
+        message: Message = MessageFactory.create_reply_message(
+            role=self._role_model,
+            content=payload,
+            model=self._model,
+        )
 
         return message
 
     def _print_simple(self, response: Response) -> Message:
         logger.info("Reply mode -> Simple")
-        content = json.loads(response.content)["choices"][0]["message"]["content"]
+        content: str = json.loads(response.content)["choices"][0]["message"]["content"]
         self._print_reply(content)
 
-        message = MessageFactory.create_reply_message(role=self._role_model, content=content, model=self._model)
+        message: Message = MessageFactory.create_reply_message(
+            role=self._role_model,
+            content=content,
+            model=self._model,
+        )
 
         return message
 
     def _print_reply(self, text: str, end="\n") -> None:
         logger.info("Printing reply")
-        reply = "".join([f">>> [REPLY, model={self._model}]: ", text])
+        reply: str = "".join([f">>> [REPLY, model={self._model}]: ", text])
         print(reply, end=end)

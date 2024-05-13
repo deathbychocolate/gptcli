@@ -1,16 +1,18 @@
 """
 This file contains the TextToSpeech class
 """
+
 import io
 import logging
 import os
 import time
+from logging import Logger
 
 import boto3
 import sounddevice
 import soundfile
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 class TextToSpeech:
