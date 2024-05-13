@@ -1,4 +1,5 @@
 """Will handle access and storage of messages"""
+
 import json
 import logging
 import os
