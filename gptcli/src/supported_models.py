@@ -10,4 +10,5 @@ openai: dict = {
     "GPT_4_32K": "gpt-4-32k",
     "GPT_4_0314": "gpt-4-0314",
     "GPT_4_32K_0314": "gpt-4-32k-0314",
+    "GPT_4O": "gpt-4o",
 }

@@ -57,7 +57,7 @@ class Message:
         if self._model not in openai.values():
             raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
         else:
-            encoding: Encoding = tiktoken.encoding_for_model(self._model)
+            encoding: Encoding = self.encoding()
             num_tokens: int = 0
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             num_tokens += len(encoding.encode(self._content))
@@ -68,6 +68,22 @@ class Message:
 
             return num_tokens
 
+    def encoding(self) -> Encoding:
+        """Determine the encoding to use for the Message.
+        The encoding is derived from the LLM model used, via tiktoken.
+        The Openai docs seem to prefer 'cl100k_base' encoding for newer models.
+        Which may be why it is used as the fallback encoding type. See the link for more:
+        https://platform.openai.com/docs/guides/text-generation/managing-tokens
+
+        Returns:
+            Encoding: The encoding of the message, which is the encoding used for the model
+        """
+        try:
+            encoding: Encoding = tiktoken.encoding_for_model(self._model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+        return encoding
+
     def to_dictionary_reduced_context(self) -> dict:
         """Use this lightweight version when sending messages to API endpoints.
         If we send less, we save tokens.
@@ -75,7 +91,6 @@ class Message:
         Returns:
             dict: A lightweight dictionary representation of the Messsage class.
         """
-
         return {
             "role": self._role,
             "content": self._content,
@@ -88,7 +103,6 @@ class Message:
         Returns:
             dict: A complete dictionary representation of the Messsage class.
         """
-
         return {
             "role": self._role,
             "content": self._content,
