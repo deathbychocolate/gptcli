@@ -9,7 +9,7 @@ import logging
 import os
 import readline
 from logging import Logger
-from typing import Union
+from typing import Set, Union
 
 import sseclient
 from requests import Response
@@ -19,6 +19,7 @@ from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.src.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -76,6 +77,8 @@ class ChatOpenai(Chat):
         context: str = "off",
         stream: str = "on",
         filepath: str = "",
+        storage: str = "on",
+        continue_last_chat: str = "off"
     ):
         Chat.__init__(self)
 
@@ -85,7 +88,9 @@ class ChatOpenai(Chat):
         self._context: bool = True if context == "on" else False
         self._stream: bool = True if stream == "on" else False
         self._filepath: str = filepath
-        self._messages: Messages = Messages()
+        self._storage: bool = True if storage == "on" else False
+        self._continue_last_chat: bool = True if continue_last_chat == "on" else False
+        self._messages: Messages = Storage().extract_messages() if self._continue_last_chat else Messages()
 
     @user_triggered_abort
     def start(self) -> None:
@@ -101,14 +106,15 @@ class ChatOpenai(Chat):
         if self._filepath is not None and len(self._filepath) > 0:
             self._extract_file_content_to_message()
 
-        # in chat commands
-        exit_commands = set(["exit", "q"])
-        clear_screen_commands = set(["clear", "cls"])
+        # in chat commands and features
+        exit_commands: set = set(["exit", "q"])
+        clear_screen_commands: set = set(["clear", "cls"])
+        multine_input: Set[str] = set(['"""'])
 
         # commence chat loop
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
-            if user_input == '"""':
+            if user_input in multine_input:
                 user_input = self._scan_multiline_input()
                 if len(user_input) == 0 or user_input.isspace():
                     continue
@@ -121,11 +127,15 @@ class ChatOpenai(Chat):
                 self._print_gptcli_message("Bye!")
                 break
             elif user_input in clear_screen_commands:
-                os.system("cls" if os.name == "nt" else "clear")
+                os.system("cls" if os.name.casefold() == "nt" else "clear")
                 continue
             else:
                 self._process_user_and_reply_messages(user_input)
                 continue
+
+        # to be executed when exiting the chat loop
+        if self._storage is True:
+            Storage().store_messages(self._messages, storage_type="chat")
 
     def _extract_file_content_to_message(self) -> None:
         logger.info("Extracting file content from '%s' to add to message.", self._filepath)
@@ -158,10 +168,13 @@ class ChatOpenai(Chat):
         self._messages = Messages() if self._context is False else self._messages
 
     def _scan_multiline_input(self) -> str:
+
+        multine_input: Set = set(['"""'])
+
         user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
 
-        while user_input_single_line != '"""':
+        while user_input_single_line not in multine_input:
             user_input_multiline.append(user_input_single_line)
             user_input_single_line = str(input("... "))
 
