@@ -22,7 +22,7 @@ class Install:
         self.home_directory: str = os.path.expanduser("~")
         self.gptcli_filepath: str = os.path.join(self.home_directory, ".gptcli")
         self.install_successful_filepath: str = os.path.join(self.gptcli_filepath, ".install_successful")
-        self.messages_filepath: str = os.path.join(self.gptcli_filepath, "messages")
+        self.storage_filepath: str = os.path.join(self.gptcli_filepath, "storage")
         self.keys_filepath: str = os.path.join(self.gptcli_filepath, "keys")
         self.openai_filepath: str = os.path.join(self.keys_filepath, "openai")
 
@@ -53,7 +53,7 @@ class Install:
         if not self._is_gptcli_folder_present():
             logger.info("Creating basic folder structure")
             os.mkdir(self.gptcli_filepath)
-            os.mkdir(self.messages_filepath)
+            os.mkdir(self.storage_filepath)
             os.mkdir(self.keys_filepath)
             with open(self.openai_filepath, "w", encoding="utf8"):
                 pass  # no need to do anything as file was created
