@@ -28,7 +28,7 @@ The project uses the openai API to query text from messages that we send via HTT
 # How do I get an API key?
 You need valid OpenAI credentials to communicate with the AI models. To do this:
 - Create an openai account here: https://chat.openai.com/
-- Generate an openai API key here: https://platform.openai.com/account/api-keys
+- Generate an openai API key here: https://platform.openai.com/api-keys
 
 # Tips and tricks?
 Yes, there are some tips and tricks:
