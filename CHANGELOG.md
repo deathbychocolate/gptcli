@@ -1,3 +1,18 @@
+## 0.14.0 (2024-05-31)
+
+### Feat
+
+- **project**: Add the option to select cli or chat mode, and make 'storage' and 'continue from last available' as options.
+- **chat**: Add the new 'storage' and 'continue from last'  features to Chat, and refactor the in-chat commands.
+- **message**: :sparkles: Many features been added:
+- **project**: Add basic storage management functionality to store and extract messages to and from JSON files.
+
+### Refactor
+
+- **install**: Change 'messages' name to 'storage'.
+- **api**: Use the new iterability feature of Messages.
+- **project**: Add commonly used filepath to definitions.
+
 ## 0.13.0 (2024-05-13)
 
 ### Feat
