@@ -15,7 +15,7 @@ class TestMessage:
         yield message
 
     class TestNumberOfTokensFromMessage:
-        """Holds tests for number_of_tokens_from_message()."""
+        """Holds tests for _count_tokens()."""
 
         def test_should_raise_error_for_not_implemented_model(self) -> None:
             with pytest.raises(NotImplementedError):
@@ -23,25 +23,25 @@ class TestMessage:
 
         def test_should_return_an_integer(self, setup_teardown: Message) -> None:
             message: Message = setup_teardown
-            tokens: int = message.number_of_tokens_from_message()
+            tokens: int = message._count_tokens()  # pylint: disable=W0212:protected-access
             assert isinstance(tokens, int)
 
     class TestEncoding:
-        """Holds tests for encoding()."""
+        """Holds tests for _encoding()."""
 
         def test_should_return_cl100k_base_for_supported_model_gpt_4_turbo(self, setup_teardown: Message) -> None:
             message: Message = setup_teardown
-            encoding: Encoding = message.encoding()
+            encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
             assert encoding.name == "cl100k_base"
 
         def test_should_default_to_cl100k_base_when_a_key_error_occurs(self) -> None:
             message: Message = Message(role="user", content="A very basic message.", model="gpt-4o", is_reply=False)
-            encoding: Encoding = message.encoding()
+            encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
             assert encoding.name == "cl100k_base"
 
-        def test_should_return_an_encoding(self, setup_teardown: Message) -> None:
+        def test_should_return_an__encoding(self, setup_teardown: Message) -> None:
             message = setup_teardown
-            encoding: Encoding = message.encoding()
+            encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
             assert isinstance(encoding, Encoding)
 
     class TestToDictionaryReducedContext:
