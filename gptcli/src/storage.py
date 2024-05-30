@@ -2,128 +2,59 @@
 
 import json
 import logging
-import os
-from datetime import datetime
-from uuid import uuid4
+from datetime import datetime, timezone
+from glob import glob
+from os import path
+from time import time
 
-from gptcli.src.message import Message
+from gptcli.definitions import GPTCLI_STORAGE_FILEPATH
+from gptcli.src.message import Message, MessageFactory, Messages
 
-logger = logging.getLogger("__name__")
+logger = logging.getLogger(__name__)
 
 
-class Chat:
-    """Specifically handles Chat storage"""
+supported_storage_types = set(["chat", "single_exchange", "metadata"])
 
-    class Name:
-        """Used to generate names for Chats"""
 
-        def generate(self) -> str:
-            basename = self._generate_basename()
-            file_extension = self._generate_file_extension()
-            chat_name = ".".join(
-                [
-                    basename,
-                    file_extension,
-                ]
-            )
+class Storage:
+    """The basic representation of storage."""
 
-            return chat_name
+    def store_messages(self, messages: Messages, storage_type: str) -> None:
+        """Stores Messages objects to ~/.gptcli/storage/
 
-        def _generate_basename(self) -> str:
-            basename = "_".join(
-                [
-                    "chat",
-                    self._generate_date(),
-                    self._generate_random_id(),
-                ]
-            )
-            return basename
-
-        def _generate_date(self) -> str:
-            date = datetime.now().strftime(r"_%Y_%m_%d__%H_%M_%S_")
-            return date
-
-        def _generate_random_id(self) -> str:
-            random_id = str(uuid4()).split("-", maxsplit=1)[0]
-            return random_id
-
-        def _generate_file_extension(self) -> str:
-            return "json"
-
-    class Completion:
-        """Chat Completion object used to keep track of storage standard.
-        For example, we expect to store messages using the following format:
-
-        {
-            "id": "chatcmpl-74cCqMlkbdtCTGGau18UhBy9yKbBB",
-            "object": "chat.completion",
-            "created": 1681334532,
-            "model": "gpt-3.5-turbo-0301",
-            "usage": {
-                "prompt_tokens": 9,
-                "completion_tokens": 9,
-                "total_tokens": 18
-            },
-            "choices": [
-                {
-                    "message": {
-                        "role": "assistant",
-                        "content": "Hello! How may I assist you today?"
-                    },
-                    "finish_reason": "stop",
-                    "index": 0
-                }
-            ]
-        }
+        Args:
+            messages (Messages): A Messages object holds Message objects.
+            storage_type (str): A string to describe the type of storage we want. See: supported_storage_types.
         """
+        logger.info("Storing Messages to local filesystem.")
+        if len(messages) > 0:
+            filepath = self._generate_filepath(storage_type)
+            with open(filepath, "w", encoding="utf8") as filepointer:
+                filepointer.write(messages.to_json(indent=4))
 
-        def __init__(self) -> None:
-            pass
+    def _generate_filepath(self, storage_type: str) -> str:
+        logger.info("Generating filepath for storing a '%s' storage type.", storage_type)
+        if storage_type.casefold() not in supported_storage_types:
+            raise NotImplementedError(f"The storage type '{storage_type}' is not supported.")
 
-        def generate(self) -> dict:
-            return ""
+        epoch: str = str(int(time()))
+        datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S")
+        filename: str = "_".join([epoch, datetime_now_utc, storage_type]) + ".json"
+        filepath: str = path.expanduser(path.join(GPTCLI_STORAGE_FILEPATH, filename))
 
-    class Storage:
-        def __init__(self) -> None:
-            self._home_directory = os.path.expanduser("~")
-            self._messages_filepath = os.path.join(self._home_directory, "messages")
-            self._name = Chat().Name().generate()
-            self._filepath = os.path.join(self._messages_filepath, self._name)
+        return filepath
 
-        @property
-        def name(self) -> str:
-            return self._name
+    def extract_messages(self) -> Messages:
+        filepaths: list = glob(path.expanduser("~/.gptcli/storage/*.json"))
+        last_chat_session: str = max(filepaths, key=path.getctime)
 
-        @property
-        def filepath(self) -> str:
-            return self._filepath
+        file_contents: dict = dict()
+        with open(last_chat_session, "r", encoding="utf8") as filepointer:
+            file_contents = json.load(filepointer)
 
-        def store_messages(self, messages: list[Message]) -> None:
-            """Will store multiple message"""
-            logger.info("Storing messages")
-            for message in messages:
-                self._store_message(message)
+        messages: Messages = Messages()
+        for message in file_contents["messages"]:
+            message: Message = MessageFactory.create_message_from_dict(message=message)
+            messages.add_message(message=message)
 
-        def _store_message(self, message: Message) -> None:
-            logger.info("Storing message")
-            with open(self.filepath, "a", encoding="utf8") as filepointer:
-                json.dump(message.dictionary, filepointer, indent=4)
-                #  filepointer.write(message.__str__)
-
-        def _is_file_present(self) -> bool:
-            is_present = False
-            try:
-                with open(self.filepath, "r", encoding="utf8"):
-                    pass
-            except FileNotFoundError:
-                logger.info("Chat not found: %s", self.filepath)
-            return is_present
-
-        def _create_file(self) -> None:
-            logger.info("Creating file for storage of message(s)")
-            with open(self.filepath, "w", encoding="utf8"):
-                pass
-
-        def open_history(self) -> None:
-            """Will access"""
-            logger.info("Opening history of the following chat")
+        return messages
