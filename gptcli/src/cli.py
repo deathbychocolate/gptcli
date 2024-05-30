@@ -1,5 +1,4 @@
-"""Main command line interface.
-"""
+"""Main command line interface."""
 
 import argparse
 import logging
@@ -47,11 +46,18 @@ class CommandLineInterface:
             help=f"Defaults to {logging.CRITICAL}. Set the log level of the application.",
         )
         self.parser.add_argument(
+            "--mode",
+            type=str,
+            choices=["cli", "chat"],
+            default="chat",
+            help="Defaults to 'chat'. The mode to run 'gptcli' in.",
+        )
+        self.parser.add_argument(
             "--model",
             type=str,
             choices=openai.values(),
             default=openai["GPT_4O"],
-            help=f"Defaults to {openai['GPT_4O']}. The model to use.",
+            help=f"Defaults to '{openai['GPT_4O']}'. The model to use.",
         )
         self.parser.add_argument(
             "--key",
@@ -95,11 +101,25 @@ class CommandLineInterface:
             help="Select a file with text to ingest and use for context.",
             metavar="<string>",
         )
+        self.parser.add_argument(
+            "--storage",
+            type=str,
+            choices=["on", "off"],
+            default="on",
+            help="Defaults to 'on'. Choose to store your chat thread locally or not.",
+        )
+        self.parser.add_argument(
+            "--continue-last-chat",
+            type=str,
+            choices=["on", "off"],
+            default="off",
+            help="Defaults to 'off'. Choose to continue your last chat session.",
+        )
 
         self.args = self.parser.parse_args()
 
-    def run(self) -> None:
-        """Run this method if you want to start a classic dialog with the AI"""
+    def configure_cli(self) -> None:
+        """Used to run any final configurations we want regarding the argparse parameters."""
         logger.info("Running cli")
         self._configure_logging_level()
 

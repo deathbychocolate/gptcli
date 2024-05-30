@@ -1,7 +1,11 @@
 """Will handle messages to and from Openai's API"""
 
+import json
 import logging
 from logging import Logger
+from time import time
+from typing import Union
+from uuid import uuid4
 
 import tiktoken
 from tiktoken import Encoding
@@ -25,64 +29,30 @@ class Message:
         tokens (int): The token count estimated that will be needed to read this message by the LLM.
 
     Methods:
-        number_of_tokens_from_message:
+        _count_tokens: Counts the number of tokens in a Message.
     """
 
-    def __init__(self, role: str, content: str, model: str, is_reply: bool) -> None:
+    index: int = 0
+
+    def __init__(
+        self,
+        role: str,
+        content: str,
+        model: str,
+        is_reply: bool,
+        created: float = 0.0,
+        uuid: str = "",
+        tokens: int = 0,
+    ) -> None:
+        self._created: float = created if created != 0.0 else time()
+        self._uuid: int = uuid if uuid != "" else str(uuid4())
         self._role: str = role
         self._content: str = content
         self._model: str = model
         self._is_reply: bool = is_reply
-        self._tokens: int = self.number_of_tokens_from_message()
-
-    def number_of_tokens_from_message(self) -> int:
-        """Returns the number of tokens used by a list of messages.
-
-        Keep an eye on this webpage to see if they support newer or different models.
-        Please, note that the tokenizer seems to only consider the text of the message,
-        and not the roles or names associated with it:
-        https://platform.openai.com/tokenizer
-
-        Source of algorithm:
-        https://platform.openai.com/docs/guides/text-generation/managing-tokens
-
-        Raises:
-            NotImplementedError: Raised when the model requested by the user is not supported by GPTCLI.
-
-        Returns:
-            int: The number of tokens required for this message.
-        """
-
-        logger.info("Counting tokens for message")
-        if self._model not in openai.values():
-            raise NotImplementedError(f"num_tokens_from_message() is not presently implemented for {self._model}.")
-        else:
-            encoding: Encoding = self.encoding()
-            num_tokens: int = 0
-            num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
-            num_tokens += len(encoding.encode(self._content))
-            if self._role == "name":  # if there's a name, the role is omitted
-                num_tokens += -1  # role is always required and always 1 token
-            if self._is_reply:
-                num_tokens += 2  # every reply is primed with <im_start>assistant
-
-            return num_tokens
-
-    def encoding(self) -> Encoding:
-        """Determine the encoding to use for the Message.
-        The encoding is derived from the LLM model used, via tiktoken.
-        The Openai docs seem to prefer 'cl100k_base' encoding for newer models.
-        Which may be why it is used as the fallback encoding type. See the link for more:
-        https://platform.openai.com/docs/guides/text-generation/managing-tokens
-
-        Returns:
-            Encoding: The encoding of the message, which is the encoding used for the model
-        """
-        try:
-            encoding: Encoding = tiktoken.encoding_for_model(self._model)
-        except KeyError:
-            encoding = tiktoken.get_encoding("cl100k_base")
-        return encoding
+        self._tokens: int = tokens if tokens != 0 else self._count_tokens()
+        self._index: int = Message.index
+        Message.index += 1
 
     def to_dictionary_reduced_context(self) -> dict:
         """Use this lightweight version when sending messages to API endpoints.
@@ -104,12 +74,64 @@ class Message:
             dict: A complete dictionary representation of the Messsage class.
         """
         return {
+            "created": self._created,
+            "uuid": self._uuid,
             "role": self._role,
             "content": self._content,
             "model": self._model,
             "is_reply": self._is_reply,
             "tokens": self._tokens,
+            "index": self._index,
         }
+
+    def _count_tokens(self) -> int:
+        """Returns the number of tokens used by a list of messages.
+
+        Keep an eye on this webpage to see if they support newer or different models.
+        Please, note that the tokenizer seems to only consider the text of the message,
+        and not the roles or names associated with it:
+        https://platform.openai.com/tokenizer
+
+        Source of algorithm:
+        https://platform.openai.com/docs/guides/text-generation/managing-tokens
+
+        Raises:
+            NotImplementedError: Raised when the model requested by the user is not supported by GPTCLI.
+
+        Returns:
+            int: The number of tokens required for this message.
+        """
+
+        logger.info("Counting tokens for message")
+        if self._model not in openai.values():
+            raise NotImplementedError(f"_count_tokens() is not presently implemented for {self._model}.")
+        else:
+            encoding: Encoding = self._encoding()
+            num_tokens: int = 0
+            num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
+            num_tokens += len(encoding.encode(self._content))
+            if self._role == "name":  # if there's a name, the role is omitted
+                num_tokens += -1  # role is always required and always 1 token
+            if self._is_reply:
+                num_tokens += 2  # every reply is primed with <im_start>assistant
+
+            return num_tokens
+
+    def _encoding(self) -> Encoding:
+        """Determine the encoding to use for the Message.
+        The encoding is derived from the LLM model used, via tiktoken.
+        The Openai docs seem to prefer 'cl100k_base' encoding for newer models.
+        Which may be why it is used as the fallback encoding type. See the link for more:
+        https://platform.openai.com/docs/guides/text-generation/managing-tokens
+
+        Returns:
+            Encoding: The encoding of the message, which is the encoding used for the model
+        """
+        try:
+            encoding: Encoding = tiktoken.encoding_for_model(self._model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+        return encoding
 
     @property
     def tokens(self) -> int:
@@ -131,7 +153,12 @@ class MessageFactory:
         Returns:
             Message: A Message object specially suited for user generated messages.
         """
-        return Message(role=role, content=content, model=model, is_reply=False)
+        return Message(
+            role=role,
+            content=content,
+            model=model,
+            is_reply=False,
+        )
 
     @staticmethod
     def create_reply_message(role: str, content: str, model: str) -> Message:
@@ -145,19 +172,58 @@ class MessageFactory:
         Returns:
             Message: A Message object specially suited for user generated messages.
         """
-        return Message(role=role, content=content, model=model, is_reply=True)
+        return Message(
+            role=role,
+            content=content,
+            model=model,
+            is_reply=True,
+        )
+
+    @staticmethod
+    def create_message_from_dict(message: dict) -> Message:
+        """Creates a message from a dictionary.
+        The parameter must contain the following keys:
+        - role
+        - content
+        - model
+        - is_reply
+        - created
+        - uuid
+        - tokens
+        See the Storage module as an example.
+
+        Args:
+            message (dict): A dictionary representation of a message.
+            Must contain all the context as a locally stored Message would.
+
+        Returns:
+            Message: A Message object specially suited for user generated messages.
+        """
+        if not isinstance(message, dict):
+            raise TypeError(f"Expected 'message' parameter to be of type 'dict' and not '{type(message)}'.")
+        return Message(
+            role=message["role"],
+            content=message["content"],
+            model=message["model"],
+            is_reply=message["is_reply"],
+            created=message["created"],
+            uuid=message["uuid"],
+            tokens=message["tokens"],
+        )
 
 
 class Messages:
-    """A class to represent the collection of Message objects.
+    """A class to hold Message objects.
 
     It fulfills the need of custom functionalities
     that are not offered by Python dicitionaries or lists.
     """
 
     def __init__(self, messages: list[Message] | None = None) -> None:
-        self._messages: list[Message] = messages if messages is not None else list()
-        self._tokens = self._count_tokens()
+        self._uuid: str = str(uuid4())
+        self._messages: Union[list[Message] | list] = messages if messages is not None else list()
+        self._tokens: int = self._count_tokens()
+        self._count: int = len(self._messages)
 
     def add_message(self, message: Message | None) -> None:
         """Add a Message object to Messages.
@@ -172,21 +238,61 @@ class Messages:
         else:
             self._messages.append(message)
             self._tokens += message.tokens
+            self._count += 1
 
-    def __len__(self) -> int:
-        return len(self._messages)
+    def to_json(self, indent: Union[int, str, None] = None) -> str:
+        """Convert all Message objects in Messages to JSON serialized object."""
+        logger.info("Generating json from Messages.")
+        return json.dumps(
+            {
+                "messages": [message.to_dictionary_full_context() for message in self._messages],
+                "summary_data": {
+                    "tokens": self._tokens,
+                    "count": self._count,
+                },
+            },
+            indent=indent,
+            ensure_ascii=False,
+        )
 
     def _count_tokens(self) -> int:
         logger.info("Counting total number of used in messages.")
-        count: int = 0
-        for message in self._messages:
-            count = count + message.tokens
-        return count
-
-    @property
-    def messages(self) -> list[Message]:
-        return self._messages
+        if len(self._messages) == 0:
+            logger.warning("No Message objects found in Messages.")
+            return 0
+        else:
+            count: int = 0
+            for message in self._messages:
+                count += message.tokens
+            return count
 
     @property
     def tokens(self) -> int:
         return self._tokens
+
+    def __len__(self) -> int:
+        return len(self._messages)
+
+    def __iter__(self):
+        return MessagesIterator(self._messages)
+
+
+class MessagesIterator:
+    """A simple Messages iterator to promote the usage of
+    'message in messages' and not 'message in messages.messages'
+    """
+
+    def __init__(self, messages: Messages) -> None:
+        self._index: int = 0
+        self._messages: Messages = messages
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index < len(self._messages):
+            message = self._messages[self._index]
+            self._index += 1
+            return message
+        else:
+            raise StopIteration
