@@ -28,7 +28,7 @@ class OpenAiHelper:
 
     def __init__(self, model: str, messages: Messages, stream=False):
         self._model: str = model
-        self._messages: list[dict] = [message.to_dictionary_reduced_context() for message in messages]
+        self._messages: list[dict] = [message.to_dict_reduced_context() for message in messages]
         self._stream: bool = stream
 
     def send(self) -> Union[Response | None]:

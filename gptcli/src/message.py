@@ -22,11 +22,14 @@ class Message:
     store the message locally as a dictionary/JSON object etc.
 
     Attributes:
+        created (float): The epoch time of creation; includes the milliseconds.
+        uuid (str): The uuid of the message to ID specific Message objects.
         role (str): The role of the entity who created the message (ie: user or assistant [usually])
         content (str): The content of the message that is meant to be read by the LLM.
-        model (str): The LLM model requested for this message.
-        is_reply (bool): False if it is a message sent by the user, and False if it is sent by the external LLM.
-        tokens (int): The token count estimated that will be needed to read this message by the LLM.
+        model (str): The LLM model associated with this Message.
+        is_reply (bool): False if it is a message sent by the user, and True if it is sent by the external LLM.
+        tokens (int): The estimated token count that this message will require or has consumed from the user's wallet.
+        index (int): The index of the message in the conversation/chat.
 
     Methods:
         _count_tokens: Counts the number of tokens in a Message.
@@ -45,7 +48,7 @@ class Message:
         tokens: int = 0,
     ) -> None:
         self._created: float = created if created != 0.0 else time()
-        self._uuid: int = uuid if uuid != "" else str(uuid4())
+        self._uuid: str = uuid if uuid != "" else str(uuid4())
         self._role: str = role
         self._content: str = content
         self._model: str = model
@@ -54,7 +57,7 @@ class Message:
         self._index: int = Message.index
         Message.index += 1
 
-    def to_dictionary_reduced_context(self) -> dict:
+    def to_dict_reduced_context(self) -> dict:
         """Use this lightweight version when sending messages to API endpoints.
         If we send less, we save tokens.
 
@@ -66,7 +69,7 @@ class Message:
             "content": self._content,
         }
 
-    def to_dictionary_full_context(self) -> dict:
+    def to_dict_full_context(self) -> dict:
         """Use this version when storing messages locally in your machine.
         When storing messages locally, we want the full context for each message.
 
@@ -182,14 +185,6 @@ class MessageFactory:
     @staticmethod
     def create_message_from_dict(message: dict) -> Message:
         """Creates a message from a dictionary.
-        The parameter must contain the following keys:
-        - role
-        - content
-        - model
-        - is_reply
-        - created
-        - uuid
-        - tokens
         See the Storage module as an example.
 
         Args:
@@ -245,7 +240,7 @@ class Messages:
         logger.info("Generating json from Messages.")
         return json.dumps(
             {
-                "messages": [message.to_dictionary_full_context() for message in self._messages],
+                "messages": [message.to_dict_full_context() for message in self._messages],
                 "summary_data": {
                     "tokens": self._tokens,
                     "count": self._count,
