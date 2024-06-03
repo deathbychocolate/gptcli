@@ -54,7 +54,7 @@ class Storage:
 
         messages: Messages = Messages()
         for message in file_contents["messages"]:
-            message: Message = MessageFactory.create_message_from_dict(message=message)
-            messages.add_message(message=message)
+            m: Message = MessageFactory.create_message_from_dict(message=message)
+            messages.add_message(message=m)
 
         return messages

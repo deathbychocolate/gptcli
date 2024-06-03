@@ -4,7 +4,7 @@ import json
 import logging
 from logging import Logger
 from time import time
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 import tiktoken
@@ -43,17 +43,17 @@ class Message:
         content: str,
         model: str,
         is_reply: bool,
-        created: float = 0.0,
-        uuid: str = "",
-        tokens: int = 0,
+        created: Optional[float] = None,
+        uuid: Optional[str] = None,
+        tokens: Optional[int] = None,
     ) -> None:
-        self._created: float = created if created != 0.0 else time()
-        self._uuid: str = uuid if uuid != "" else str(uuid4())
+        self._created: float = created if created is not None else time()
+        self._uuid: str = uuid if uuid is not None else str(uuid4())
         self._role: str = role
         self._content: str = content
         self._model: str = model
         self._is_reply: bool = is_reply
-        self._tokens: int = tokens if tokens != 0 else self._count_tokens()
+        self._tokens: int = tokens if tokens is not None else self._count_tokens()
         self._index: int = Message.index
         Message.index += 1
 
@@ -241,7 +241,7 @@ class Messages:
         return json.dumps(
             {
                 "messages": [message.to_dict_full_context() for message in self._messages],
-                "summary_data": {
+                "summary": {
                     "tokens": self._tokens,
                     "count": self._count,
                 },

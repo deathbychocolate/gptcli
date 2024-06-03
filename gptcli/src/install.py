@@ -5,6 +5,7 @@ Use this to install or configure the local machine environment
 import logging
 import os
 from logging import Logger
+from typing import Optional
 
 from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
@@ -17,8 +18,8 @@ logger: Logger = logging.getLogger(__name__)
 class Install:
     """Class to hold all the install tools for the local machine"""
 
-    def __init__(self, openai_api_key="") -> None:
-        self.openai_api_key: str = openai_api_key
+    def __init__(self, openai_api_key: Optional[str] = None) -> None:
+        self.openai_api_key: str = openai_api_key if openai_api_key is not None else ""
         self.home_directory: str = os.path.expanduser("~")
         self.gptcli_filepath: str = os.path.join(self.home_directory, ".gptcli")
         self.install_successful_filepath: str = os.path.join(self.gptcli_filepath, ".install_successful")
