@@ -81,6 +81,13 @@ class CommandLineInterface:
             metavar="<string>",
         )
         self.parser.add_argument(
+            "--filepath",
+            type=str,
+            default="",
+            help="Select a file with text to ingest and use for context.",
+            metavar="<string>",
+        )
+        self.parser.add_argument(
             "--context",
             type=str,
             choices=["on", "off"],
@@ -93,13 +100,6 @@ class CommandLineInterface:
             choices=["on", "off"],
             default="on",
             help="Defaults to 'on'. Streaming mode for text replies in chat mode.",
-        )
-        self.parser.add_argument(
-            "--filepath",
-            type=str,
-            default="",
-            help="Select a file with text to ingest and use for context.",
-            metavar="<string>",
         )
         self.parser.add_argument(
             "--storage",
