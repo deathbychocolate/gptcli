@@ -11,7 +11,17 @@ logger: Logger = logging.getLogger(__name__)
 
 
 def custom_formatter(prog):
-    return argparse.HelpFormatter(prog, max_help_position=40)
+    return argparse.RawTextHelpFormatter(prog, max_help_position=40)
+
+
+epilog: str = """
+Tips and Tricks:
+    Yes, there are some tips and tricks:
+    - You can use multiline input while in prompt mode by starting your message with \"\"\" + `ENTER` and ending it with \"\"\" + `ENTER`.
+    - You can exit chat mode by typing and entering `exit` or `q` or `CRTL+C`.
+    - You can abort any process via `CRTL+C`.
+    - You can cycle through your sent messages in your active chat session via the arrow keys: `up` and `down`.
+"""
 
 
 class CommandLineInterface:
@@ -27,7 +37,11 @@ class CommandLineInterface:
 
     def __init__(self) -> None:
         # pylint: disable=line-too-long
-        self.parser = argparse.ArgumentParser(add_help=False, formatter_class=custom_formatter)
+        self.parser = argparse.ArgumentParser(
+            add_help=False,
+            formatter_class=custom_formatter,
+            epilog=epilog,
+        )
         self.parser.add_argument(
             "-h",
             "--help",
