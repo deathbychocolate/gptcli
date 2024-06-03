@@ -1,3 +1,15 @@
+## 0.15.0 (2024-06-03)
+
+### Feat
+
+- **cli**: Improve the CLI parser.
+
+### Refactor
+
+- **cli**: Place 'on' 'off' options to the bottom to make it easier to track.
+- **project**: Make minor improvements.
+- Improve documentation, type hinting, change methods names to something more concise.
+
 ## 0.14.0 (2024-05-31)
 
 ### Feat
