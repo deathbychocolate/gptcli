@@ -10,6 +10,10 @@ from gptcli.src.supported_models import openai
 logger: Logger = logging.getLogger(__name__)
 
 
+def custom_formatter(prog):
+    return argparse.HelpFormatter(prog, max_help_position=40)
+
+
 class CommandLineInterface:
     """Class for the command line interface."""
 
@@ -23,7 +27,7 @@ class CommandLineInterface:
 
     def __init__(self) -> None:
         # pylint: disable=line-too-long
-        self.parser = argparse.ArgumentParser(add_help=False)
+        self.parser = argparse.ArgumentParser(add_help=False, formatter_class=custom_formatter)
         self.parser.add_argument(
             "-h",
             "--help",
@@ -89,31 +93,27 @@ class CommandLineInterface:
         )
         self.parser.add_argument(
             "--context",
-            type=str,
-            choices=["on", "off"],
-            default="on",
-            help="Defaults to 'on'. Send all chat messages to API to build a better reply. Use 'off' to conserve tokens.",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Enable or disable the sending of past messages from the same chat session. Use to conserve tokens.",
         )
         self.parser.add_argument(
             "--stream",
-            type=str,
-            choices=["on", "off"],
-            default="on",
-            help="Defaults to 'on'. Streaming mode for text replies in chat mode.",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Enable or disable streaming mode.",
         )
         self.parser.add_argument(
             "--storage",
-            type=str,
-            choices=["on", "off"],
-            default="on",
-            help="Defaults to 'on'. Choose to store your chat thread locally or not.",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Enable or disable local storage of last chat session.",
         )
         self.parser.add_argument(
-            "--continue-last-chat",
-            type=str,
-            choices=["on", "off"],
-            default="off",
-            help="Defaults to 'off'. Choose to continue your last chat session.",
+            "--continue-chat",
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help="Enable or disable loading your last chat session from storage.",
         )
 
         self.args = self.parser.parse_args()

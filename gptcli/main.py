@@ -35,7 +35,7 @@ def enter_chat_mode(cli: CommandLineInterface) -> None:
         stream=cli.args.stream,
         filepath=cli.args.filepath,
         storage=cli.args.storage,
-        continue_last_chat=cli.args.continue_last_chat,
+        continue_chat=cli.args.continue_chat,
     ).start()
 
 

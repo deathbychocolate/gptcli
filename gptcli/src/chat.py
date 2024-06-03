@@ -74,23 +74,23 @@ class ChatOpenai(Chat):
         model,
         role_user: str = "user",
         role_model: str = "assistant",
-        context: str = "off",
-        stream: str = "on",
+        context: bool = True,
+        stream: bool = True,
         filepath: str = "",
-        storage: str = "on",
-        continue_last_chat: str = "off"
+        storage: bool = True,
+        continue_chat: bool = False
     ):
         Chat.__init__(self)
 
         self._model: str = model
         self._role_user: str = role_user
         self._role_model: str = role_model
-        self._context: bool = True if context == "on" else False
-        self._stream: bool = True if stream == "on" else False
+        self._context: bool = context
+        self._stream: bool = stream
         self._filepath: str = filepath
-        self._storage: bool = True if storage == "on" else False
-        self._continue_last_chat: bool = True if continue_last_chat == "on" else False
-        self._messages: Messages = Storage().extract_messages() if self._continue_last_chat else Messages()
+        self._storage: bool = storage
+        self._continue_chat: bool = continue_chat
+        self._messages: Messages = Storage().extract_messages() if self._continue_chat else Messages()
 
     @user_triggered_abort
     def start(self) -> None:
