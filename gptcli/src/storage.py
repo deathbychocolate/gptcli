@@ -40,7 +40,7 @@ class Storage:
         epoch: str = str(int(time()))
         datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S")
         filename: str = "_".join([epoch, datetime_now_utc, storage_type]) + ".json"
-        filepath: str = path.expanduser(path.join(GPTCLI_STORAGE_FILEPATH, filename))
+        filepath: str = path.join(GPTCLI_STORAGE_FILEPATH, filename)
 
         return filepath
 

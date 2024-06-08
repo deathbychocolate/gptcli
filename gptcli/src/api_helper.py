@@ -11,6 +11,7 @@ import requests
 from requests import Response
 from requests.exceptions import ReadTimeout
 
+from gptcli.definitions import OPENAI_API_KEY
 from gptcli.src.message import Messages
 
 logger: Logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class OpenAiHelper:
         """
         logger.info("Sending message to openai")
         self._export_api_key_to_environment_variable()
-        key: str = os.environ["OPENAI_API_KEY"]
+        key: str = os.environ[OPENAI_API_KEY]
         response: Union[Response | None] = self._post_request(key=key)
 
         return response
@@ -56,13 +57,13 @@ class OpenAiHelper:
         return is_valid
 
     def _export_api_key_to_environment_variable(self) -> None:
-        if "OPENAI_API_KEY" not in os.environ:
+        if OPENAI_API_KEY not in os.environ:
             logger.info("Exporting API key to environment variable")
 
             # get api key from file
             bash_script_path = os.path.join(os.path.expanduser("~"), ".gptcli/keys/openai")
             with open(bash_script_path, "r", encoding="utf8") as filepointer:
-                os.environ["OPENAI_API_KEY"] = filepointer.read()
+                os.environ[OPENAI_API_KEY] = filepointer.read()
         else:
             logger.info("API key already in environment variable")
 

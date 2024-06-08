@@ -7,6 +7,7 @@ import os
 from logging import Logger
 from typing import Optional
 
+from gptcli.definitions import OPENAI_API_KEY
 from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
 from gptcli.src.message import Message, MessageFactory, Messages
@@ -101,10 +102,10 @@ class Install:
 
     def _load_api_key_to_environment_variable(self) -> None:
         logger.info("Loading API key to environment variable")
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv(OPENAI_API_KEY)
         if api_key is None:
             with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
-                os.environ["OPENAI_API_KEY"] = filepointer.readline()
+                os.environ[OPENAI_API_KEY] = filepointer.readline()
         else:
             logger.info("API key already loaded")
 
