@@ -49,7 +49,7 @@ def enter_chat_mode(parser: CommandParser) -> None:
 def main() -> None:
     """This is the main function."""
     parser: CommandParser = run_and_configure_argparse()
-    if "key" not in parser.args:
+    if "key" not in parser.args or len(parser.args.key) == 0:
         load_api_key_to_environment_variable()
         parser.args.key = os.environ[OPENAI_API_KEY]
     execute_install(parser=parser)
