@@ -86,7 +86,6 @@ class CommandParser:
         parser_se.add_argument(
             "--key",
             type=str,
-            default="",
             help="Defaults to the key stored in .gptcli in your home dir. The API key to use for the run.",
             metavar="<string>",
         )
@@ -135,7 +134,6 @@ class CommandParser:
         parser_chat.add_argument(
             "--key",
             type=str,
-            default="",
             help="Defaults to the key stored in .gptcli in your home dir. The API key to use for the run.",
             metavar="<string>",
         )

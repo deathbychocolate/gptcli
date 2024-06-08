@@ -18,9 +18,12 @@ def run_and_configure_argparse() -> CommandParser:
     return parser
 
 
-def load_api_key_to_environment_variable() -> None:
-    with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
-        os.environ[OPENAI_API_KEY] = filepointer.read()
+def load_api_key_to_environment_variable(parser: CommandParser) -> None:
+    if parser.args.key is None:
+        with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
+            os.environ[OPENAI_API_KEY] = filepointer.read()
+    elif str(parser.args.key).isascii():
+        os.environ[OPENAI_API_KEY] = str(parser.args.key)
 
 
 def execute_install(parser: CommandParser) -> None:
@@ -49,9 +52,7 @@ def enter_chat_mode(parser: CommandParser) -> None:
 def main() -> None:
     """This is the main function."""
     parser: CommandParser = run_and_configure_argparse()
-    if "key" not in parser.args or len(parser.args.key) == 0:
-        load_api_key_to_environment_variable()
-        parser.args.key = os.environ[OPENAI_API_KEY]
+    load_api_key_to_environment_variable(parser=parser)
     execute_install(parser=parser)
     match parser.args.subcommand_name:
         case "se":
