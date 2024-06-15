@@ -7,3 +7,11 @@ openai: dict = {
     "GPT_4_TURBO": "gpt-4-turbo",
     "GPT_4O": "gpt-4o",
 }
+
+roles: list = [
+    "system",
+    "assistant",
+    "user",
+    "function",
+    "tool",
+]

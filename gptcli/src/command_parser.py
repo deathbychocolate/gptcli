@@ -5,7 +5,7 @@ import logging
 from logging import Logger
 
 from gptcli._version import __version__
-from gptcli.src.supported_models import openai
+from gptcli.src.supported_models import openai, roles
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -93,6 +93,7 @@ class CommandParser:
             "--role-user",
             type=str,
             default="user",
+            choices=roles,
             help="Defaults to 'user'. The user may assume a role other than 'user'.",
             metavar="<string>",
         )
@@ -100,6 +101,7 @@ class CommandParser:
             "--role-model",
             type=str,
             default="assistant",
+            choices=roles,
             help="Defaults to 'assistant'. The language model may assume a role other than 'assistant'.",
             metavar="<string>",
         )
