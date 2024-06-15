@@ -18,11 +18,20 @@
     - Run the following command in the root of the project: `pytest --cov=gptcli/src/ --cov-report html --log-cli-level=ERROR`. This will generate a coverage report named htmlcov at the root of the project.
 
 # How does it work?
-The project uses the openai API to query text from messages that we send via HTTP POST requests. This is respresented to the user as a MESSAGE-REPLY thread. You as the user send a message and the AI model replies. Meaning you will see something like this in your terminal:
+The project uses the OpenAI API to query text using client sent messages sent over HTTP POST requests. There are 2 modes to consider, `Chat` and `Single-Exchange`:
+
+`Chat` mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. This mode will show you output similar to the following:
 ```text
 >>> [MESSAGE]: hi
 >>> [REPLY, model=gpt-3.5-turbo]: Hello! How can I assist you today?
 >>> [MESSAGE]: exit
+```
+
+`Single-Exchange` is funcationally similar to `Chat`, but it only allows a single exchange of messages to happen (1 sent from client-side, 1 from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automation. This mode will show you ouput similar to the following:
+```text
+username@hostname ~/> gptcli se "hello"
+Hello! How can I assist you today?
+username@hostname ~/>
 ```
 
 # How do I get an API key?
