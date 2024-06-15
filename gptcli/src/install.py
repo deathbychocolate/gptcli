@@ -1,13 +1,11 @@
-"""
-Use this to install or configure the local machine environment
-"""
+"""Use this to install or configure the local machine environment."""
 
 import logging
 import os
 from logging import Logger
-from typing import Optional
 
-from gptcli.definitions import OPENAI_API_KEY
+from gptcli.definitions import (GPTCLI_INSTALL_SUCCESSFUL, GPTCLI_KEYS_FILEPATH, GPTCLI_KEYS_OPENAI,
+                                GPTCLI_ROOT_FILEPATH, GPTCLI_STORAGE_FILEPATH, OPENAI_API_KEY)
 from gptcli.src.api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
 from gptcli.src.message import Message, MessageFactory, Messages
@@ -19,22 +17,13 @@ logger: Logger = logging.getLogger(__name__)
 class Install:
     """Class to hold all the install tools for the local machine"""
 
-    def __init__(self, openai_api_key: Optional[str] = None) -> None:
-        self.openai_api_key: str = openai_api_key if openai_api_key is not None else ""
-        self.home_directory: str = os.path.expanduser("~")
-        self.gptcli_filepath: str = os.path.join(self.home_directory, ".gptcli")
-        self.install_successful_filepath: str = os.path.join(self.gptcli_filepath, ".install_successful")
-        self.storage_filepath: str = os.path.join(self.gptcli_filepath, "storage")
-        self.keys_filepath: str = os.path.join(self.gptcli_filepath, "keys")
-        self.openai_filepath: str = os.path.join(self.keys_filepath, "openai")
-
     def standard_install(self) -> None:
         """Performs standard install by creating local file directory with needed config files"""
         logger.info("Performing standard install")
         if not self._is_installed():
             self._create_folder_structure()
-            self._setup_api_key()
-            self._write_api_key_to_openai_file()
+            openai_api_key = self._setup_api_key()
+            self._write_api_key_to_openai_file(openai_api_key=openai_api_key)
             self._load_api_key_to_environment_variable()
             self._mark_install_as_successful()
         else:
@@ -44,7 +33,7 @@ class Install:
         logger.info("Checking if GPTCLI is installed")
         is_installed = False
         try:
-            with open(self.install_successful_filepath, "r", encoding="utf8"):
+            with open(GPTCLI_INSTALL_SUCCESSFUL, "r", encoding="utf8"):
                 is_installed = True
         except FileNotFoundError:
             logger.exception("FileNotFoundError: install marker not found")
@@ -54,38 +43,40 @@ class Install:
     def _create_folder_structure(self) -> None:
         if not self._is_gptcli_folder_present():
             logger.info("Creating basic folder structure")
-            os.mkdir(self.gptcli_filepath)
-            os.mkdir(self.storage_filepath)
-            os.mkdir(self.keys_filepath)
-            with open(self.openai_filepath, "w", encoding="utf8"):
+            os.mkdir(GPTCLI_ROOT_FILEPATH)
+            os.mkdir(GPTCLI_STORAGE_FILEPATH)
+            os.mkdir(GPTCLI_KEYS_FILEPATH)
+            with open(GPTCLI_KEYS_OPENAI, "w", encoding="utf8"):
                 pass  # no need to do anything as file was created
         else:
             logger.info(".gptcli config folder is already present")
 
     def _is_gptcli_folder_present(self) -> bool:
         logger.info("Checking for .gptcli")
-        is_present = os.path.exists(self.gptcli_filepath)
+        is_present = os.path.exists(GPTCLI_ROOT_FILEPATH)
 
         return is_present
 
-    def _setup_api_key(self) -> None:
+    def _setup_api_key(self) -> str:
         logger.info("Asking user for openai API key")
         chat: ChatInstall = ChatInstall()
+        openai_api_key: str = ""
         while True:
-            self.openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
-            if self._is_valid_openai_api_key(self.openai_api_key):
+            openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
+            if self._is_valid_openai_api_key(openai_api_key):
                 logger.info("Valid API key detected")
                 break
             else:
                 print(">>> [GPTCLI]: Invalid openai API key detected...")
+        return openai_api_key
 
-    def _write_api_key_to_openai_file(self) -> None:
+    def _write_api_key_to_openai_file(self, openai_api_key: str) -> None:
         logger.info("Loading API key to openai file")
         if self._is_openai_file_present():
             file_permissions = 0o600
-            with open(self.openai_filepath, "w", encoding="utf8", newline="") as filepointer:
-                os.chmod(self.openai_filepath, file_permissions)
-                filepointer.write(self.openai_api_key)
+            with open(GPTCLI_KEYS_OPENAI, "w", encoding="utf8", newline="") as filepointer:
+                os.chmod(GPTCLI_KEYS_OPENAI, file_permissions)
+                filepointer.write(openai_api_key)
         else:
             logger.info("Failed to load API key to openai file")
 
@@ -93,7 +84,7 @@ class Install:
         logger.info("Checking for .gptcli/keys/openai")
         is_present = False
         try:
-            with open(self.openai_filepath, "r", encoding="utf8"):
+            with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8"):
                 is_present = True
         except FileNotFoundError:
             is_present = False
@@ -104,7 +95,7 @@ class Install:
         logger.info("Loading API key to environment variable")
         api_key = os.getenv(OPENAI_API_KEY)
         if api_key is None:
-            with open(self.openai_filepath, "r", encoding="utf8") as filepointer:
+            with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
                 os.environ[OPENAI_API_KEY] = filepointer.readline()
         else:
             logger.info("API key already loaded")
@@ -120,5 +111,5 @@ class Install:
 
     def _mark_install_as_successful(self) -> None:
         logger.info("Marking install as successful")
-        with open(self.install_successful_filepath, "w", encoding="utf8"):
+        with open(GPTCLI_INSTALL_SUCCESSFUL, "w", encoding="utf8"):
             pass  # simply create the file
