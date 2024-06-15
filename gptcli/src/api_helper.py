@@ -23,10 +23,6 @@ class OpenAiHelper:
     It includes information and tools specifically for interacting with OpenAI's API.
     """
 
-    GPT_3_5_MAX_TOKENS = 4_096
-    GPT_4_MAX_TOKENS = 8_192
-    GPT_4_32K_MAX_TOKENS = 32_768
-
     def __init__(self, model: str, messages: Messages, stream=False):
         self._model: str = model
         self._messages: list[dict] = [message.to_dict_reduced_context() for message in messages]
@@ -35,7 +31,7 @@ class OpenAiHelper:
     def send(self) -> Union[Response | None]:
         """Sends message(s) to openai
 
-        :return: The response string from openai
+        :return: The requests.Response object sent from the server. None, if request was invalid.
         """
         logger.info("Sending message to openai")
         self._export_api_key_to_environment_variable()
@@ -49,12 +45,8 @@ class OpenAiHelper:
         We expect a return of True if we have a valid key and false if not.
         """
         response: Union[Response | None] = self._post_request(key=key)
-        if response is None:
-            return False
-        else:
-            is_valid = True if response.status_code == 200 else False
 
-        return is_valid
+        return False if response is None else response.status_code == 200
 
     def _export_api_key_to_environment_variable(self) -> None:
         if OPENAI_API_KEY not in os.environ:
@@ -67,7 +59,7 @@ class OpenAiHelper:
         else:
             logger.info("API key already in environment variable")
 
-    def _post_request(self, key: str) -> Response | None:
+    def _post_request(self, key: str) -> Union[Response | None]:
         logger.info("POSTing request to openai API")
 
         request_url = "https://api.openai.com/v1/chat/completions"
