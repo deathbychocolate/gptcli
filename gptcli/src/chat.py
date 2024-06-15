@@ -67,11 +67,11 @@ class ChatInstall(Chat):
 
 
 class ChatOpenai(Chat):
-    """A chat session for communicating with Openai"""
+    """A chat session for communicating with Openai."""
 
     def __init__(
         self,
-        model,
+        model: str,
         role_user: str = "user",
         role_model: str = "assistant",
         context: bool = True,
