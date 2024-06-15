@@ -15,7 +15,7 @@ import sseclient
 from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
-from gptcli.src.api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages

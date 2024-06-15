@@ -3,7 +3,7 @@
 import pytest
 import requests
 
-from gptcli.src.api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.message import Message, MessageFactory, Messages
 
 

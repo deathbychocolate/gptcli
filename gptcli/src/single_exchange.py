@@ -5,7 +5,7 @@ from typing import Union
 
 from requests import Response
 
-from gptcli.src.api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.message import Message, MessageFactory, Messages
 
 
