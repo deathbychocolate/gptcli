@@ -29,11 +29,7 @@ class SingleExchange:
         self._storage: bool = storage
 
     def start(self) -> None:
-        """_summary_
-
-        Returns:
-            _type_: _description_
-        """
+        """Start Single-Exchange communication."""
         message: Message = MessageFactory.create_user_message(
             role=self._role_user,
             content=self._input_string,
