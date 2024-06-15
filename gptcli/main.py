@@ -5,7 +5,8 @@ from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
 import logging
 
 from gptcli.src.chat import ChatOpenai
-from gptcli.src.cli import CommandParser
+from gptcli.src.single_exchange import SingleExchange
+from gptcli.src.command_parser import CommandParser
 from gptcli.src.install import Install
 
 logger = logging.getLogger(__name__)
@@ -19,28 +20,34 @@ def run_and_configure_argparse() -> CommandParser:
 
 
 def load_api_key_to_environment_variable(parser: CommandParser) -> None:
-    if parser.args.key is None:
-        with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
-            os.environ[OPENAI_API_KEY] = filepointer.read()
-    elif str(parser.args.key).isascii():
+    if "key" in parser.args and parser.args.key is None:
+        try:
+            with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
+                os.environ[OPENAI_API_KEY] = filepointer.read()
+        except FileNotFoundError:
+            logger.warning("File storing API key not found. Skipping loading API from local storage.")
+    elif "key" in parser.args and str(parser.args.key).isascii():
         os.environ[OPENAI_API_KEY] = str(parser.args.key)
 
 
-def execute_install(parser: CommandParser) -> None:
-    logger.info("Executing install script.")
-    Install(openai_api_key=parser.args.key).standard_install()
-
-
-def enter_cli_mode(parser: CommandParser) -> None:
+def enter_single_exchange_mode(parser: CommandParser) -> None:
     logger.info("Entering CLI mode.")
-    logger.warning("CLI mode is not currently implemented: %s", parser.args)
-    raise NotImplementedError("CLI only mode not implemented yet.")
+    SingleExchange(
+        input_string=parser.args.input_string,
+        model=parser.args.model,
+        role_user=parser.args.role_user,
+        role_model=parser.args.role_model,
+        filepath=parser.args.filepath,
+        storage=parser.args.storage,
+    ).start()
 
 
 def enter_chat_mode(parser: CommandParser) -> None:
     logger.info("Entering chat mode.")
     ChatOpenai(
         model=parser.args.model,
+        role_user=parser.args.role_user,
+        role_model=parser.args.role_model,
         context=parser.args.context,
         stream=parser.args.stream,
         filepath=parser.args.filepath,
@@ -53,10 +60,10 @@ def main() -> None:
     """This is the main function."""
     parser: CommandParser = run_and_configure_argparse()
     load_api_key_to_environment_variable(parser=parser)
-    execute_install(parser=parser)
+    Install().standard_install()
     match parser.args.subcommand_name:
         case "se":
-            enter_cli_mode(parser=parser)
+            enter_single_exchange_mode(parser=parser)
         case "chat":
             enter_chat_mode(parser=parser)
         case _:

@@ -116,6 +116,11 @@ class CommandParser:
             default=True,
             help="Enable or disable local storage of last chat session.",
         )
+        parser_se.add_argument(
+            "input_string",
+            type=str,
+            help="Accepts a string input of any size.",
+        )
 
         # parser options for 'chat' mode
         parser_chat = subparsers.add_parser(
