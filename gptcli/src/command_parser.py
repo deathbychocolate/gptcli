@@ -5,7 +5,7 @@ import logging
 from logging import Logger
 
 from gptcli._version import __version__
-from gptcli.src.supported_models import openai, roles
+from gptcli.src.definitions import openai, roles, extraction_types
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ Tips and Tricks:
     - You can use multiline input while in prompt mode by starting your message with \"\"\" + `ENTER` and ending it with \"\"\" + `ENTER`.
     - You can exit chat mode by typing and entering `exit` or `q`.
     - You can clear your terminal's screen by typing and entering `clear` or `cls`.
-    - You can abort any process via `CRTL+C`.
+    - You can abort any process via `CTRL+C`.
     - You can cycle through your sent messages in your active chat session via the arrow keys: `up` and `down`.
 """
 
@@ -117,6 +117,14 @@ class CommandParser:
             action=argparse.BooleanOptionalAction,
             default=True,
             help="Enable or disable local storage of last chat session.",
+        )
+        parser_se.add_argument(
+            "--et",
+            type=str,
+            default=extraction_types["plain"],
+            choices=extraction_types.values(),
+            help="",
+            metavar="<string>",
         )
         parser_se.add_argument(
             "input_string",

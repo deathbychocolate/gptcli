@@ -15,3 +15,9 @@ roles: list = [
     "function",
     "tool",
 ]
+
+extraction_types: dict = {
+    "plain": "plain",
+    "choices": "choices",
+    "all": "all",
+}

@@ -39,6 +39,7 @@ def enter_single_exchange_mode(parser: CommandParser) -> None:
         role_model=parser.args.role_model,
         filepath=parser.args.filepath,
         storage=parser.args.storage,
+        extraction_type=parser.args.et,
     ).start()
 
 
