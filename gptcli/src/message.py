@@ -10,7 +10,7 @@ from uuid import uuid4
 import tiktoken
 from tiktoken import Encoding
 
-from gptcli.src.supported_models import openai
+from gptcli.src.definitions import openai
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -149,7 +149,7 @@ class MessageFactory:
         """Creates a message, you may specify the role and the content.
 
         Args:
-            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc).
+            role (str): The role designated by the user at the start (user, mathematician, pilot etc).
             content (str): The content of the message body.
             model (str): The LLM used for this message.
 
@@ -168,7 +168,7 @@ class MessageFactory:
         """Creates a message, you may specify the role and the content.
 
         Args:
-            role (str): The role dersignated by the user at the start (user, mathmatician, pilot etc).
+            role (str): The role designated by the user at the start (user, mathematician, pilot etc).
             content (str): The content of the message body.
             model (str): The LLM used for this message.
 
@@ -211,7 +211,7 @@ class Messages:
     """A class to hold Message objects.
 
     It fulfills the need of custom functionalities
-    that are not offered by Python dicitionaries or lists.
+    that are not offered by Python dictionaries or lists.
     """
 
     def __init__(self, messages: list[Message] | None = None) -> None:

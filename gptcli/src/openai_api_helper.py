@@ -28,7 +28,7 @@ class OpenAiHelper:
         self._messages: list[dict] = [message.to_dict_reduced_context() for message in messages]
         self._stream: bool = stream
 
-    def send(self) -> Union[Response | None]:
+    def send(self) -> Response:
         """Sends message(s) to openai
 
         :return: The requests.Response object sent from the server. None, if request was invalid.
@@ -36,7 +36,7 @@ class OpenAiHelper:
         logger.info("Sending message to openai")
         self._export_api_key_to_environment_variable()
         key: str = os.environ[OPENAI_API_KEY]
-        response: Union[Response | None] = self._post_request(key=key)
+        response: Response = self._post_request(key=key)
 
         return response
 
@@ -44,7 +44,11 @@ class OpenAiHelper:
         """Sends a POST request to the Openai API.
         We expect a return of True if we have a valid key and false if not.
         """
-        response: Union[Response | None] = self._post_request(key=key)
+
+        try:
+            response: Response = self._post_request(key=key)
+        except ValueError:
+            return False
 
         return False if response is None else response.status_code == 200
 
@@ -59,7 +63,7 @@ class OpenAiHelper:
         else:
             logger.info("API key already in environment variable")
 
-    def _post_request(self, key: str) -> Union[Response | None]:
+    def _post_request(self, key: str) -> Response:
         logger.info("POSTing request to openai API")
 
         request_url = "https://api.openai.com/v1/chat/completions"
@@ -73,7 +77,7 @@ class OpenAiHelper:
             "messages": self._messages,
         }
 
-        response: Union[Response | None] = None  # return None rather than uninitiated variable
+        response: Union[Response | None] = None
         try:
             response = requests.post(
                 request_url,
@@ -93,7 +97,7 @@ class OpenAiHelper:
             logger.exception("This is likely manual user intervention")  # when the user decides to exit during a POST
 
         # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
-        if response is not None:  # response retrieved
+        if response:  # response retrieved
             code: int = response.status_code
             if code >= 400:
                 match code:
@@ -110,7 +114,7 @@ class OpenAiHelper:
                     case _ if code >= 500 and code < 600:
                         logger.warning("Received unexpected server error")
                     case _ if code >= 600:
-                        logger.warning("Response code not recongnized!")
+                        logger.warning("Response code not recognized!")
                 error = json.loads(response.content)["error"]
                 log_message = ":".join(
                     [
@@ -120,9 +124,8 @@ class OpenAiHelper:
                     ]
                 )
                 logger.warning(log_message)
-                response = None
-        else:
-            logger.warning("Response not retrieved. Replying with None")
-            response = None
+
+        if not response:
+            raise ValueError("Response not retrieved from API call.")
 
         return response

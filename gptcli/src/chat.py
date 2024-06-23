@@ -15,10 +15,10 @@ import sseclient
 from requests import Response
 from requests.exceptions import ChunkedEncodingError
 
-from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
 from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ class ChatOpenai(Chat):
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
-        response: Union[Response | None] = self._send_messages()
+        response: Response = self._send_messages()
         self._add_reply_to_messages(response)
         self._messages = Messages() if self._context is False else self._messages
 
@@ -190,8 +190,8 @@ class ChatOpenai(Chat):
         )
         self._messages.add_message(message)
 
-    def _send_messages(self) -> Union[Response | None]:
-        response: Union[Response | None] = OpenAiHelper(
+    def _send_messages(self) -> Response:
+        response: Response = OpenAiHelper(
             self._model,
             messages=self._messages,
             stream=self._stream,

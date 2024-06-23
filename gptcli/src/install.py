@@ -6,10 +6,10 @@ from logging import Logger
 
 from gptcli.definitions import (GPTCLI_INSTALL_SUCCESSFUL, GPTCLI_KEYS_FILEPATH, GPTCLI_KEYS_OPENAI,
                                 GPTCLI_ROOT_FILEPATH, GPTCLI_STORAGE_FILEPATH, OPENAI_API_KEY)
-from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.chat import ChatInstall
+from gptcli.src.definitions import openai
 from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.supported_models import openai
+from gptcli.src.openai_api_helper import OpenAiHelper
 
 logger: Logger = logging.getLogger(__name__)
 
