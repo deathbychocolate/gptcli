@@ -1,3 +1,29 @@
+## 0.16.0 (2024-06-29)
+
+### Feat
+
+- :sparkles: Add option to select extraction type.
+- **project**: Add makefile and update documentation.
+- **project**: Add Single-Exchange feature. Fix bug regarding the --key parameter not working by exporting the API key to environment variables and always checking there first, and if it is not present check the locally stored key.
+- **project**: :construction: Add foundation for Single-Exchange mode.
+
+### Fix
+
+- **api**: :bug: Provide a list of allowed role titles to user and model roles to prevent client error.
+- **project**: :bug: Fix issue where locally stored api key is always used even when user provided key is present.
+- **project**: :ambulance: Make sure the key is not only present as an arg, but also make sure it is empty.
+- **docs**: :memo: Move tips and tricks to gptcli's help command.
+
+### Refactor
+
+- **project**: :pencil2: Fix spelling mistakes and change option name.
+- **api**: :recycle: Remove option to return None and fix spelling errors.
+- **api**: Improve doc string, code readability, and fix the return type hint.
+- **install**: Simplify the install process by moving strings to definitions.py.
+- **chat**: Add variable type hint to model parameter.
+- **project**: Remove deprecated and soon to be deprecated LLMs.
+- **project**: Remove deprecated (or soon to be) LLMs.
+
 ## 0.15.0 (2024-06-03)
 
 ### Feat
