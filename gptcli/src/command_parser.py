@@ -192,7 +192,7 @@ class CommandParser:
             help="Enable or disable local storage of last chat session.",
         )
         parser_chat.add_argument(
-            "--continue-chat",
+            "--load-last",
             action=argparse.BooleanOptionalAction,
             default=False,
             help="Enable or disable loading your last chat session from storage.",

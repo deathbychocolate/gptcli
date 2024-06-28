@@ -53,7 +53,7 @@ def enter_chat_mode(parser: CommandParser) -> None:
         stream=parser.args.stream,
         filepath=parser.args.filepath,
         storage=parser.args.storage,
-        continue_chat=parser.args.continue_chat,
+        load_last=parser.args.load_last,
     ).start()
 
 

@@ -78,7 +78,7 @@ class ChatOpenai(Chat):
         stream: bool = True,
         filepath: str = "",
         storage: bool = True,
-        continue_chat: bool = False
+        load_last: bool = False
     ):
         Chat.__init__(self)
 
@@ -89,8 +89,8 @@ class ChatOpenai(Chat):
         self._stream: bool = stream
         self._filepath: str = filepath
         self._storage: bool = storage
-        self._continue_chat: bool = continue_chat
-        self._messages: Messages = Storage().extract_messages() if self._continue_chat else Messages()
+        self._load_last: bool = load_last
+        self._messages: Messages = Storage().extract_messages() if self._load_last else Messages()
 
     @user_triggered_abort
     def start(self) -> None:
@@ -109,12 +109,12 @@ class ChatOpenai(Chat):
         # in chat commands and features
         exit_commands: set = set(["exit", "q"])
         clear_screen_commands: set = set(["clear", "cls"])
-        multine_input: Set[str] = set(['"""'])
+        multiline_input: Set[str] = set(['"""'])
 
         # commence chat loop
         while True:
             user_input = self.prompt(">>> [MESSAGE]: ")
-            if user_input in multine_input:
+            if user_input in multiline_input:
                 user_input = self._scan_multiline_input()
                 if len(user_input) == 0 or user_input.isspace():
                     continue
@@ -169,12 +169,12 @@ class ChatOpenai(Chat):
 
     def _scan_multiline_input(self) -> str:
 
-        multine_input: Set = set(['"""'])
+        multiline_input: Set = set(['"""'])
 
         user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
 
-        while user_input_single_line not in multine_input:
+        while user_input_single_line not in multiline_input:
             user_input_multiline.append(user_input_single_line)
             user_input_single_line = str(input("... "))
 
