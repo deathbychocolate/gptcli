@@ -62,7 +62,7 @@ class Message:
         If we send less, we save tokens.
 
         Returns:
-            dict: A lightweight dictionary representation of the Messsage class.
+            dict: A lightweight dictionary representation of the Message class.
         """
         return {
             "role": self._role,
@@ -74,7 +74,7 @@ class Message:
         When storing messages locally, we want the full context for each message.
 
         Returns:
-            dict: A complete dictionary representation of the Messsage class.
+            dict: A complete dictionary representation of the Message class.
         """
         return {
             "created": self._created,
