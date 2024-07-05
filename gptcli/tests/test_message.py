@@ -30,13 +30,23 @@ class TestMessage:
     class TestEncoding:
         """Holds tests for _encoding()."""
 
-        def test_should_return_cl100k_base_for_supported_model_gpt_4_turbo(self, setup_teardown: Message) -> None:
-            message: Message = setup_teardown
+        def test_should_return_o200k_base_for_supported_model_gpt_4o(self) -> None:
+            message: Message = Message(role="user", content="Test.", model="gpt-4o", is_reply=False)
+            encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
+            assert encoding.name == "o200k_base"
+
+        def test_should_return_cl100k_base_for_supported_model_gpt_4_turbo(self) -> None:
+            message: Message = Message(role="user", content="Test.", model="gpt-4-turbo", is_reply=False)
             encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
             assert encoding.name == "cl100k_base"
 
-        def test_should_default_to_cl100k_base_when_a_key_error_occurs(self) -> None:
-            message: Message = Message(role="user", content="Test.", model="gpt-4o", is_reply=False)
+        def test_should_return_cl100k_base_for_supported_model_gpt_4(self) -> None:
+            message: Message = Message(role="user", content="Test.", model="gpt-4", is_reply=False)
+            encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
+            assert encoding.name == "cl100k_base"
+
+        def test_should_return_cl100k_base_for_supported_model_gpt_3_5_turbo(self) -> None:
+            message: Message = Message(role="user", content="Test.", model="gpt-3.5-turbo", is_reply=False)
             encoding: Encoding = message._encoding()  # pylint: disable=W0212:protected-access
             assert encoding.name == "cl100k_base"
 

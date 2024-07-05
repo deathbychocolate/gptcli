@@ -123,18 +123,11 @@ class Message:
     def _encoding(self) -> Encoding:
         """Determine the encoding to use for the Message.
         The encoding is derived from the LLM model used, via tiktoken.
-        The Openai docs seem to prefer 'cl100k_base' encoding for newer models.
-        Which may be why it is used as the fallback encoding type. See the link for more:
-        https://platform.openai.com/docs/guides/text-generation/managing-tokens
 
         Returns:
-            Encoding: The encoding of the message, which is the encoding used for the model
+            Encoding: The encoding of the message, which is the encoding used for the model.
         """
-        try:
-            encoding: Encoding = tiktoken.encoding_for_model(self._model)
-        except KeyError:
-            encoding = tiktoken.get_encoding("cl100k_base")
-        return encoding
+        return tiktoken.encoding_for_model(self._model)
 
     @property
     def tokens(self) -> int:
