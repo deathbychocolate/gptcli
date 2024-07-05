@@ -1,3 +1,9 @@
+## 0.16.1 (2024-07-05)
+
+### Fix
+
+- **docker**: Fix issue with docker image not building.
+
 ## 0.16.0 (2024-06-29)
 
 ### Feat

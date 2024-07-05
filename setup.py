@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-__version__ = "0.16.0"
+__version__ = "0.16.1"
 
 setup(
     name="gptcli",
