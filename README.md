@@ -1,27 +1,36 @@
 # How do I run it?
 - Users:
-    - A user should only have to run `gptcli` in their preferred terminal.
+    - A user should only have to run `gptcli chat` or `gptcli se` in their preferred terminal.
     - For more info on usage, check the builtin help docs using `gptcli [-h|--help]`
 - Developers:
-    - Open your preferred terminal.
-    - Clone the project to your local machine using: `git clone <https_link|ssh_link>`
-    - Change your current working directory to the project root.
-    - Execute the following command: `make install`
-    - Run `gptcli`
+    - Cloning the repo:
+        - Open your preferred terminal.
+        - Clone the project to your local machine using: `git clone <https_link|ssh_link>`
+        - Change your current working directory to the project root.
+        - Execute the following command: `make install`
+        - Run `gptcli`
+    - Running the Docker image via a Docker container:
+        - Open your preferred terminal.
+        - Enter switch to the root user.
+        - Start docker: `systemctl start docker`
+        - Pull the docker image: `docker pull deathbychocolate/gptcli:latest`
+        - Enter the image: `docker exec -it <container_name> bash`
 
 # How do I run the tests?
-- Developers:
-    - Follow the `How do I run it?` above.
-    - Run the following command in the root of the project: `make test` or `make coverage`. This will generate a coverage report named htmlcov at the root of the project.
+- Follow the `How do I run it?` above and then choose:
+    - Run the tests: `make test`
+    - Run the tests and generate a coverage report: `make coverage`
 
 # How does it work?
 The project uses the OpenAI API to query text using client sent messages sent over HTTP POST requests. There are 2 modes to consider, `Chat` and `Single-Exchange`:
 
 `Chat` mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. This mode will show you output similar to the following:
 ```text
+username@hostname ~/> gptcli chat
 >>> [MESSAGE]: hi
 >>> [REPLY, model=gpt-3.5-turbo]: Hello! How can I assist you today?
 >>> [MESSAGE]: exit
+username@hostname ~/>
 ```
 
 `Single-Exchange` is functionally similar to `Chat`, but it only allows a single exchange of messages to happen (1 sent from client-side, 1 from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automation. This mode will show you output similar to the following:
