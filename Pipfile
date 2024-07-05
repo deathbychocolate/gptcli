@@ -4,15 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sounddevice = "~=0.4.6"
-soundfile = "~=0.12.1"
-boto3 = "~=1.26.129"
-sseclient-py = "~=1.7.2"
-requests = "~=2.31.0"
-tiktoken = "~=0.3.3"
+sounddevice = "*"
+soundfile = "*"
+boto3 = "*"
+sseclient-py = "*"
+requests = "*"
+tiktoken = "*"
 gptcli = {editable = true, path = "."}
-pypdf = "~=4.1.0"
-filetype = "~=1.2.0"
+pypdf = "*"
+filetype = "*"
 
 [dev-packages]
 pytest = "*"
