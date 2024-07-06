@@ -1,7 +1,7 @@
 # How do I run it?
 - Users:
     - A user should only have to run `gptcli chat` or `gptcli se` in their preferred terminal.
-    - For more info on usage, check the builtin help docs using `gptcli [-h|--help]`
+    - For more info on usage, check the builtin help docs using `gptcli [chat|se] [-h|--help]`
 - Developers:
     - Cloning the repo:
         - Open your preferred terminal.

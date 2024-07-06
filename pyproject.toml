@@ -10,9 +10,8 @@ dependencies = ["requests", "sseclient-py", "tiktoken", "filetype", "pypdf"]
 classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Linux",
-    "Operating System :: OS Unix",
-    "Operating System :: OS WSL",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
 ]
 
 [project.urls]
