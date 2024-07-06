@@ -8,7 +8,7 @@ license = { file = "LICENSE" }
 keywords = ["openai", "gpt", "cli", "gptcli", "terminal", "chat", "api"]
 dependencies = ["requests", "sseclient-py", "tiktoken", "filetype", "pypdf"]
 classifiers = [
-    "Intended Audience :: Engineers",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.11",
     "Operating System :: OS Linux",
     "Operating System :: OS Unix",
