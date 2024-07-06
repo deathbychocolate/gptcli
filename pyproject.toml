@@ -1,6 +1,29 @@
 [project]
-name = "gptcli"
+authors = [{ name = "Damian Vonapartis", email = "damianosvon@gmail.com" }]
+name = "dbc-gptcli"
 version = "0.16.1"
+description = "A CLI tool for talking to the Openai API"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
+keywords = ["openai", "gpt", "cli", "gptcli", "terminal", "chat", "api"]
+dependencies = ["requests", "sseclient-py", "tiktoken", "filetype", "pypdf"]
+classifiers = [
+    "Intended Audience :: Engineers",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Linux",
+    "Operating System :: OS Unix",
+    "Operating System :: OS WSL",
+]
+
+[project.urls]
+Repository = "https://github.com/deathbychocolate/gptcli"
+
+[project.scripts]
+scripts = "gptcli.main:main"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 120
