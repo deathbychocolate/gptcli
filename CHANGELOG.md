@@ -1,3 +1,10 @@
+## 0.16.2 (2024-07-06)
+
+### Fix
+
+- **project**: Fix missing module error with pypdf and move all configurations to toml from setup.py.
+- **message**: Incorporate the new encodings for Openai's LLMs.
+
 ## 0.16.1 (2024-07-05)
 
 ### Fix
