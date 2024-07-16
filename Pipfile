@@ -4,9 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sounddevice = "*"
-soundfile = "*"
-boto3 = "*"
 sseclient-py = "*"
 requests = "*"
 tiktoken = "*"
@@ -22,6 +19,7 @@ mypy = "*"  # make sure to also install types: mypy --install-types
 pylint = "*"
 black = "*"
 isort = "*"
+dbc-gptcli = {file = ".", editable = true}
 
 [requires]
 python_version = "3.11"
