@@ -1,0 +1,29 @@
+{
+    "conventionalCommits.scopes": [
+        "project",
+        "tests",
+        "docs",
+        "chat",
+        "install",
+        "ingest",
+        "message",
+        "api",
+        "decorators",
+        "cli",
+        "makefile",
+        "docker"
+    ],
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.autoImportCompletions": true,
+    "python.testing.pytestArgs": [
+        "gptcli"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "C_Cpp.intelliSenseEngineFallback": "enabled",
+    "cSpell.words": [
+        "gptcli",
+        "htmlcov",
+        "openai"
+    ],
+}
