@@ -1,7 +1,7 @@
 FROM python:latest
 
-WORKDIR /gptcli
-COPY . /gptcli
+WORKDIR /app
+COPY . /app
 
 # Update and upgrade container packages
 RUN apt update
@@ -17,8 +17,3 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Install our app
 RUN pip install pipenv
 RUN pipenv install --system --deploy
-
-# https://stackoverflow.com/questions/67763121/installing-pyaudio-to-docker-container
-# https://stackoverflow.com/questions/38480029/libsndfile-so-1-cannot-open-shared-object-file-no-such-file-or-directory
-# RUN apt install libsndfile1 -y
-# RUN apt install libasound-dev libportaudio2 libportaudiocpp0 portaudio19-dev -y
