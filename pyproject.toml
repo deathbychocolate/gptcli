@@ -39,7 +39,6 @@ tag_format = "$version"
 version_files = [
     "./pyproject.toml",
     "./gptcli/_version.py:__version__",
-    "./setup.py:__version__",
 ]
 version_scheme = "semver"
 version_provider = "pep621"
