@@ -1,3 +1,17 @@
+## 0.17.0 (2024-07-19)
+
+### Feat
+
+- **project**: Add 'gpt-4o mini' as an option to model selection.
+
+### Refactor
+
+- **project**: :see_no_evil: Remove outdated custom list and include vscode config files.
+- **project**: Remove unused comments and change the workdir name as to not be confusing when are project's root dir is '/gptcli/gptcli/. '.
+- **makefile**: Hide the command executed from stdout using @.
+- **project**: Remove uneeded version variables.
+- **project**: Remove code for speech feature.
+
 ## 0.16.2 (2024-07-06)
 
 ### Fix
