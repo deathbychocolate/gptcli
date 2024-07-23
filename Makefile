@@ -13,7 +13,7 @@ test:
 
 .PHONY: coverage
 coverage:
-	@pipenv run pytest --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html
+	@pipenv run pytest --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
 
 .PHONY: clean
 clean:
