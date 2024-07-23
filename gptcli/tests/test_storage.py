@@ -2,6 +2,7 @@
 
 import pytest
 
+
 class TestChat:
     """Holds all tests related to the Chat class."""
 

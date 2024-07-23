@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """The entrypoint to the project."""
-import os
-from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
 import logging
+import os
 
+from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
 from gptcli.src.chat import ChatOpenai
-from gptcli.src.single_exchange import SingleExchange
 from gptcli.src.command_parser import CommandParser
 from gptcli.src.install import Install
+from gptcli.src.single_exchange import SingleExchange
 
 logger = logging.getLogger(__name__)
 

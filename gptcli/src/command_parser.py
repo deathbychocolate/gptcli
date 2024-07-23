@@ -5,7 +5,7 @@ import logging
 from logging import Logger
 
 from gptcli._version import __version__
-from gptcli.src.definitions import openai, roles, extraction_types
+from gptcli.src.definitions import extraction_types, openai, roles
 
 logger: Logger = logging.getLogger(__name__)
 

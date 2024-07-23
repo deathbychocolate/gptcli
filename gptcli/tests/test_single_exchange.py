@@ -1,16 +1,15 @@
 """File that will hold all the tests relating to Message.py."""
 
 import json
-
 from typing import Generator, Union
-from requests import Response
-import pytest
 
-from gptcli.src.definitions import openai
+import pytest
+from requests import Response
+
+from gptcli.src.definitions import extraction_types, openai
 from gptcli.src.message import Message, MessageFactory, Messages
 from gptcli.src.openai_api_helper import OpenAiHelper
 from gptcli.src.single_exchange import SingleExchange
-from gptcli.src.definitions import extraction_types
 
 
 # pylint: disable=W0212:protected-access

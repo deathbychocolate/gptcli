@@ -1,8 +1,9 @@
 """File that will hold all the tests relating to Message.py."""
 
+from typing import Generator
+
 import pytest
 from tiktoken import Encoding
-from typing import Generator
 
 from gptcli.src.message import Message, MessageFactory, Messages
 
