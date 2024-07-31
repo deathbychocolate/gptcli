@@ -22,8 +22,10 @@
     "python.testing.pytestEnabled": true,
     "C_Cpp.intelliSenseEngineFallback": "enabled",
     "cSpell.words": [
+        "filepointer",
         "gptcli",
         "htmlcov",
-        "openai"
+        "openai",
+        "tiktoken"
     ],
 }
