@@ -205,13 +205,10 @@ class ChatOpenai(Chat):
     def _reply(self, response: Response, stream: bool) -> Union[Message | None]:
         logger.info("Selecting reply mode")
         message: Union[Message | None] = None
-        if response is None:
-            self._print_none()
+        if stream:
+            message = self._print_stream(response)
         else:
-            if stream:
-                message = self._print_stream(response)
-            else:
-                message = self._print_simple(response)
+            message = self._print_simple(response)
 
         return message
 
