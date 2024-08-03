@@ -17,7 +17,7 @@ coverage:
 
 .PHONY: clean
 clean:
-	@python3 -m p3yclean .
+	@python3 -m pyclean .
 
 .PHONY: clean-coverage
 clean-coverage:
