@@ -4,18 +4,18 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-sseclient-py = "*"
 requests = "*"
 tiktoken = "*"
 gptcli = {editable = true, path = "."}
 pypdf = "*"
 filetype = "*"
+mypy = "*"
+types-requests = "*"
 
 [dev-packages]
 pytest = "*"
 commitizen = "*"
 pytest-cov = "*"
-mypy = "*"  # make sure to also install types: mypy --install-types
 pylint = "*"
 black = "*"
 isort = "*"

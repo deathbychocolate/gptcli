@@ -6,7 +6,7 @@ description = "A CLI tool for talking to the Openai API"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 keywords = ["openai", "gpt", "cli", "gptcli", "terminal", "chat", "api"]
-dependencies = ["requests", "sseclient-py", "tiktoken", "filetype", "pypdf"]
+dependencies = ["requests", "tiktoken", "filetype", "pypdf", "mypy", "types-requests"]
 classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.11",
@@ -21,7 +21,7 @@ Repository = "https://github.com/deathbychocolate/gptcli"
 scripts = "gptcli.main:main"
 
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=42", "wheel", "mypy", "types-requests"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]

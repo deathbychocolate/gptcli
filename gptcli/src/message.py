@@ -4,7 +4,7 @@ import json
 import logging
 from logging import Logger
 from time import time
-from typing import Optional, Union
+from typing import ClassVar, Optional, Union
 from uuid import uuid4
 
 import tiktoken
@@ -35,7 +35,7 @@ class Message:
         _count_tokens: Counts the number of tokens in a Message.
     """
 
-    index: int = 0
+    index: ClassVar[int] = 0
 
     def __init__(
         self,

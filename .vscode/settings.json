@@ -25,7 +25,10 @@
         "filepointer",
         "gptcli",
         "htmlcov",
+        "mypyc",
+        "mypycify",
         "openai",
+        "pypdf",
         "tiktoken"
     ],
 }

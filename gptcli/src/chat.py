@@ -8,12 +8,11 @@ import json
 import logging
 import os
 import readline
+import time
 from logging import Logger
 from typing import Set, Union
 
-import sseclient
 from requests import Response
-from requests.exceptions import ChunkedEncodingError
 
 from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
@@ -27,7 +26,7 @@ logger: Logger = logging.getLogger(__name__)
 class Chat:
     """A simple chat session"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._configure_chat()
 
     def _configure_chat(self) -> None:
@@ -182,7 +181,7 @@ class ChatOpenai(Chat):
 
         return user_input
 
-    def _add_user_input_to_messages(self, user_input) -> None:
+    def _add_user_input_to_messages(self, user_input: str) -> None:
         message: Message = MessageFactory.create_user_message(
             role=self._role_user,
             content=user_input,
@@ -198,7 +197,7 @@ class ChatOpenai(Chat):
         ).send()
         return response
 
-    def _add_reply_to_messages(self, response) -> None:
+    def _add_reply_to_messages(self, response: Response) -> None:
         message: Union[Message | None] = self._reply(response, stream=self._stream)
         self._messages.add_message(message)
 
@@ -222,21 +221,21 @@ class ChatOpenai(Chat):
 
     def _print_stream(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
+        self._print_reply("", end="")
+        data: list[str] = response.content.decode("utf8").split("\n\n")
+        data.pop(0)  # remove metadata about the request at start of response
+        data.pop()   # remove '' at end of response
+        data.pop()   # remove '[DONE]' at end of response
+        data.pop()   # remove metadata indicating stop at end of response
+        data_clean: list[str] = [event.replace("data: ", "") for event in data]
+        dictionaries: list[dict] = [json.loads(chunk) for chunk in data_clean]
         payload: str = ""
-        try:
-            self._print_reply("", end="")
-            client = sseclient.SSEClient(response)
-            for event in client.events():
-                if event.data != "[DONE]":
-                    delta = json.loads(event.data)["choices"][0]["delta"]
-                    if delta.get("content") is not None:
-                        text = delta["content"]
-                        print(text, end="", flush=True)
-                        payload = "".join([payload, text])
-            print("")
-        except ChunkedEncodingError:
-            print("")
-            self._print_gptcli_message("ChunkedEncodingError detected. Maybe try again.")
+        for dictionary in dictionaries:
+            text: str = dictionary["choices"][0]["delta"]["content"]
+            print(text, end="", flush=True)
+            payload = "".join([payload, text])
+            time.sleep(0.02)  # mimic streaming
+        print("")
 
         message: Message = MessageFactory.create_reply_message(
             role=self._role_model,

@@ -3,6 +3,7 @@
 import argparse
 import logging
 from logging import Logger
+from typing import ClassVar
 
 from gptcli._version import __version__
 from gptcli.src.definitions import extraction_types, openai, roles
@@ -28,7 +29,7 @@ Tips and Tricks:
 class CommandParser:
     """Class for the command line interface."""
 
-    LOGGING_MODE_ALL = [
+    LOGGING_MODE_ALL: ClassVar[list[int]] = [
         logging.DEBUG,
         logging.INFO,
         logging.WARNING,
