@@ -22,6 +22,8 @@
     "python.testing.pytestEnabled": true,
     "C_Cpp.intelliSenseEngineFallback": "enabled",
     "cSpell.words": [
+        "capsys",
+        "dunder",
         "filepointer",
         "gptcli",
         "htmlcov",
