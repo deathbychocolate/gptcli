@@ -1,3 +1,6 @@
+![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20package)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
+
 # How do I run it?
 - Users:
     - A user should only have to run `gptcli chat` or `gptcli se` in their preferred terminal.
