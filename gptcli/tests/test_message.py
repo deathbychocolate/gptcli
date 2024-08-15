@@ -1,4 +1,4 @@
-"""File that will hold all the tests relating to Message.py."""
+"""File that will hold all the tests relating to message.py."""
 
 from typing import Generator
 
