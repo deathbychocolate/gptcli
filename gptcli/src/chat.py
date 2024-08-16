@@ -10,14 +10,14 @@ import os
 import readline
 import time
 from logging import Logger
-from typing import Set, Union
+from typing import Set
 
 from requests import Response
 
 from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
 from gptcli.src.ingest import PDF, Text
-from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import OpenAiHelper
+from gptcli.src.message import Message, MessageFactory as mf, Messages
+from gptcli.src.openai_api_helper import OpenAiHelper as oh
 from gptcli.src.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class ChatOpenai(Chat):
         stream: bool = True,
         filepath: str = "",
         storage: bool = True,
-        load_last: bool = False
+        load_last: bool = False,
     ):
         Chat.__init__(self)
 
@@ -137,7 +137,7 @@ class ChatOpenai(Chat):
             Storage().store_messages(self._messages, storage_type="chat")
 
     def _extract_file_content_to_message(self) -> None:
-        logger.info("Extracting file content from '%s' to add to message.", self._filepath)
+        logger.info("Extracting file content from '%s' to add to m.", self._filepath)
 
         self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
 
@@ -153,12 +153,8 @@ class ChatOpenai(Chat):
 
         # add content to message for context if content is populated with text
         if len(content) > 0 and not content.isspace():
-            message: Message = MessageFactory.create_user_message(
-                role=self._role_user,
-                content=content,
-                model=self._model,
-            )
-            self._messages.add_message(message)
+            m: Message = mf.create_user_message(role=self._role_user, content=content, model=self._model)
+            self._messages.add_message(m)
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         self._add_user_input_to_messages(user_input)
@@ -182,80 +178,50 @@ class ChatOpenai(Chat):
         return user_input
 
     def _add_user_input_to_messages(self, user_input: str) -> None:
-        message: Message = MessageFactory.create_user_message(
-            role=self._role_user,
-            content=user_input,
-            model=self._model,
-        )
-        self._messages.add_message(message)
+        m: Message = mf.create_user_message(role=self._role_user, content=user_input, model=self._model)
+        self._messages.add_message(m)
 
     def _send_messages(self) -> Response:
-        response: Response = OpenAiHelper(
-            self._model,
-            messages=self._messages,
-            stream=self._stream,
-        ).send()
+        response: Response = oh(self._model, messages=self._messages, stream=self._stream).send()
         return response
 
     def _add_reply_to_messages(self, response: Response) -> None:
-        message: Union[Message | None] = self._reply(response, stream=self._stream)
-        self._messages.add_message(message)
+        m: Message = self._reply(response, stream=self._stream)
+        self._messages.add_message(m)
+
+    def _reply(self, response: Response, stream: bool) -> Message:
+        logger.info("Selecting reply mode")
+        m: Message = self._print_chunks(response) if stream else self._print_content(response)
+
+        return m
 
     @allow_graceful_chat_exit
-    def _reply(self, response: Response, stream: bool) -> Union[Message | None]:
-        logger.info("Selecting reply mode")
-        message: Union[Message | None] = None
-        if stream:
-            message = self._print_stream(response)
-        else:
-            message = self._print_simple(response)
-
-        return message
-
-    def _print_none(self) -> None:
-        logger.info("Reply mode -> None")
-        self._print_gptcli_message("POST request was not completed successfully. Turn on logging to see why.")
-
-    def _print_stream(self, response: Response) -> Message:
+    def _print_chunks(self, response: Response) -> Message:
         logger.info("Reply mode -> Stream")
-        self._print_reply("", end="")
+        print(f">>> [REPLY, model={self._model}]: ", end="")
         data: list[str] = response.content.decode("utf8").split("\n\n")
         data.pop(0)  # remove metadata about the request at start of response
-        data.pop()   # remove '' at end of response
-        data.pop()   # remove '[DONE]' at end of response
-        data.pop()   # remove metadata indicating stop at end of response
+        data.pop()  # remove '' at end of response
+        data.pop()  # remove '[DONE]' at end of response
+        data.pop()  # remove metadata indicating stop at end of response
         data_clean: list[str] = [event.replace("data: ", "") for event in data]
         dictionaries: list[dict] = [json.loads(chunk) for chunk in data_clean]
         payload: str = ""
         for dictionary in dictionaries:
             text: str = dictionary["choices"][0]["delta"]["content"]
-            print(text, end="", flush=True)
+            print(text, end="", flush=True)  # flush is needed to mimic streaming
             payload = "".join([payload, text])
             time.sleep(0.02)  # mimic streaming
         print("")
 
-        message: Message = MessageFactory.create_reply_message(
-            role=self._role_model,
-            content=payload,
-            model=self._model,
-        )
+        m: Message = mf.create_reply_message(role=self._role_model, content=payload, model=self._model)
 
-        return message
+        return m
 
-    def _print_simple(self, response: Response) -> Message:
+    def _print_content(self, response: Response) -> Message:
         logger.info("Reply mode -> Simple")
         content: str = json.loads(response.content)["choices"][0]["message"]["content"]
-        self._print_reply(content)
+        print(f">>> [REPLY, model={self._model}]:", content)
+        m: Message = mf.create_reply_message(role=self._role_model, content=content, model=self._model)
 
-        message: Message = MessageFactory.create_reply_message(
-            role=self._role_model,
-            content=content,
-            model=self._model,
-        )
-
-        return message
-
-    def _print_reply(self, text: str, end="\n") -> None:
-        logger.info("Printing reply")
-        reply: str = "".join([f">>> [REPLY, model={self._model}]: ", text])
-        print(reply, end=end)
+        return m
