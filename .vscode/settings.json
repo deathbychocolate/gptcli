@@ -33,4 +33,5 @@
         "pypdf",
         "tiktoken"
     ],
+    "makefile.configureOnOpen": false,
 }
