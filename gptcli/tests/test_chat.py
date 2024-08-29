@@ -17,7 +17,7 @@ class TestChat:
         c: Chat = Chat()
         yield c
 
-    def test_should_configure_chat(self, setup_teardown: Chat)->None:
+    def test_should_configure_chat(self, setup_teardown: Chat) -> None:
         with patch.object(target=Chat, attribute="_configure_chat") as mock__configure_chat:
             chat: Chat = setup_teardown
             chat.__init__()  # type: ignore # pylint:disable=C2801:unnecessary-dunder-call
