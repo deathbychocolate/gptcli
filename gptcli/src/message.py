@@ -270,9 +270,9 @@ class MessagesIterator:
     'message in messages' and not 'message in messages.messages'
     """
 
-    def __init__(self, messages: Messages) -> None:
+    def __init__(self, messages: list[Message]) -> None:
         self._index: int = 0
-        self._messages: Messages = messages
+        self._messages: list[Message] = messages
 
     def __iter__(self):
         return self
