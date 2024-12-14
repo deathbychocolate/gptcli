@@ -127,7 +127,11 @@ class Message:
         Returns:
             Encoding: The encoding of the message, which is the encoding used for the model.
         """
-        return tiktoken.encoding_for_model(self._model)
+        try:
+            return tiktoken.encoding_for_model(model_name=self._model)
+        except KeyError:
+            return tiktoken.get_encoding(encoding_name="cl100k_base")  # keep this here
+            # sometimes updates to tiktoken are late for new models, therefore default to 'cl100k_base'
 
     @property
     def tokens(self) -> int:
