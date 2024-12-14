@@ -4,13 +4,14 @@ import json
 import logging
 from datetime import datetime, timezone
 from glob import glob
+from logging import Logger
 from os import path
 from time import time
 
 from gptcli.definitions import GPTCLI_STORAGE_FILEPATH
 from gptcli.src.message import Message, MessageFactory, Messages
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 supported_storage_types = set(["chat", "single_exchange", "metadata"])
