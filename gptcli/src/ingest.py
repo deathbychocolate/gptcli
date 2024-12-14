@@ -1,4 +1,4 @@
-"""Allow ingestion of external textual infromation.
+"""Allow ingestion of external textual information.
 Such as text from the terminal, or a text file.
 """
 
@@ -97,7 +97,7 @@ class PDF(File):
 
         text: str = ""
         if self._exists() and self._is_file():
-            reader = PdfReader(self.filepath)
+            reader: PdfReader = PdfReader(stream=self.filepath)
             text = " ".join([page.extract_text() for page in reader.pages])
         else:
             logger.warning("File '%s' not found. Returning empty value.", self.filepath)
