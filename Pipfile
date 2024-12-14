@@ -6,10 +6,8 @@ name = "pypi"
 [packages]
 requests = "*"
 tiktoken = "*"
-gptcli = {editable = true, path = "."}
 pypdf = "*"
 filetype = "*"
-mypy = "*"
 types-requests = "*"
 
 [dev-packages]
@@ -19,9 +17,9 @@ pytest-cov = "*"
 pylint = "*"
 black = "*"
 isort = "*"
-dbc-gptcli = {file = ".", editable = true}
 pyclean = "*"
 scalene = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.11"
