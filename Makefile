@@ -11,11 +11,11 @@ install: ## Install project dependencies using pipenv.
 
 .PHONY: test
 test: ## Run tests with pytest.
-	@pipenv run pytest --log-cli-level=ERROR
+	@pipenv run pytest -x --log-cli-level=ERROR
 
 .PHONY: coverage
 test_coverage: ## Run tests with pytest and generate code coverage report (html).
-	@pipenv run pytest --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
+	@pipenv run pytest -x --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
 
 .PHONY: clean
 clean: ## Remove __pycache__ and cpython generated files (gptcli folder only).
