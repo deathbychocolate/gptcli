@@ -5,9 +5,8 @@ MAKEFILE_PATH := $(shell readlink -f Makefile) ## Makefile absolute path.
 .PHONY: install
 install: ## Install project dependencies using pipenv.
 	@pipenv install --dev
-	@mypy --install-types
-	@pip install --editable .
-	@exit
+	@pipenv run mypy --install-types
+	@pipenv run pip install --editable .
 
 .PHONY: test
 test: ## Run tests with pytest.
