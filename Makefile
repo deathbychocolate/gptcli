@@ -19,13 +19,13 @@ test_coverage: ## Run tests with pytest and generate code coverage report (html)
 
 .PHONY: clean
 clean: ## Remove __pycache__ and cpython generated files (gptcli folder only).
-	@find . -type d -name "__pycache__" -exec rm -rf {} \;
-	@find . -type f -name "*.cpython-*" -exec rm -f {} \;
+	@-find . -type d -name "__pycache__" -exec rm -rf {} \;
+	@-find . -type f -name "*.cpython-*" -exec rm -f {} \;
 
 .PHONY: clean-coverage
 clean_coverage: ## Remove coverage report and metadata.
-	@rm .coverage
-	@rm -r htmlcov
+	@-rm .coverage
+	@-rm -r htmlcov
 
 .PHONY: help
 help: ## Show help and exit.
