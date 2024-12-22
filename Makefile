@@ -21,7 +21,7 @@ clean: ## Remove __pycache__ and cpython generated files (gptcli folder only).
 	@-find . -type d -name "__pycache__" -exec rm -rf {} \;
 	@-find . -type f -name "*.cpython-*" -exec rm -f {} \;
 
-.PHONY: clean-coverage
+.PHONY: clean_coverage
 clean_coverage: ## Remove coverage report and metadata.
 	@-rm .coverage
 	@-rm -r htmlcov
