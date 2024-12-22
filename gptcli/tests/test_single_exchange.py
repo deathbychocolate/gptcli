@@ -6,9 +6,9 @@ from typing import Generator, Union
 import pytest
 from requests import Response
 
-from gptcli.src.definitions import extraction_types, openai
+from gptcli.src.definitions import openai, output_types
 from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import SingleExchange as seh
 from gptcli.src.single_exchange import SingleExchange
 
 
@@ -36,7 +36,7 @@ class TestSingleExchange:
             model=openai["GPT_4O"],
         )
         messages: Messages = Messages(messages=[message])
-        helper: OpenAiHelper = OpenAiHelper(model=openai["GPT_4O"], messages=messages)
+        helper: seh = seh(model=openai["GPT_4O"], messages=messages)
         response: Response = helper.send()
         yield response
 
@@ -52,7 +52,7 @@ class TestSingleExchange:
             assert isinstance(result, Response)
 
     class TestChooseExtractionType:
-        """Holds tests for _choose_extraction_type()."""
+        """Holds tests for _choose_output()."""
 
         @pytest.mark.parametrize(
             "extraction_type,expected_type",
@@ -71,9 +71,9 @@ class TestSingleExchange:
         ):
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            python_object: Union[str | list | dict] = se._choose_extraction_type(
+            python_object: Union[str | list | dict] = se._choose_output(
                 response=response,
-                extraction_type=extraction_types[extraction_type],
+                output=output_types[extraction_type],
             )
             assert isinstance(python_object, expected_type)
 
@@ -84,9 +84,9 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: dict = dict()
             with pytest.raises(ValueError):
-                se._choose_extraction_type(
+                se._choose_output(
                     response=response,  # type: ignore
-                    extraction_type=extraction_types["plain"],
+                    output=output_types["plain"],
                 )
 
         def test_should_raise_value_error_when_parameter_extraction_type_is_not_string_object(
@@ -97,9 +97,9 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
-                se._choose_extraction_type(
+                se._choose_output(
                     response=response,
-                    extraction_type=-1,  # type: ignore
+                    output="",  # type: ignore
                 )
 
         def test_should_raise_value_error_when_parameter_extraction_type_does_not_contain_valid_value(
@@ -110,9 +110,9 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
-                se._choose_extraction_type(
+                se._choose_output(
                     response=response,
-                    extraction_type="not a valid type",  # type: ignore
+                    output="not a valid type",  # type: ignore
                 )
 
     class TestExtractMessageContent:

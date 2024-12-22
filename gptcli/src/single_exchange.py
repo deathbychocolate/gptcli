@@ -3,13 +3,12 @@
 import json
 import logging
 from logging import Logger
-from typing import Union
 
 from requests import Response
 
-from gptcli.src.definitions import extraction_types
+from gptcli.src.definitions import output_types
 from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import SingleExchange as se
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class SingleExchange:
         role_model: str = "assistant",
         filepath: str = "",
         storage: bool = True,
-        extraction_type: str = "plain",
+        output: str = "plain",
     ) -> None:
         self._input_string: str = input_string
         self._model: str = model
@@ -33,16 +32,16 @@ class SingleExchange:
         self._role_model: str = role_model
         self._filepath: str = filepath  # TODO: Implement
         self._storage: bool = storage  # TODO: Implement
-        self._extraction_type: str = extraction_type
+        self._output: str = output
 
     def start(self) -> None:
         """Start Single-Exchange communication."""
         logger.info("Starting Single-Exchange mode.")
         response = self._build_message_and_generate_response()
         if response:
-            text: Union[str | list | dict] = self._choose_extraction_type(
+            text: str | list | dict = self._choose_output(
                 response=response,
-                extraction_type=self._extraction_type,
+                output=self._output,
             )
             print(text)
 
@@ -53,21 +52,21 @@ class SingleExchange:
             model=self._model,
         )
         messages: Messages = Messages(messages=[message])
-        helper: OpenAiHelper = OpenAiHelper(model=self._model, messages=messages)
+        helper: se = se(model=self._model, messages=messages)
         response: Response = helper.send()
         return response
 
-    def _choose_extraction_type(self, response: Response, extraction_type: str) -> Union[str | list | dict]:
+    def _choose_output(self, response: Response, output: str) -> str | list | dict:
         logger.info("Choosing extraction type.")
         if not isinstance(response, Response):
             raise ValueError(f"Parameter 'response' only accepts Response values and not '{type(response)}'.")
-        if not isinstance(extraction_type, str):
-            raise ValueError(f"Parameter 'extraction_type' only accepts str values and not '{type(extraction_type)}'.")
-        if extraction_type not in extraction_types.values():
-            raise ValueError(f"Parameter 'extraction_type' must be one of '{extraction_types.values()}'.")
+        if not isinstance(output, str):
+            raise ValueError(f"Parameter 'output' only accepts str values and not '{type(output)}'.")
+        if output not in output_types.values():
+            raise ValueError(f"Parameter 'output' must be one of '{output_types.values()}'.")
 
-        extracted: Union[str | list | dict] = ""
-        match extraction_type:
+        extracted: str | list | dict = ""
+        match output:
             case "plain":
                 extracted = self._extract_message_content(response=response)
             case "choices":

@@ -15,7 +15,7 @@ from gptcli.definitions import (
 from gptcli.src.chat import ChatInstall
 from gptcli.src.definitions import openai
 from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import OpenAiHelper
+from gptcli.src.openai_api_helper import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class Install:
         message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model=openai["GPT_3_5_TURBO"])
         messages: Messages = Messages()
         messages.add_message(message)
-        is_valid = OpenAiHelper(model=openai["GPT_3_5_TURBO"], messages=messages).is_valid_api_key(key)
+        is_valid = SingleExchange(model=openai["GPT_3_5_TURBO"], messages=messages).is_valid_api_key(key)
 
         return is_valid
 

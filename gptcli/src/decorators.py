@@ -27,7 +27,7 @@ def user_triggered_abort(function):
     return decorator
 
 
-def allow_graceful_chat_exit(function):
+def allow_graceful_stream_exit(function):
 
     def decorator(*args, **kwargs):
         logger.info("Calling '%s', with args '%s', and kwargs '%s'", function.__qualname__, args, kwargs)

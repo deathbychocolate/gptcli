@@ -6,7 +6,7 @@ from logging import Logger
 from typing import ClassVar
 
 from gptcli._version import __version__
-from gptcli.src.definitions import extraction_types, openai, roles
+from gptcli.src.definitions import openai, output_types, roles
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -120,12 +120,11 @@ class CommandParser:
             help="Enable or disable local storage of last chat session.",
         )
         parser_se.add_argument(
-            "--et",
+            "--output",
             type=str,
-            default=extraction_types["plain"],
-            choices=extraction_types.values(),
-            help="",
-            metavar="<string>",
+            choices=output_types.values(),
+            default=output_types["plain"],
+            help="Defaults to 'plain'. The output format of the reply message.",
         )
         parser_se.add_argument(
             "input_string",

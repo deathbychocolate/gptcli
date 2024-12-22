@@ -2,6 +2,7 @@
 """The entrypoint to the project."""
 import logging
 import os
+from logging import Logger
 
 from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
 from gptcli.src.chat import ChatOpenai
@@ -9,7 +10,7 @@ from gptcli.src.command_parser import CommandParser
 from gptcli.src.install import Install
 from gptcli.src.single_exchange import SingleExchange
 
-logger = logging.getLogger(__name__)
+logger: Logger = logging.getLogger(__name__)
 
 
 def run_and_configure_argparse() -> CommandParser:
@@ -39,7 +40,7 @@ def enter_single_exchange_mode(parser: CommandParser) -> None:
         role_model=parser.args.role_model,
         filepath=parser.args.filepath,
         storage=parser.args.storage,
-        extraction_type=parser.args.et,
+        output=parser.args.output,
     ).start()
 
 

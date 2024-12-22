@@ -4,20 +4,18 @@ TODO: make better description
 It represents the same chat session body that you would see on the chatGPT website
 """
 
-import json
 import logging
 import os
 import readline
-import time
 from logging import Logger
 from typing import Set
 
-from requests import Response
-
-from gptcli.src.decorators import allow_graceful_chat_exit, user_triggered_abort
+from gptcli.src.decorators import user_triggered_abort
 from gptcli.src.ingest import PDF, Text
-from gptcli.src.message import Message, MessageFactory as mf, Messages
-from gptcli.src.openai_api_helper import OpenAiHelper as oh
+from gptcli.src.message import Message
+from gptcli.src.message import MessageFactory as mf
+from gptcli.src.message import Messages
+from gptcli.src.openai_api_helper import Chat as ch
 from gptcli.src.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
@@ -157,12 +155,14 @@ class ChatOpenai(Chat):
             self._messages.add_message(m)
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
+        logger.info("Processing user and reply messages")
         self._add_user_input_to_messages(user_input)
-        response: Response = self._send_messages()
-        self._add_reply_to_messages(response)
+        message: Message = ch(self._model, messages=self._messages, stream=self._stream).send()
+        self._messages.add_message(message)
         self._messages = Messages() if self._context is False else self._messages
 
     def _scan_multiline_input(self) -> str:
+        logger.info("Scanning for multiline input")
 
         multiline_input: Set = set(['"""'])
 
@@ -178,50 +178,6 @@ class ChatOpenai(Chat):
         return user_input
 
     def _add_user_input_to_messages(self, user_input: str) -> None:
+        logger.info("Adding user input to messages (ie context)")
         m: Message = mf.create_user_message(role=self._role_user, content=user_input, model=self._model)
         self._messages.add_message(m)
-
-    def _send_messages(self) -> Response:
-        response: Response = oh(self._model, messages=self._messages, stream=self._stream).send()
-        return response
-
-    def _add_reply_to_messages(self, response: Response) -> None:
-        m: Message = self._reply(response, stream=self._stream)
-        self._messages.add_message(m)
-
-    def _reply(self, response: Response, stream: bool) -> Message:
-        logger.info("Selecting reply mode")
-        m: Message = self._print_chunks(response) if stream else self._print_content(response)
-
-        return m
-
-    @allow_graceful_chat_exit
-    def _print_chunks(self, response: Response) -> Message:
-        logger.info("Reply mode -> Stream")
-        print(f">>> [REPLY, model={self._model}]: ", end="")
-        data: list[str] = response.content.decode("utf8").split("\n\n")
-        data.pop(0)  # remove metadata about the request at start of response
-        data.pop()  # remove '' at end of response
-        data.pop()  # remove '[DONE]' at end of response
-        data.pop()  # remove metadata indicating stop at end of response
-        data_clean: list[str] = [event.replace("data: ", "") for event in data]
-        dictionaries: list[dict] = [json.loads(chunk) for chunk in data_clean]
-        payload: str = ""
-        for dictionary in dictionaries:
-            text: str = dictionary["choices"][0]["delta"]["content"]
-            print(text, end="", flush=True)  # flush is needed to mimic streaming
-            payload = "".join([payload, text])
-            time.sleep(0.02)  # mimic streaming
-        print("")
-
-        m: Message = mf.create_reply_message(role=self._role_model, content=payload, model=self._model)
-
-        return m
-
-    def _print_content(self, response: Response) -> Message:
-        logger.info("Reply mode -> Simple")
-        content: str = json.loads(response.content)["choices"][0]["message"]["content"]
-        print(f">>> [REPLY, model={self._model}]:", content)
-        m: Message = mf.create_reply_message(role=self._role_model, content=content, model=self._model)
-
-        return m

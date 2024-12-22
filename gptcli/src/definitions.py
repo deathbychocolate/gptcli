@@ -7,6 +7,8 @@ openai: dict = {
     "GPT_4_TURBO": "gpt-4-turbo",
     "GPT_4O": "gpt-4o",
     "GPT_4O_MINI": "gpt-4o-mini",
+    # "O1": "o1",
+    # "O1_MINI": "o1-mini",
 }
 
 roles: list = [
@@ -17,7 +19,7 @@ roles: list = [
     "tool",
 ]
 
-extraction_types: dict = {
+output_types: dict = {
     "plain": "plain",
     "choices": "choices",
     "all": "all",
