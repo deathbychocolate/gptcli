@@ -26,6 +26,10 @@ clean_coverage: ## Remove coverage report and metadata.
 	@-rm .coverage
 	@-rm -r htmlcov
 
+.PHONY: build_wheel
+build_wheel: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
+	@python3 -m build
+
 .PHONY: help
 help: ## Show help and exit.
 	@./scripts/help.sh $(MAKEFILE_PATH)
