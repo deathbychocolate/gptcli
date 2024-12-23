@@ -10,5 +10,5 @@ paths += glob("gptcli/src/**.py")
 
 setup(
     packages=find_packages(exclude=["*tests*"]),
-    ext_modules=mypycify(paths),
+    # ext_modules=mypycify(paths),  # uncomment to generate wheel with platform specific C code
 )
