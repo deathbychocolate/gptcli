@@ -1,3 +1,25 @@
+## 0.18.0 (2024-12-23)
+
+### Feat
+
+- **project**: Add minimum necessary changes to mypycify the project and remove sseclient module from project.
+
+### Fix
+
+- Fix spelling.
+- Fix bug with finding correct encoding for messages.
+- Fix typing issue found by mypy.
+- Fix broken make clean command.
+
+### Refactor
+
+- **project**: Major changes going in.
+- Add type hint and fix spelling.
+- Add type hint for logger.
+- Make it more obvious the default value needs to be overwritten.
+- **chat**: Improve chat readability, coverage, reply process, and abort process.
+- Since we always expect response to be a Response object, it could never be None.
+
 ## 0.17.0 (2024-07-19)
 
 ### Feat
