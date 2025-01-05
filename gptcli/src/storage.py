@@ -39,7 +39,7 @@ class Storage:
             raise NotImplementedError(f"The storage type '{storage_type}' is not supported.")
 
         epoch: str = str(int(time()))
-        datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S")
+        datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S_")
         filename: str = "_".join([epoch, datetime_now_utc, storage_type]) + ".json"
         filepath: str = path.join(GPTCLI_STORAGE_FILEPATH, filename)
 
