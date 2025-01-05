@@ -11,7 +11,8 @@
         "decorators",
         "cli",
         "makefile",
-        "docker"
+        "docker",
+        "storage"
     ],
     "python.analysis.typeCheckingMode": "off",
     "python.analysis.autoImportCompletions": true,
