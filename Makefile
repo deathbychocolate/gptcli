@@ -28,6 +28,7 @@ clean_coverage: ## Remove coverage report and metadata.
 
 .PHONY: build_wheel
 build_wheel: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
+	@-rm dist/*
 	@python3 -m build
 
 .PHONY: help
