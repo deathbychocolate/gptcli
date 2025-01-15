@@ -92,7 +92,7 @@ jobs:
 
       - name: Set project version with Commitizen
         run: |
-          cz bump ${{ needs.details.outputs.new_version }}
+          echo "no" | cz bump ${{ needs.details.outputs.new_version }}
 
       - name: Install dependencies
         run: pipenv sync
