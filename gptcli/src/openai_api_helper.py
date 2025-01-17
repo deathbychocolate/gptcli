@@ -77,8 +77,12 @@ def _check_for_http_errors(response: Response | None) -> bool:
             print("[GPTCLI]:", log_message)
             logger.warning(log_message)
 
+            return True
+
     if response is None:
         raise ValueError("Response not retrieved from API call.")
+
+    return False
 
 
 class Chat:
