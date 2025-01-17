@@ -69,7 +69,7 @@ def main() -> None:
         case "chat":
             enter_chat_mode(parser=parser)
         case _:
-            print("[GPTCLI] Message: It seems you have not selected a mode. Try using 'gptcli -h/--help'.")
+            print("[GPTCLI]: It seems you have not selected a mode. Try using 'gptcli -h/--help'.")
 
 
 if __name__ == "__main__":

@@ -88,14 +88,14 @@ class TestChat:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith(">>> [GPTCLI]: ")
+            assert captured.out.startswith("[GPTCLI]: ")
 
         def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join([">>> [GPTCLI]: ", text]))
+            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))
 
 
 class TestChatInstall:
@@ -185,14 +185,14 @@ class TestChatInstall:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith(">>> [GPTCLI]: ")
+            assert captured.out.startswith("[GPTCLI]: ")
 
         def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join([">>> [GPTCLI]: ", text]))
+            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))
 
 
 class TestChatOpenai:
@@ -281,11 +281,11 @@ class TestChatOpenai:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith(">>> [GPTCLI]: ")
+            assert captured.out.startswith("[GPTCLI]: ")
 
         def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join([">>> [GPTCLI]: ", text]))
+            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))

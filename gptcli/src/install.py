@@ -68,12 +68,12 @@ class Install:
         chat: ChatInstall = ChatInstall()
         openai_api_key: str = ""
         while True:
-            openai_api_key = chat.prompt(">>> [GPTCLI]: Enter your openai API key: ")
+            openai_api_key = chat.prompt("[GPTCLI]: Enter your openai API key: ")
             if self._is_valid_openai_api_key(openai_api_key):
                 logger.info("Valid API key detected")
                 break
             else:
-                print(">>> [GPTCLI]: Invalid openai API key detected...")
+                print("[GPTCLI]: Invalid openai API key detected...")
         return openai_api_key
 
     def _write_api_key_to_openai_file(self, openai_api_key: str) -> None:

@@ -52,7 +52,7 @@ class Chat:
 
     def _print_gptcli_message(self, text: str) -> None:
         logger.info("Printing gptcli message")
-        message: str = "".join([">>> [GPTCLI]: ", text])
+        message: str = "".join(["[GPTCLI]: ", text])
         print(message)
 
 
