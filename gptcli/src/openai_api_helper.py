@@ -28,11 +28,27 @@ def _export_api_key_to_environment_variable() -> None:
         logger.info("API key already in environment variable")
 
 
-def _check_for_http_errors(response: Response | None) -> None:
-    logger.info("Checking for http errors")
+def _check_for_http_errors(response: Response | None) -> bool:
+    """A function that checks for common HTTP errors when calling the OpenAI endpoint.
+
+    Detail:
+        This function accepts a response object generated from the 'requests' package.
+        It then runs a pattern matching check against errors as documented by OpenAI and errors
+        that we ourselves have found.
+
+    Args:
+        response (Response | None): The response that was received from the API endpoint.
+
+    Raises:
+        ValueError: Raised when response is 'None'
+
+    Returns:
+        bool: True if errors were found. False otherwise.
+    """
+    logger.info("Checking for HTTP errors")
 
     # Http error codes reference: https://platform.openai.com/docs/guides/error-codes/api-errors
-    if response:  # response retrieved
+    if response is not None:  # response retrieved
         code: int = response.status_code
         if code >= 400:
             match code:
@@ -58,9 +74,10 @@ def _check_for_http_errors(response: Response | None) -> None:
                     error["code"],
                 ]
             )
+            print("[GPTCLI]:", log_message)
             logger.warning(log_message)
 
-    if not response:
+    if response is None:
         raise ValueError("Response not retrieved from API call.")
 
 
@@ -146,15 +163,16 @@ class Chat:
         content: str = ""
         session: Session = requests.Session()
         with session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30) as response:
-            _check_for_http_errors(response=response)
-            for line in response.iter_lines(decode_unicode=True):
-                if len(line) == 0:  # iter_lines is giving an extra chunk that is empty; skip it, TODO: find out why
-                    continue
-                elif "content" in line:  # not all chunks have content we want to print
-                    chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
-                    print(chunk, end="", flush=True)
-                    content = "".join([content, chunk])
-        print("")
+            found_errors: bool = _check_for_http_errors(response=response)
+            if found_errors is False:  # don't bother printing
+                for line in response.iter_lines(decode_unicode=True):
+                    if len(line) == 0:  # iter_lines is giving an extra chunk that is empty; skip it, TODO: find out why
+                        continue
+                    elif "content" in line:  # not all chunks have content we want to print
+                        chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
+                        print(chunk, end="", flush=True)
+                        content = "".join([content, chunk])
+                print("")
 
         message: Message = MessageFactory.create_reply_message(role="assistant", content=content, model=self._model)
 
