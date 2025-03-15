@@ -81,8 +81,8 @@ class CommandParser:
             "--model",
             type=str,
             choices=openai.values(),
-            default=openai["GPT_4O"],
-            help=f"Defaults to '{openai['GPT_4O']}'. The model to use.",
+            default=openai["O3_MINI"],
+            help=f"Defaults to '{openai['O3_MINI']}'. The model to use.",
         )
         parser_se.add_argument(
             "--key",
@@ -143,8 +143,8 @@ class CommandParser:
             "--model",
             type=str,
             choices=openai.values(),
-            default=openai["GPT_4O"],
-            help=f"Defaults to '{openai['GPT_4O']}'. The model to use.",
+            default=openai["O3_MINI"],
+            help=f"Defaults to '{openai['O3_MINI']}'. The model to use.",
         )
         parser_chat.add_argument(
             "--key",

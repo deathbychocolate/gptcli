@@ -9,6 +9,9 @@ openai: dict = {
     "GPT_4O_MINI": "gpt-4o-mini",
     "O1": "o1",
     "O1_MINI": "o1-mini",
+    "O1_PREVIEW": "o1-preview", 
+    "O1": "o1",
+    "O3_MINI": "o3-mini",
 }
 
 roles: list = [
