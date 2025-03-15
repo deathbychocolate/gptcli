@@ -1,4 +1,15 @@
 {
+    "autoDocstring.docstringFormat": "google",
+    "autoDocstring.includeExtendedSummary": true,
+    "black-formatter.args": [
+        "--line-length", "119"
+    ],
+    "pylint.args": [
+        "--max-line-legth", "119"
+    ],
+    "isort.args": [
+        "--line-length", "79"
+    ],
     "conventionalCommits.scopes": [
         "project",
         "tests",
@@ -21,7 +32,6 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "C_Cpp.intelliSenseEngineFallback": "enabled",
     "cSpell.words": [
         "capsys",
         "dunder",
