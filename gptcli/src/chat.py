@@ -22,7 +22,7 @@ logger: Logger = logging.getLogger(__name__)
 
 
 class Chat:
-    """A simple chat session"""
+    """A simple chat session."""
 
     def __init__(self) -> None:
         self._configure_chat()
@@ -45,7 +45,7 @@ class Chat:
 
     @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:
-        """Prompt user with specified text"""
+        """Prompt user with specified text."""
         user_input: str = str(input(prompt_text))
 
         return user_input
@@ -57,7 +57,7 @@ class Chat:
 
 
 class ChatInstall(Chat):
-    """A chat session for when we are installing GPTCLI"""
+    """A chat session for when we are installing GPTCLI."""
 
     def __init__(self):
         Chat.__init__(self)
@@ -94,7 +94,7 @@ class ChatOpenai(Chat):
         """Start a chat session. Expect to see the following output to terminal:
 
         >>> [MESSAGE]: hi
-        >>> [REPLY, model=gpt-4]: Hello! How can I help you today?
+        Hello! How can I help you today?
         >>> [MESSAGE]:
         """
         logger.info("Starting chat")
