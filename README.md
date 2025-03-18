@@ -4,22 +4,22 @@
 # How do I run it?
 - Users:
     - Open your preferred terminal.
-    - Install the project via pypi using `pip install dbc-gptcli` or `python3 -m pip install dbc-gptcli`
+    - Install the project via pypi using `pip install dbc-gptcli` or `python3 -m pip install dbc-gptcli`.
     - A user should only have to run `gptcli chat` or `gptcli se`.
-    - For more info on usage, check the builtin help docs using `gptcli [chat|se] [-h|--help]`
+    - For more info on usage, check the builtin help docs using `gptcli [chat|se] [-h|--help]`.
 - Developers:
     - Cloning the repo:
         - Open your preferred terminal.
-        - Clone the project to your local machine using: `git clone [<https_link>|<ssh_link>]`
+        - Clone the project to your local machine using: `git clone [<https_link>|<ssh_link>]`.
         - Change your current working directory to the project root.
-        - Execute the following command: `make install`
-        - Run `gptcli [chat|se]`. If installed python packages are not in your system's PATH (as is the case for MacOS), run `python3 gptcli/main.py [chat|se]`
+        - Execute `make install`.
+        - Run `gptcli [chat|se]`. If installed python packages are not in your system's PATH, run `python3 gptcli/main.py [chat|se]`.
     - Running the Docker image via a Docker container:
         - Open your preferred terminal.
         - Enter switch to the root user.
-        - Start docker: `systemctl start docker`
-        - Pull the docker image: `docker pull deathbychocolate/gptcli:latest`
-        - Enter the image: `docker exec -it <container_name> bash`
+        - Start docker with `systemctl start docker`.
+        - Pull the docker image with `docker pull deathbychocolate/gptcli:latest`.
+        - Enter the image with `docker exec -it <container_name> bash`.
 
 # How do I get an API key?
 You need valid OpenAI credentials to communicate with the AI models. To do this:
@@ -38,7 +38,7 @@ GPTCLI offers 2 modes to communicate with the LLM of your choosing, `Chat` and `
 ```text
 username@hostname ~/> gptcli chat
 >>> [MESSAGE]: hi
->>> [REPLY, model=gpt-3.5-turbo]: Hello! How can I assist you today?
+Hello! How can I assist you today?
 >>> [MESSAGE]: exit
 username@hostname ~/>
 ```
@@ -51,8 +51,6 @@ username@hostname ~/>
 ```
 
 # How is GPTCLI different from other clients?
-- The philosophy behind GPTCLI is to offer the features of ChatGPT in the terminal. This means that the user should eventually have all the features that ChatGPT offers in the webapp. However, we are not creating a 'ChatGPT webapp, but in the terminal'. Other useful features that are not available in ChatGPT could be added.
-
 - GPTCLI does not use any software developed by OpenAI. For example, it does not use the `openai` package supported by OpenAI (found [here](https://github.com/openai/openai-python?tab=readme-ov-file)), there are simply too many features in it that go unused (>200 MB) when for now we only really need 50-100 lines of Python code.
-
-- GPTCLI prioritizes making features that make CLI based usage easy and useful.
+- GPTCLI prioritizes making features that make CLI usage easy and useful.
+- GPTCLI aims to eventually have all the features of ChatGPT in the terminal.
