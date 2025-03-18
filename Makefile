@@ -13,7 +13,7 @@ test: ## Run tests with pytest.
 	@pipenv run pytest -x --log-cli-level=ERROR
 
 .PHONY: coverage
-test_coverage: ## Run tests with pytest and generate code coverage report (html).
+coverage: ## Run tests with pytest and generate code coverage report (html).
 	@pipenv run pytest -x --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
 
 .PHONY: clean
@@ -27,7 +27,7 @@ clean_coverage: ## Remove coverage report and metadata.
 	@-rm -r htmlcov
 
 .PHONY: build_wheel
-build_wheel: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
+build: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
 	@-rm dist/*
 	@python3 -m build
 
