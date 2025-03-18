@@ -1,4 +1,4 @@
-"""Contains a wrapper for the openai SDK"""
+"""Contains a wrapper for the openai SDK."""
 
 import json
 import logging
@@ -104,9 +104,10 @@ class Chat:
         self._stream: bool = stream
 
     def send(self) -> Message:
-        """Sends message(s) to openai
+        """Sends message(s) to openai._
 
-        :return: The requests.Response object sent from the server. None, if request was invalid.
+        Returns:
+            Message: A Message object. Derived from the object sent from the server.
         """
         logger.info("Sending message to openai")
 
@@ -139,13 +140,15 @@ class Chat:
             )
         # Python errors reference: https://platform.openai.com/docs/guides/error-codes/python-library-error-types
         except ReadTimeout:
-            logger.exception("The server did not send any data in the allotted amount of time")
+            logger.exception("The server did not send any data in the allotted amount of time.")
         except TimeoutError:
-            logger.exception("This is likely an issue with the API")
+            logger.exception("Timeout expired. This is likely an issue with the API.")
         except requests.exceptions.ConnectionError:
-            logger.exception("This is likely a local issue")
+            logger.exception("A Connection error occurred. This is likely a local issue.")
         except KeyboardInterrupt:
-            logger.exception("This is likely manual user intervention")  # when the user decides to exit during a POST
+            logger.exception("Program interrupted by user. This is likely caused by an interrupt signal.")
+        except Exception:
+            logger.exception("An unknown error has occurred. This is likely a server issue.")
 
         return message
 
@@ -201,9 +204,10 @@ class SingleExchange:
         self._stream: bool = stream
 
     def send(self) -> Response:
-        """Sends message(s) to openai
+        """Sends message(s) to openai.
 
-        :return: The requests.Response object sent from the server. None, if request was invalid.
+        Returns:
+            Response: The response object sent from the server. None, if request was invalid.
         """
         logger.info("Sending message to openai")
 
@@ -216,6 +220,12 @@ class SingleExchange:
     def is_valid_api_key(self, key: str) -> bool:
         """Sends a POST request to the Openai API.
         We expect a return of True if we have a valid key and false if not.
+
+        Args:
+            key (str): The API key used to communicate with the LLMs.
+
+        Returns:
+            bool: True if we do not get a ValueError, otherwise False.
         """
         logger.info("Checking if we have a valid API key")
 
