@@ -2,18 +2,19 @@
 
 MAKEFILE_PATH := $(shell readlink -f Makefile) ## Makefile absolute path.
 
+# Standard project targets.
 .PHONY: install
-install: ## Install project dependencies using pipenv.
+install: has_pipenv ## Install project dependencies using pipenv.
 	@pipenv install --dev
 	@pipenv run mypy --install-types
 	@pipenv run pip install --editable .
 
 .PHONY: test
-test: ## Run tests with pytest.
+test: has_pipenv ## Run tests with pytest.
 	@pipenv run pytest -x --log-cli-level=ERROR
 
 .PHONY: coverage
-coverage: ## Run tests with pytest and generate code coverage report (html).
+coverage: has_pipenv ## Run tests with pytest and generate code coverage report (html).
 	@pipenv run pytest -x --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
 
 .PHONY: clean
@@ -30,6 +31,13 @@ clean_coverage: ## Remove coverage report and metadata.
 build: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
 	@-rm dist/*
 	@python3 -m build
+
+
+## Custom scripts to optimize Makefile.
+.PHONY: has_pipenv
+has_pipenv:
+	@echo "Checking for pipenv in PATH."
+	@./scripts/has_pipenv.sh
 
 .PHONY: help
 help: ## Show help and exit.
