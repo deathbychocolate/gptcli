@@ -2,7 +2,8 @@
 
 MAKEFILE_PATH := $(shell readlink -f Makefile) ## Makefile absolute path.
 
-# Standard project targets.
+
+## Standard project targets.
 .PHONY: install
 install: has_pipenv ## Install project dependencies using pipenv.
 	@pipenv install --dev
@@ -27,7 +28,7 @@ clean_coverage: ## Remove coverage report and metadata.
 	@-rm .coverage
 	@-rm -r htmlcov
 
-.PHONY: build_wheel
+.PHONY: build
 build: ## Run the 'build' module to generate a 'tar' and 'wheel' file in a 'dist' folder.
 	@-rm dist/*
 	@python3 -m build
