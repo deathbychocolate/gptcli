@@ -210,3 +210,7 @@ class CommandParser:
         logger.info("Configuring logging level")
         log_level = self.args.loglevel
         logging.basicConfig(level=log_level)
+
+    def print_help(self) -> None:
+        """Prints the help doc of the root parser."""
+        self.parser.print_help()
