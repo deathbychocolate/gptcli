@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: mypy
         args: ["--strict"]
+        additional_dependencies: [types-requests==2.32.*]
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
