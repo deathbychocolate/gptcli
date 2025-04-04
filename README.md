@@ -1,4 +1,5 @@
-![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20package)
+![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20version)
+![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=repo%20version)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
 
 # How do I run it?
