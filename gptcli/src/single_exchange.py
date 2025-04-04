@@ -3,6 +3,7 @@
 import json
 import logging
 from logging import Logger
+from typing import Any
 
 from requests import Response
 
@@ -39,7 +40,7 @@ class SingleExchange:
         logger.info("Starting Single-Exchange mode.")
         response = self._build_message_and_generate_response()
         if response:
-            text: str | list | dict = self._choose_output(
+            text: str | list[dict[str, Any]] | dict[str, Any] = self._choose_output(
                 response=response,
                 output=self._output,
             )
@@ -56,7 +57,7 @@ class SingleExchange:
         response: Response = helper.send()
         return response
 
-    def _choose_output(self, response: Response, output: str) -> str | list | dict:
+    def _choose_output(self, response: Response, output: str) -> str | list[dict[str, Any]] | dict[str, Any]:
         logger.info("Choosing extraction type.")
         if not isinstance(response, Response):
             raise ValueError(f"Parameter 'response' only accepts Response values and not '{type(response)}'.")
@@ -65,7 +66,7 @@ class SingleExchange:
         if output not in output_types.values():
             raise ValueError(f"Parameter 'output' must be one of '{output_types.values()}'.")
 
-        extracted: str | list | dict = ""
+        extracted: str | list[dict[str, Any]] | dict[str, Any] = ""
         match output:
             case "plain":
                 extracted = self._extract_message_content(response=response)
@@ -87,16 +88,16 @@ class SingleExchange:
         message_content: str = json.loads(response.content.decode())["choices"][0]["message"]["content"]
         return message_content
 
-    def _extract_choices(self, response: Response) -> list:
+    def _extract_choices(self, response: Response) -> list[dict[str, Any]]:
         logger.info("Extracting choices from Response object")
         if not isinstance(response, Response):
             raise ValueError(f"Parameter 'response' only accepts Response values and not '{type(response)}'.")
-        choices: list = json.loads(response.content.decode())["choices"]
+        choices: list[dict[str, Any]] = json.loads(response.content.decode())["choices"]
         return choices
 
-    def _extract_all(self, response: Response) -> dict:
+    def _extract_all(self, response: Response) -> dict[str, Any]:
         logger.info("Extracting all from Response object")
         if not isinstance(response, Response):
             raise ValueError(f"Parameter 'response' only accepts Response values and not '{type(response)}'.")
-        body: dict = json.loads(response.content.decode())
+        body: dict[str, Any] = json.loads(response.content.decode())
         return body

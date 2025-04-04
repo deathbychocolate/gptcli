@@ -98,9 +98,9 @@ class Chat:
     To understand the type of processing being done in SingleExchange, please read its docstring.
     """
 
-    def __init__(self, model: str, messages: Messages, stream=False):
+    def __init__(self, model: str, messages: Messages, stream: bool = False) -> None:
         self._model: str = model
-        self._messages: list[dict] = [message.to_dict_reduced_context() for message in messages]
+        self._messages: list[dict[str, str]] = [message.to_dict_reduced_context() for message in messages]
         self._stream: bool = stream
 
     def send(self) -> Message:
@@ -173,7 +173,7 @@ class Chat:
             found_errors: bool = _check_for_http_errors(response=response)
             if found_errors is False:  # don't bother printing
                 for line in response.iter_lines(decode_unicode=True):
-                    if len(line) == 0:  # iter_lines is giving an extra chunk that is empty; skip it, TODO: find out why
+                    if len(line) == 0:  # iter_lines has an extra chunk that is empty; skip it, TODO: find out why
                         continue
                     elif "content" in line:  # not all chunks have content we want to print
                         chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
@@ -198,9 +198,9 @@ class SingleExchange:
     This is necessary if we want the 'output' flag of GPTCLI to work.
     """
 
-    def __init__(self, model: str, messages: Messages, stream=False):
+    def __init__(self, model: str, messages: Messages, stream: bool = False) -> None:
         self._model: str = model
-        self._messages: list[dict] = [message.to_dict_reduced_context() for message in messages]
+        self._messages: list[dict[str, str]] = [message.to_dict_reduced_context() for message in messages]
         self._stream: bool = stream
 
     def send(self) -> Response:

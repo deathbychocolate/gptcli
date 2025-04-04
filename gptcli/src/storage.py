@@ -7,6 +7,7 @@ from glob import glob
 from logging import Logger
 from os import path
 from time import time
+from typing import Any
 
 from gptcli.definitions import GPTCLI_STORAGE_FILEPATH
 from gptcli.src.message import Message, MessageFactory, Messages
@@ -46,15 +47,15 @@ class Storage:
         return filepath
 
     def extract_messages(self) -> Messages:
-        filepaths: list = glob(path.expanduser("~/.gptcli/storage/*.json"))
+        filepaths: list[str] = glob(path.expanduser("~/.gptcli/storage/*.json"))
         last_chat_session: str = max(filepaths, key=path.getctime)
 
-        file_contents: dict = dict()
+        file_contents_messages: list[dict[str, Any]] = []
         with open(last_chat_session, "r", encoding="utf8") as filepointer:
-            file_contents = json.load(filepointer)
+            file_contents_messages = json.load(filepointer)["messages"]
 
         messages: Messages = Messages()
-        for message in file_contents["messages"]:
+        for message in file_contents_messages:
             m: Message = MessageFactory.create_message_from_dict(message=message)
             messages.add_message(message=m)
 

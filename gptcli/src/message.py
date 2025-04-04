@@ -4,7 +4,7 @@ import json
 import logging
 from logging import Logger
 from time import time
-from typing import ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional, Self, Union
 from uuid import uuid4
 
 import tiktoken
@@ -57,7 +57,7 @@ class Message:
         self._index: int = Message.index
         Message.index += 1
 
-    def to_dict_reduced_context(self) -> dict:
+    def to_dict_reduced_context(self) -> dict[str, str]:
         """Use this lightweight version when sending messages to API endpoints.
         If we send less, we save tokens.
 
@@ -69,7 +69,7 @@ class Message:
             "content": self._content,
         }
 
-    def to_dict_full_context(self) -> dict:
+    def to_dict_full_context(self) -> dict[str, bool | int | float | str]:
         """Use this version when storing messages locally in your machine.
         When storing messages locally, we want the full context for each message.
 
@@ -180,7 +180,7 @@ class MessageFactory:
         )
 
     @staticmethod
-    def create_message_from_dict(message: dict) -> Message:
+    def create_message_from_dict(message: dict[str, Any]) -> Message:
         """Creates a message from a dictionary.
         See the Storage module as an example.
 
@@ -204,6 +204,27 @@ class MessageFactory:
         )
 
 
+class MessagesIterator:
+    """A simple Messages iterator to promote the usage of
+    'message in messages' and not 'message in messages.messages'
+    """
+
+    def __init__(self, messages: list[Message]) -> None:
+        self._index: int = 0
+        self._messages: list[Message] = messages
+
+    def __iter__(self) -> Self:
+        return self
+
+    def __next__(self) -> Message:
+        if self._index < len(self._messages):
+            message = self._messages[self._index]
+            self._index += 1
+            return message
+        else:
+            raise StopIteration
+
+
 class Messages:
     """A class to hold Message objects.
 
@@ -213,7 +234,7 @@ class Messages:
 
     def __init__(self, messages: list[Message] | None = None) -> None:
         self._uuid: str = str(uuid4())
-        self._messages: Union[list[Message] | list] = messages if messages is not None else list()
+        self._messages: Union[list[Message]] = messages if messages is not None else []
         self._tokens: int = self._count_tokens()
         self._count: int = len(self._messages)
 
@@ -265,26 +286,5 @@ class Messages:
     def __len__(self) -> int:
         return len(self._messages)
 
-    def __iter__(self):
+    def __iter__(self) -> MessagesIterator:
         return MessagesIterator(self._messages)
-
-
-class MessagesIterator:
-    """A simple Messages iterator to promote the usage of
-    'message in messages' and not 'message in messages.messages'
-    """
-
-    def __init__(self, messages: list[Message]) -> None:
-        self._index: int = 0
-        self._messages: list[Message] = messages
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self._index < len(self._messages):
-            message = self._messages[self._index]
-            self._index += 1
-            return message
-        else:
-            raise StopIteration

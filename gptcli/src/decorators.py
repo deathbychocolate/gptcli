@@ -8,7 +8,7 @@ from typing import Any, Callable
 logger: Logger = logging.getLogger(__name__)
 
 
-def user_triggered_abort(function: Callable[..., Any]):
+def user_triggered_abort(function: Callable[..., Any]) -> Callable[..., Any]:
     """Use this wrapper to catch KeyboardInterrupt or EOFError errors.
 
     This is useful if for example the user decides to use Ctrl+C to
@@ -18,7 +18,7 @@ def user_triggered_abort(function: Callable[..., Any]):
         function (Callable[..., Any]): The method or function to wrap around.
     """
 
-    def decorator(*args, **kwargs):
+    def decorator(*args: Any, **kwargs: Any) -> Any:
         logger.info("Calling '%s', with args '%s', and kwargs '%s'", function.__qualname__, args, kwargs)
         try:
             return function(*args, **kwargs)
@@ -36,7 +36,7 @@ def user_triggered_abort(function: Callable[..., Any]):
     return decorator
 
 
-def allow_graceful_stream_exit(function: Callable[..., Any]):
+def allow_graceful_stream_exit(function: Callable[..., Any]) -> Callable[..., Any]:
     """Use this wrapper to catch KeyboardInterrupt or EOFError errors.
 
     This is useful if for example the user decides to use Ctrl+C to
@@ -46,7 +46,7 @@ def allow_graceful_stream_exit(function: Callable[..., Any]):
         function (Callable[..., Any]): The method or function to wrap around.
     """
 
-    def decorator(*args, **kwargs):
+    def decorator(*args: Any, **kwargs: Any) -> Any:
         logger.info("Calling '%s', with args '%s', and kwargs '%s'", function.__qualname__, args, kwargs)
         try:
             return function(*args, **kwargs)

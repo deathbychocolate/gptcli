@@ -8,7 +8,6 @@ import logging
 import os
 import readline
 from logging import Logger
-from typing import Set
 
 from gptcli.src.decorators import user_triggered_abort
 from gptcli.src.ingest import PDF, Text
@@ -59,7 +58,7 @@ class Chat:
 class ChatInstall(Chat):
     """A chat session for when we are installing GPTCLI."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         Chat.__init__(self)
 
 
@@ -76,7 +75,7 @@ class ChatOpenai(Chat):
         filepath: str = "",
         storage: bool = True,
         load_last: bool = False,
-    ):
+    ) -> None:
         Chat.__init__(self)
 
         self._model: str = model
@@ -104,9 +103,9 @@ class ChatOpenai(Chat):
             self._extract_file_content_to_message()
 
         # in chat commands and features
-        exit_commands: set = set(["exit", "q"])
-        clear_screen_commands: set = set(["clear", "cls"])
-        multiline_input: Set[str] = set(['"""'])
+        exit_commands: set[str] = set(["exit", "q"])
+        clear_screen_commands: set[str] = set(["clear", "cls"])
+        multiline_input: set[str] = set(['"""'])
 
         # commence chat loop
         while True:
@@ -164,7 +163,7 @@ class ChatOpenai(Chat):
     def _scan_multiline_input(self) -> str:
         logger.info("Scanning for multiline input")
 
-        multiline_input: Set = set(['"""'])
+        multiline_input: set[str] = set(['"""'])
 
         user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
