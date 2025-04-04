@@ -92,9 +92,9 @@ class ChatOpenai(Chat):
     def start(self) -> None:
         """Start a chat session. Expect to see the following output to terminal:
 
-        >>> [MESSAGE]: hi
+        >>> hi
         Hello! How can I help you today?
-        >>> [MESSAGE]:
+        >>>
         """
         logger.info("Starting chat")
 
@@ -109,7 +109,7 @@ class ChatOpenai(Chat):
 
         # commence chat loop
         while True:
-            user_input = self.prompt(">>> [MESSAGE]: ")
+            user_input = self.prompt(">>> ")
             if user_input in multiline_input:
                 user_input = self._scan_multiline_input()
                 if len(user_input) == 0 or user_input.isspace():

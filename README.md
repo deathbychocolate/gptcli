@@ -14,7 +14,7 @@
         - Clone the project to your local machine using: `git clone [<https_link>|<ssh_link>]`.
         - Change your current working directory to the project root.
         - Execute `make install`.
-        - Run `gptcli [chat|se]`. If installed python packages are not in your system's PATH, run `python3 gptcli/main.py [chat|se]`.
+        - Run `gptcli [chat|se]` or `python3 gptcli/main.py [chat|se]`.
     - Running the Docker image via a Docker container:
         - Open your preferred terminal.
         - Enter switch to the root user.
@@ -38,9 +38,9 @@ GPTCLI offers 2 modes to communicate with the LLM of your choosing, `Chat` and `
 `Chat` mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. This mode will show you output similar to the following:
 ```text
 username@hostname ~/> gptcli chat
->>> [MESSAGE]: hi
+>>> hi
 Hello! How can I assist you today?
->>> [MESSAGE]: exit
+>>> exit
 username@hostname ~/>
 ```
 
