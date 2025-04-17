@@ -5,6 +5,7 @@ from typing import Any, Generator
 from unittest.mock import patch
 
 import pytest
+from pytest import CaptureFixture
 
 from gptcli.src.chat import Chat
 
@@ -84,13 +85,13 @@ class TestChat:
     class TestPrintGptcliMessage:
         """Holds tests for the _print_gptcli_message() method."""
 
-        def test_should_print_boilerplate_text(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
             assert captured.out.startswith("[GPTCLI]: ")
 
-        def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
@@ -181,13 +182,13 @@ class TestChatInstall:
     class TestPrintGptcliMessage:
         """Holds tests for the _print_gptcli_message() method."""
 
-        def test_should_print_boilerplate_text(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
             assert captured.out.startswith("[GPTCLI]: ")
 
-        def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
@@ -277,13 +278,13 @@ class TestChatOpenai:
     class TestPrintGptcliMessage:
         """Holds tests for the _print_gptcli_message() method."""
 
-        def test_should_print_boilerplate_text(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
             captured: Any = capsys.readouterr()
             assert captured.out.startswith("[GPTCLI]: ")
 
-        def test_should_print_boilerplate_with_valid_input(self, capsys, setup_teardown: Chat) -> None:
+        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
             text: str = "This is a test."
             chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access

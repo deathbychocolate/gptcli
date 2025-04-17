@@ -1,6 +1,6 @@
 """File that will hold all the tests relating to message.py."""
 
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
 from tiktoken import Encoding
@@ -65,7 +65,7 @@ class TestMessage:
             keys = message.to_dict_reduced_context().keys()
             assert variable in keys
 
-        def test_should_return_a_dictionary(self, setup_teardown) -> None:
+        def test_should_return_a_dictionary(self, setup_teardown: Message) -> None:
             message = setup_teardown
             context = message.to_dict_reduced_context()
             assert isinstance(context, dict)
@@ -101,7 +101,7 @@ class TestMessageFactory:
             message = message_factory.create_user_message(role="user", content="Test.", model="gpt-4-turbo")
             assert message._is_reply is False  # pylint: disable=W0212:protected-access
 
-        def test_should_return_a_message(self, setup_teardown) -> None:
+        def test_should_return_a_message(self, setup_teardown: MessageFactory) -> None:
             message_factory: MessageFactory = setup_teardown
             message = message_factory.create_user_message(role="user", content="Test.", model="gpt-4-turbo")
             assert isinstance(message, Message)
@@ -114,7 +114,7 @@ class TestMessageFactory:
             message = message_factory.create_reply_message(role="user", content="Test.", model="gpt-4-turbo")
             assert message._is_reply is True  # pylint: disable=W0212:protected-access
 
-        def test_should_return_a_message(self, setup_teardown) -> None:
+        def test_should_return_a_message(self, setup_teardown: MessageFactory) -> None:
             message_factory: MessageFactory = setup_teardown
             message = message_factory.create_reply_message(role="user", content="Test.", model="gpt-4-turbo")
             assert isinstance(message, Message)
@@ -127,12 +127,12 @@ class TestMessageFactory:
         ) -> None:
             with pytest.raises(TypeError):
                 message_factory: MessageFactory = setup_teardown
-                message: list = ["", ""]
+                message: list[str] = ["", ""]
                 message_factory.create_message_from_dict(message=message)  # type: ignore[arg-type]
 
         def test_should_return_a_message(self, setup_teardown: MessageFactory) -> None:
             message_factory: MessageFactory = setup_teardown
-            message: dict = {
+            message: dict[str, Any] = {
                 "created": 1717265555.4425488,
                 "uuid": "238555b5-98f8-4ead-8cb7-8d14283aa3fe",
                 "role": "user",
@@ -158,14 +158,14 @@ class TestMessages:
     class TestAddMessage:
         """Holds tests for add_message()."""
 
-        def test_should_not_add_message_when_message_is_none(self, setup_teardown) -> None:
+        def test_should_not_add_message_when_message_is_none(self, setup_teardown: Messages) -> None:
             messages: Messages = setup_teardown
             messages_count_before: int = len(messages)
             messages.add_message(message=None)
             messages_count_after: int = len(messages)
             assert messages_count_before == messages_count_after
 
-        def test_should_add_message_when_we_add_valid_message_object(self, setup_teardown) -> None:
+        def test_should_add_message_when_we_add_valid_message_object(self, setup_teardown: Messages) -> None:
             messages: Messages = setup_teardown
             messages_count_before: int = len(messages)
             message: Message = Message(role="user", content="Test.", model="gpt-4-turbo", is_reply=False)
@@ -173,7 +173,7 @@ class TestMessages:
             messages_count_after: int = len(messages)
             assert messages_count_before + 1 == messages_count_after
 
-        def test_should_increase_token_count_when_we_add_valid_message_object(self, setup_teardown) -> None:
+        def test_should_increase_token_count_when_we_add_valid_message_object(self, setup_teardown: Messages) -> None:
             messages: Messages = setup_teardown
             messages_token_count_before: int = messages.tokens
             message: Message = Message(role="user", content="Test.", model="gpt-4-turbo", is_reply=False)
@@ -184,12 +184,12 @@ class TestMessages:
     class TestCountTokens:
         """Holds tests for _count_tokens()."""
 
-        def test_should_return_an_integer(self, setup_teardown) -> None:
+        def test_should_return_an_integer(self, setup_teardown: Messages) -> None:
             messages: Messages = setup_teardown
             count: int = messages._count_tokens()  # pylint: disable=W0212:protected-access
             assert isinstance(count, int)
 
-        def test_should_return_a_positive_value(self, setup_teardown) -> None:
+        def test_should_return_a_positive_value(self, setup_teardown: Messages) -> None:
             messages: Messages = setup_teardown
             count: int = messages._count_tokens()  # pylint: disable=W0212:protected-access
             assert count >= 0

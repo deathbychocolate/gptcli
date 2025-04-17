@@ -1,7 +1,7 @@
 """File that will hold all the tests relating to Message.py."""
 
 import json
-from typing import Generator, Union
+from typing import Any, Generator
 
 import pytest
 from requests import Response
@@ -46,7 +46,7 @@ class TestSingleExchange:
         def test_should_return_response_object(
             self,
             single_exchange_fixture: SingleExchange,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             result: Response = se._build_message_and_generate_response()
             assert isinstance(result, Response)
@@ -66,12 +66,12 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-            extraction_type,
-            expected_type,
-        ):
+            extraction_type: str,
+            expected_type: type,
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            python_object: Union[str | list | dict] = se._choose_output(
+            python_object: str | list[dict[str, Any]] | dict[str, Any] = se._choose_output(
                 response=response,
                 output=output_types[extraction_type],
             )
@@ -80,9 +80,9 @@ class TestSingleExchange:
         def test_should_raise_value_error_when_parameter_response_is_not_response_object(
             self,
             single_exchange_fixture: SingleExchange,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
-            response: dict = dict()
+            response: dict[str, Any] = dict()
             with pytest.raises(ValueError):
                 se._choose_output(
                     response=response,  # type: ignore
@@ -93,26 +93,26 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
                 se._choose_output(
                     response=response,
-                    output="",  # type: ignore
+                    output="",
                 )
 
         def test_should_raise_value_error_when_parameter_extraction_type_does_not_contain_valid_value(
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
                 se._choose_output(
                     response=response,
-                    output="not a valid type",  # type: ignore
+                    output="not a valid type",
                 )
 
     class TestExtractMessageContent:
@@ -122,7 +122,7 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             se._extract_message_content(response=response)
@@ -131,7 +131,7 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             expected_text: str = json.loads(response.content.decode())["choices"][0]["message"]["content"]
@@ -141,7 +141,7 @@ class TestSingleExchange:
         def test_should_raise_value_error(
             self,
             single_exchange_fixture: SingleExchange,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             with pytest.raises(ValueError):
                 se._extract_message_content(response=None)  # type: ignore
@@ -150,7 +150,7 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             extracted_message_content: str = se._extract_message_content(response=response)
@@ -163,7 +163,7 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             se._extract_choices(response=response)
@@ -172,17 +172,17 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            expected_text: str = json.loads(response.content.decode())["choices"]
-            extracted_message_content: list = se._extract_choices(response=response)
+            expected_text: list[dict[str, Any]] = json.loads(response.content.decode())["choices"]
+            extracted_message_content: list[dict[str, Any]] = se._extract_choices(response=response)
             assert expected_text == extracted_message_content
 
         def test_should_raise_value_error(
             self,
             single_exchange_fixture: SingleExchange,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             with pytest.raises(ValueError):
                 se._extract_choices(response=None)  # type: ignore
@@ -191,10 +191,10 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            extracted_message_content: list = se._extract_choices(response=response)
+            extracted_message_content: list[dict[str, Any]] = se._extract_choices(response=response)
             assert isinstance(extracted_message_content, list)
 
     class TestExtractAll:
@@ -204,7 +204,7 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             se._extract_all(response=response)
@@ -213,17 +213,17 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            expected_text: str = json.loads(response.content.decode())
-            extracted_message_content: dict = se._extract_all(response=response)
+            expected_text: dict[str, Any] = json.loads(response.content.decode())
+            extracted_message_content: dict[str, Any] = se._extract_all(response=response)
             assert expected_text == extracted_message_content
 
         def test_should_raise_value_error(
             self,
             single_exchange_fixture: SingleExchange,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             with pytest.raises(ValueError):
                 se._extract_all(response=None)  # type: ignore
@@ -232,8 +232,8 @@ class TestSingleExchange:
             self,
             single_exchange_fixture: SingleExchange,
             response_fixture: Response,
-        ):
+        ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            extracted_message_content: dict = se._extract_all(response=response)
+            extracted_message_content: dict[str, Any] = se._extract_all(response=response)
             assert isinstance(extracted_message_content, dict)
