@@ -4,7 +4,7 @@ import json
 import logging
 from logging import Logger
 from time import time
-from typing import Any, ClassVar, Optional, Self, Union
+from typing import Any, ClassVar, Optional, Self
 from uuid import uuid4
 
 import tiktoken
@@ -234,7 +234,7 @@ class Messages:
 
     def __init__(self, messages: list[Message] | None = None) -> None:
         self._uuid: str = str(uuid4())
-        self._messages: Union[list[Message]] = messages if messages is not None else []
+        self._messages: list[Message] = messages if messages is not None else []
         self._tokens: int = self._count_tokens()
         self._count: int = len(self._messages)
 
@@ -253,8 +253,18 @@ class Messages:
             self._tokens += message.tokens
             self._count += 1
 
-    def to_json(self, indent: Union[int, str, None] = None) -> str:
-        """Convert all Message objects in Messages to JSON serialized object."""
+    def to_json(self, indent: int | str | None = None) -> str:
+        """Convert all Message objects in Messages to JSON serialized object.
+
+        This method does not enforce standard ASCII. So, languages such Russian
+        or Japanese will not be encoded when converted.
+
+        Args:
+            indent (int | str | None, optional): The indent we want for our JSON. Defaults to None.
+
+        Returns:
+            str: A JSON representation of Messages.
+        """
         logger.info("Generating json from Messages.")
         return json.dumps(
             {
