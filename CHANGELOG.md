@@ -1,3 +1,34 @@
+## 0.20.0 (2025-04-17)
+
+### BREAKING CHANGE
+
+- We are removing the feature to build the project with mypycify because it requires setup.py to work. And I am unwilling to find a workaround.
+
+### Feat
+
+- Make gpt-4.1-mini the default model for Single-Exchange and Chat modes.
+- Add new models.
+- Print help when running the program without sub-options.
+- Make o3-mini default LLM, and o1 o1-preview models.
+- Add o1 mini to available models.
+- Handle case where the model chosen is not available to the API key provided.
+
+### Fix
+
+- Install types-requests for mypy.
+- **build**: Issue where Macs and WSL systems do not have gptcli in PATH.
+- Update the model version because it is cheaper.
+- Make it obvious output generated from the client (as opposed to the LLM) is NOT part of the 'chat' session.
+- Issue where content is not being printed because of 'None' being returned.
+
+### Refactor
+
+- **message**: Add some docs and remove use of Union.
+- Make changes to pass 'mypy --strict' on pre-commit check; and resolve black and isort changes.
+- **chat**: Remove the '[MESSAGE]' string from chat mode, to create a cleaner look.
+- Make changes to pass 'mypy --strict' on pre-commit check.
+- Fix assortment of errors.
+
 ## 0.19.0 (2025-01-10)
 
 ### Feat
