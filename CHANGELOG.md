@@ -1,3 +1,9 @@
+## 0.20.1 (2025-04-19)
+
+### Fix
+
+- **chat**: Issue where single quotes are interpreted as backspace chars.
+
 ## 0.20.0 (2025-04-17)
 
 ### BREAKING CHANGE
