@@ -55,25 +55,25 @@ class TestChat:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[A': history-search-backward")
+                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
 
         def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[B': history-search-forward")
+                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
 
         def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[C': forward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
 
         def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[D': backward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
 
         def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
             with pytest.raises(expected_exception=AssertionError):
@@ -152,25 +152,25 @@ class TestChatInstall:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[A': history-search-backward")
+                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
 
         def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[B': history-search-forward")
+                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
 
         def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[C': forward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
 
         def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[D': backward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
 
         def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
             with pytest.raises(expected_exception=AssertionError):
@@ -248,25 +248,25 @@ class TestChatOpenai:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[A': history-search-backward")
+                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
 
         def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[B': history-search-forward")
+                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
 
         def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[C': forward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
 
         def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
             with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
                 chat: Chat = setup_teardown
                 chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r"'\e[D': backward-char")
+                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
 
         def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
             with pytest.raises(expected_exception=AssertionError):
