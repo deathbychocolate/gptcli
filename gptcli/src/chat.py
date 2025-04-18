@@ -37,10 +37,10 @@ class Chat:
 
     def _add_arrow_key_support(self) -> None:
         logger.info("Adding arrow key support")
-        readline.parse_and_bind(r"'\e[A': history-search-backward")
-        readline.parse_and_bind(r"'\e[B': history-search-forward")
-        readline.parse_and_bind(r"'\e[C': forward-char")
-        readline.parse_and_bind(r"'\e[D': backward-char")
+        readline.parse_and_bind(r'"\e[A": history-search-backward')
+        readline.parse_and_bind(r'"\e[B": history-search-forward')
+        readline.parse_and_bind(r'"\e[C": forward-char')
+        readline.parse_and_bind(r'"\e[D": backward-char')
 
     @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:
