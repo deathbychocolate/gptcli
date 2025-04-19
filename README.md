@@ -44,6 +44,27 @@ Hello! How can I assist you today?
 username@hostname ~/>
 ```
 
+`Chat` mode also allows for multiline correspondence. This is useful in cases where you would like to copy and paste small to medium-large text or code samples; though there is no size limit. You may enter and exit this feature by typing and entering `"""` in the prompt. For example, you should see output similar to the following:
+```text
+username@hostname ~/> gptcli chat
+>>> """
+... What is the expected output of this code? Be concise.
+...
+... import json
+... payload: dict = {'a': 1, 'b': 2}
+... print(json.dumps(payload, indent=4))
+... """
+The output is a pretty-printed JSON string of the dictionary:
+
+{
+    "a": 1,
+    "b": 2
+}
+
+>>> exit
+username@hostname ~/>
+```
+
 `Single-Exchange` is functionally similar to `Chat`, but it only allows a single exchange of messages to happen (1 sent from client-side, 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
 ```text
 username@hostname ~/> gptcli se "hello"
