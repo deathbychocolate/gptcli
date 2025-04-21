@@ -1,17 +1,23 @@
 .DEFAULT_GOAL := help
 
-MAKEFILE_PATH := $(shell readlink -f Makefile) ## Makefile absolute path.
+MAKEFILE_PATH := $(shell readlink -f Makefile)## Makefile absolute path.
 
 
 ## Standard project targets.
+.PHONY: dotenv
+dotenv: ## Install python-dotenv (used for target 'setup').
+	@pip install -U python-dotenv
+
 .PHONY: setup
-setup: ## Install tools needed for other targets (ex: pipenv).
+setup: dotenv ## Setup pre-commit and pipenv.
 	@python3 -c "import os;import dotenv;dotenv.load_dotenv();assert os.environ['DBC_GPTCLI_SETUP_COMPLETE'] == '0', 'Your targets are already setup. To force a retry, change DBC_GPTCLI_SETUP_COMPLETE in .env from 1 to 0.'"
-	@pip install pipenv
+	@pip install -U pipenv
+	@pip install -U pre-commit
+	@pre-commit install --install-hooks --overwrite
 	@python3 -c "import dotenv;dotenv.set_key(dotenv.find_dotenv(), 'DBC_GPTCLI_SETUP_COMPLETE', '1')"
 
 .PHONY: install
-install: has_pipenv ## Install gptcli locally and project dependencies using pipenv.
+install: has_pipenv ## Install project dependencies and the project (locally) using pipenv.
 	@pipenv sync --dev
 	@pipenv run mypy --install-types
 	@pipenv run pip install --editable .
@@ -26,8 +32,8 @@ coverage: has_pipenv ## Run tests with pytest and generate code coverage report 
 
 .PHONY: clean
 clean: ## Remove __pycache__ and cpython generated files (gptcli folder only).
-	@-find . -type d -name "__pycache__" -exec rm -rf {} \;
-	@-find . -type f -name "*.cpython-*" -exec rm -f {} \;
+	@-find . -type d -name "__pycache__" -exec rm -rf {} \; 2> /dev/null
+	@-find . -type f -name "*.cpython-*" -exec rm -f {} \; 2> /dev/null
 
 .PHONY: clean_coverage
 clean_coverage: ## Remove coverage report and metadata.
