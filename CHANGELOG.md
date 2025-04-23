@@ -1,3 +1,16 @@
+## 0.20.2 (2025-04-23)
+
+### Fix
+
+- **install**: Bug where a response's return code is ignored resulting in the storage of an invalid API key.
+
+### Refactor
+
+- **install**: Fix string grammar casing of logs.
+- Make o4-mini the default LLM.
+- Slim down docker image and make sure gptcli is installed and ready to use.
+- Improve Makefile.
+
 ## 0.20.1 (2025-04-19)
 
 ### Fix
