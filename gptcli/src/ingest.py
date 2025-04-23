@@ -55,7 +55,7 @@ class Text(File):
                 text = filepointer.read()
         else:
             logger.warning("File '%s' not found. Returning empty value.", self.filepath)
-            print(f"[GPTCLI]: No file detected at filepath '{self.filepath}'. Proceeding without it...")
+            print(f": No file detected at filepath '{self.filepath}'. Proceeding without it...")
 
         return text
 
@@ -74,7 +74,7 @@ class Text(File):
             is_text = mime_type is not None and mime_type.split("/", maxsplit=2)[0] == "text"
         else:
             logger.warning("File '%s' not found. Returning False.", filepath)
-            print(f"[GPTCLI]: No file detected at filepath '{filepath}'. Proceeding without it...")
+            print(f": No file detected at filepath '{filepath}'. Proceeding without it...")
             is_text = False
 
         return is_text
@@ -101,7 +101,7 @@ class PDF(File):
             text = " ".join([page.extract_text() for page in reader.pages])
         else:
             logger.warning("File '%s' not found. Returning empty value.", self.filepath)
-            print(f"[GPTCLI]: No file detected at filepath '{self.filepath}'. Proceeding without it...")
+            print(f": No file detected at filepath '{self.filepath}'. Proceeding without it...")
 
         return text
 
@@ -125,7 +125,7 @@ class PDF(File):
                 is_pdf = True
         else:
             logger.warning("File '%s' not found. Returning False.", filepath)
-            print(f"[GPTCLI]: No file detected at filepath '{filepath}'. Proceeding without it...")
+            print(f": No file detected at filepath '{filepath}'. Proceeding without it...")
             is_pdf = False
 
         return is_pdf

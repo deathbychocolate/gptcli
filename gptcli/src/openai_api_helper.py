@@ -74,7 +74,7 @@ def _check_for_http_errors(response: Response | None) -> bool:
                     error["code"],
                 ]
             )
-            print("[GPTCLI]:", log_message)
+            print(log_message)
             logger.warning(log_message)
 
             return True

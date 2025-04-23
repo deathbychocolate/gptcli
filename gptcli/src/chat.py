@@ -49,11 +49,6 @@ class Chat:
 
         return user_input
 
-    def _print_gptcli_message(self, text: str) -> None:
-        logger.info("Printing gptcli message")
-        message: str = "".join(["[GPTCLI]: ", text])
-        print(message)
-
 
 class ChatInstall(Chat):
     """A chat session for when we are installing GPTCLI."""
@@ -120,7 +115,7 @@ class ChatOpenai(Chat):
             elif len(user_input) == 0 or user_input.isspace():
                 continue
             elif user_input in exit_commands:
-                self._print_gptcli_message("Bye!")
+                print("Bye!")
                 break
             elif user_input in clear_screen_commands:
                 os.system("cls" if os.name.casefold() == "nt" else "clear")
@@ -136,7 +131,7 @@ class ChatOpenai(Chat):
     def _extract_file_content_to_message(self) -> None:
         logger.info("Extracting file content from '%s' to add to m.", self._filepath)
 
-        self._print_gptcli_message(f"Loading '{self._filepath}' content as context.")
+        print(f"Loading '{self._filepath}' content as context.")
 
         # check if file exists and is supported
         content: str = ""
@@ -145,8 +140,8 @@ class ChatOpenai(Chat):
         elif PDF.is_pdf(filepath=self._filepath):
             content = PDF(filepath=self._filepath).extract_text()
         else:
-            self._print_gptcli_message("File not supported or does not exist.")
-            self._print_gptcli_message(f"Make sure the filepath you provided is correct: '{self._filepath}'")
+            print("File not supported or does not exist.")
+            print(f"Make sure the filepath you provided is correct: '{self._filepath}'")
 
         # add content to message for context if content is populated with text
         if len(content) > 0 and not content.isspace():

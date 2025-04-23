@@ -82,22 +82,6 @@ class TestChat:
                     chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
                     mock_parse_and_bind.assert_any_call(r"not a real call")
 
-    class TestPrintGptcliMessage:
-        """Holds tests for the _print_gptcli_message() method."""
-
-        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("[GPTCLI]: ")
-
-        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            text: str = "This is a test."
-            chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))
-
 
 class TestChatInstall:
     """Holds tests for the ChatInstall class.
@@ -179,22 +163,6 @@ class TestChatInstall:
                     chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
                     mock_parse_and_bind.assert_any_call(r"not a real call")
 
-    class TestPrintGptcliMessage:
-        """Holds tests for the _print_gptcli_message() method."""
-
-        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("[GPTCLI]: ")
-
-        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            text: str = "This is a test."
-            chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))
-
 
 class TestChatOpenai:
     """Holds tests for the ChatOpenai class.
@@ -274,19 +242,3 @@ class TestChatOpenai:
                     chat: Chat = setup_teardown
                     chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
                     mock_parse_and_bind.assert_any_call(r"not a real call")
-
-    class TestPrintGptcliMessage:
-        """Holds tests for the _print_gptcli_message() method."""
-
-        def test_should_print_boilerplate_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            chat._print_gptcli_message(text="")  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("[GPTCLI]: ")
-
-        def test_should_print_boilerplate_with_text(self, capsys: CaptureFixture[str], setup_teardown: Chat) -> None:
-            chat: Chat = setup_teardown
-            text: str = "This is a test."
-            chat._print_gptcli_message(text=text)  # pylint:disable=W0212:protected-access
-            captured: Any = capsys.readouterr()
-            assert captured.out.startswith("".join(["[GPTCLI]: ", text]))
