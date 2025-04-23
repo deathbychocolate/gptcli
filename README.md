@@ -1,31 +1,45 @@
 ![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20version)
 ![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=repo%20version)
+![Supported Python Versions](https://img.shields.io/pypi/pyversions/dbc-gptcli)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
 
 # How do I run it?
-- Users:
+- Pypi:
     - Open your preferred terminal.
-    - Install the project via pypi using `pip install dbc-gptcli` or `python3 -m pip install dbc-gptcli`.
-    - A user should only have to run `gptcli chat` or `gptcli se`.
-    - For more info on usage, check the builtin help docs using `gptcli [chat|se] [-h|--help]`.
-- Developers:
-    - Cloning the repo:
-        - Open your preferred terminal.
-        - Clone the project to your local machine using: `git clone [<https_link>|<ssh_link>]`.
-        - Change your current working directory to the project root.
-        - Execute `make install`.
-        - Run `gptcli [chat|se]` or `python3 gptcli/main.py [chat|se]`.
-    - Running the Docker image via a Docker container:
-        - Open your preferred terminal.
-        - Enter switch to the root user.
-        - Start docker with `systemctl start docker`.
-        - Pull the docker image with `docker pull deathbychocolate/gptcli:latest`.
-        - Enter the image with `docker exec -it <container_name> bash`.
+    - Install the project via pypi using `pip install dbc-gptcli`.
+    - Run `gptcli` or `gptcli [chat|se]`.
+    - For more info on usage, check the builtin help docs using `gptcli -h` or `gptcli [chat|se] [-h|--help`.
+- Docker:
+    - Open your preferred terminal.
+    - Start docker via the desktop app or running `sudo systemctl start docker`.
+    - Pull the docker image with `docker pull deathbychocolate/gptcli:latest`.
+    - Start and enter a container with `docker run --rm -it --entrypoint /bin/bash deathbychocolate/gptcli:latest`.
+    - Run `gptcli` or `gptcli [chat|se]` or `python3 gptcli/main.py [chat|se]`.
 
 # How do I get an API key?
 You need valid OpenAI credentials to communicate with the AI models. To do this:
 - Create an OpenAI account here: https://chat.openai.com/
 - Generate an OpenAI API key here: https://platform.openai.com/api-keys
+
+# How do I setup the project for development?
+These steps assume you have installed the Python version indicated in the [Pipfile](./Pipfile), are using VSCode, and have already run the program in `chat` mode at least once with a valid OpenAI API key. If you do not have the indicated Python version, it is recommended you install [homebrew](https://brew.sh/) and run `brew install python@3.11`. With that being said, you may complete the following steps:  
+[1] Install [`miniconda`](https://www.anaconda.com/docs/getting-started/miniconda/install).  
+[2] Open a terminal in your preferred directory; something like `~/Documents/Git/mine/`.  
+[3] Run `git clone https://github.com/deathbychocolate/gptcli.git`.  
+[4] Run `cd gptcli`.  
+[5] Run `make setup`.  
+[6] Run `make install`.  
+[7] Run `pipenv shell`.  
+[8] Run `gptcli [chat|se]` or `python3 gptcli/main.py [chat|se]`.  
+[9] Run `make test` and `make coverage`.  
+[10] Run [./gptcli/main.py](./gptcli/main.py) with VSCode's debug feature.
+
+### Explanation:
+[1] Miniconda sets up a default and always active virtual environment called `base`. This allows us to install packages without installing them system wide; thus avoiding use of `pip install --break-system-packages`.  
+[5] Installs `python-dotenv`, `pipenv`, and `pre-commit` along with the rules in `.pre-commit-config`.  
+[6] Installs project dependencies, type stubs, and the project in an editable state, allowing us to run `gptcli` as a terminal command and dynamically adding changes from the source code.  
+[9] The first runs the tests using `pytest` and the second does the same but generates `coverage` html report as well in the project root. If both are generating only green output, it means the install process has been successful.  
+[10] The project requires passing certain default values to trigger `chat` and `se`. This is because debug mode "skips" argparse creating the default values to pass along. To streamline things, the config needed has been added to [./vscode/launch.json](./.vscode/launch.json). To use it, you must set the current active file in VSCode to be [./gptcli/main.py](./gptcli/main.py) by opening the file in a tab and clicking in that file with your cursor. Then you may select VSCode's built-in *Run and Debug* feature (left hand side, under *Explorer*) and click the green arrow with the `Python Debugger: Current File with Arguments` option.  
 
 # How do I use the project's Makefile?
 From the project root directory, run `make` or `make help` to display all Makefile targets documentation.
@@ -74,5 +88,5 @@ username@hostname ~/>
 
 # How is GPTCLI different from other clients?
 - GPTCLI does not use any software developed by OpenAI. For example, it does not use the `openai` package supported by OpenAI (found [here](https://github.com/openai/openai-python?tab=readme-ov-file)), there are simply too many features in it that go unused (>200 MB) when for now we only really need 50-100 lines of Python code.
-- GPTCLI prioritizes making features that make CLI usage easy and useful.
+- GPTCLI prioritizes features that make CLI usage easy and useful.
 - GPTCLI aims to eventually have all the features of ChatGPT in the terminal.
