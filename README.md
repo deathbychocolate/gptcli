@@ -22,7 +22,9 @@ You need valid OpenAI credentials to communicate with the AI models. To do this:
 - Generate an OpenAI API key here: https://platform.openai.com/api-keys
 
 # How do I setup the project for development?
-These steps assume you have installed the Python version indicated in the [Pipfile](./Pipfile), are using VSCode, and have already run the program in `chat` mode at least once with a valid OpenAI API key. If you do not have the indicated Python version, it is recommended you install [homebrew](https://brew.sh/) and run `brew install python@3.11`. With that being said, you may complete the following steps:  
+These steps assume your system has the Python version indicated in the [Pipfile](./Pipfile) installed, are using VSCode, and have already run the program in `chat` mode at least once with a valid OpenAI API key. If you do not have the indicated Python version, it is recommended you install [homebrew](https://brew.sh/) and run `brew install python@3.11`.  
+
+With that being said, you may complete the following steps:  
 [1] Install [`miniconda`](https://www.anaconda.com/docs/getting-started/miniconda/install).  
 [2] Open a terminal in your preferred directory; something like `~/Documents/Git/mine/`.  
 [3] Run `git clone https://github.com/deathbychocolate/gptcli.git`.  
