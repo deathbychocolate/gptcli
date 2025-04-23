@@ -234,7 +234,7 @@ class SingleExchange:
         except ValueError:
             return False
 
-        return False if response is None else True
+        return False if (not response or not response.ok) else True
 
     def _build_and_execute_post_request(self, key: str) -> Response:
         logger.info("POSTing request to openai API")
