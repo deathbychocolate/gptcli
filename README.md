@@ -36,10 +36,14 @@ These steps assume you have installed the Python version indicated in the [Pipfi
 
 ### Explanation:
 [1] Miniconda sets up a default and always active virtual environment called `base`. This allows us to install packages without installing them system wide; thus avoiding use of `pip install --break-system-packages`.  
+
 [5] Installs `python-dotenv`, `pipenv`, and `pre-commit` along with the rules in `.pre-commit-config`.  
+
 [6] Installs project dependencies, type stubs, and the project in an editable state, allowing us to run `gptcli` as a terminal command and dynamically adding changes from the source code.  
+
 [9] The first runs the tests using `pytest` and the second does the same but generates `coverage` html report as well in the project root. If both are generating only green output, it means the install process has been successful.  
-[10] The project requires passing certain default values to trigger `chat` and `se`. This is because debug mode "skips" argparse creating the default values to pass along. To streamline things, the config needed has been added to [./vscode/launch.json](./.vscode/launch.json). To use it, you must set the current active file in VSCode to be [./gptcli/main.py](./gptcli/main.py) by opening the file in a tab and clicking in that file with your cursor. Then you may select VSCode's built-in *Run and Debug* feature (left hand side, under *Explorer*) and click the green arrow with the `Python Debugger: Current File with Arguments` option.  
+
+[10] The project requires passing certain default values to trigger `chat` and `se`. This is because debug mode "skips" over argparse creating the default values we usually pass down the program's pipeline. To streamline things, the config needed has been added to [./vscode/launch.json](./.vscode/launch.json). To use it, you must set the current active file in VSCode to be [./gptcli/main.py](./gptcli/main.py) by opening the file in a tab and clicking in that file with your cursor. Then you may select VSCode's built-in *Run and Debug* feature (left hand side, under *Explorer*) and click the green arrow with the `Python Debugger: Current File with Arguments` option.  
 
 # How do I use the project's Makefile?
 From the project root directory, run `make` or `make help` to display all Makefile targets documentation.
