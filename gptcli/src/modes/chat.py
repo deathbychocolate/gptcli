@@ -70,6 +70,7 @@ class ChatOpenai(Chat):
         filepath: str = "",
         storage: bool = True,
         load_last: bool = False,
+        multiline_delimiter: str = '"""',
     ) -> None:
         Chat.__init__(self)
 
@@ -81,6 +82,7 @@ class ChatOpenai(Chat):
         self._filepath: str = filepath
         self._storage: bool = storage
         self._load_last: bool = load_last
+        self._multiline_delimiter: str = multiline_delimiter
         self._messages: Messages = Storage().extract_messages() if self._load_last else Messages()
 
     @user_triggered_abort
@@ -100,12 +102,11 @@ class ChatOpenai(Chat):
         # in chat commands and features
         exit_commands: set[str] = set(["exit", "q"])
         clear_screen_commands: set[str] = set(["clear", "cls"])
-        multiline_input: set[str] = set(['"""'])
 
         # commence chat loop
         while True:
             user_input = self.prompt(">>> ")
-            if user_input in multiline_input:
+            if user_input == self._multiline_delimiter:
                 user_input = self._scan_multiline_input()
                 if len(user_input) == 0 or user_input.isspace():
                     continue

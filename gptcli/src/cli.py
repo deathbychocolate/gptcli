@@ -168,6 +168,13 @@ class CommandParser:
             metavar="<string>",
         )
         parser_chat.add_argument(
+            "--multiline-delimiter",
+            type=str,
+            default='"""',
+            help='Defaults to \'"""\'. Change it to another sequence if you are copy-pasting text with \'"""\' lines.',
+            metavar="<string>",
+        )
+        parser_chat.add_argument(
             "--filepath",
             type=str,
             default="",

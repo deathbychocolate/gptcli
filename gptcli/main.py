@@ -55,6 +55,7 @@ def enter_chat_mode(parser: CommandParser) -> None:
         filepath=parser.args.filepath,
         storage=parser.args.storage,
         load_last=parser.args.load_last,
+        multiline_delimiter=parser.args.multiline_delimiter,
     ).start()
 
 
