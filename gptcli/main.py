@@ -5,7 +5,7 @@ import os
 from logging import Logger
 
 from gptcli.constants import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
-from gptcli.src.common.cli import CommandParser
+from gptcli.src.cli import CommandParser
 from gptcli.src.install import Install
 from gptcli.src.modes.chat import ChatOpenai
 from gptcli.src.modes.single_exchange import SingleExchange
