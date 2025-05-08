@@ -5,7 +5,7 @@ from typing import Any, Generator
 import pytest
 from tiktoken import Encoding
 
-from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.src.common.message import Message, MessageFactory, Messages
 
 
 class TestMessage:

@@ -10,9 +10,9 @@ import requests
 from requests import Response, Session
 from requests.exceptions import ReadTimeout
 
-from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
-from gptcli.src.decorators import allow_graceful_stream_exit
-from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.constants import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
+from gptcli.src.common.decorators import allow_graceful_stream_exit
+from gptcli.src.common.message import Message, MessageFactory, Messages
 
 logger: Logger = logging.getLogger(__name__)
 

@@ -5,12 +5,12 @@ from typing import Generator
 import pytest
 import requests
 
-from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import (
+from gptcli.src.common.api.openai import (
     Chat,
     SingleExchange,
     _export_api_key_to_environment_variable,
 )
+from gptcli.src.common.message import Message, MessageFactory, Messages
 
 
 class TestOpenAiHelper:

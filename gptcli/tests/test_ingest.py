@@ -5,8 +5,8 @@ from typing import Generator
 
 import pytest
 
-from gptcli.definitions import PROJECT_ROOT_DIRECTORY
-from gptcli.src.ingest import PDF, Text
+from gptcli.constants import PROJECT_ROOT_DIRECTORY
+from gptcli.src.common.ingest import PDF, Text
 
 FILEPATH_TEXT_FILE_POPULATED: str = "gptcli/tests/data/ingest/text_file_populated.txt"
 FILEPATH_TEXT_FILE_EMPTY: str = "gptcli/tests/data/ingest/text_file_empty.txt"

@@ -6,10 +6,10 @@ from typing import Any, Generator
 import pytest
 from requests import Response
 
-from gptcli.src.definitions import openai, output_types
-from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import SingleExchange as seh
-from gptcli.src.single_exchange import SingleExchange
+from gptcli.src.common.api.openai import SingleExchange as seh
+from gptcli.src.common.constants import openai, output_types
+from gptcli.src.common.message import Message, MessageFactory, Messages
+from gptcli.src.modes.single_exchange import SingleExchange
 
 
 # pylint: disable=W0212:protected-access

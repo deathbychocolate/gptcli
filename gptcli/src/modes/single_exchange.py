@@ -7,9 +7,9 @@ from typing import Any
 
 from requests import Response
 
-from gptcli.src.definitions import output_types
-from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import SingleExchange as se
+from gptcli.src.common.api.openai import SingleExchange as se
+from gptcli.src.common.constants import output_types
+from gptcli.src.common.message import Message, MessageFactory, Messages
 
 logger: Logger = logging.getLogger(__name__)
 

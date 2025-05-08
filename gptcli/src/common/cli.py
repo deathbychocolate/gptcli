@@ -7,7 +7,7 @@ from logging import Logger
 from typing import Any, ClassVar
 
 from gptcli._version import __version__
-from gptcli.src.definitions import openai, output_types, roles
+from gptcli.src.common.constants import openai, output_types, roles
 
 logger: Logger = logging.getLogger(__name__)
 

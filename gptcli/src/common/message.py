@@ -10,7 +10,7 @@ from uuid import uuid4
 import tiktoken
 from tiktoken import Encoding
 
-from gptcli.src.definitions import openai
+from gptcli.src.common.constants import openai
 
 logger: Logger = logging.getLogger(__name__)
 

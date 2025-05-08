@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from pytest import CaptureFixture
 
-from gptcli.src.chat import Chat
+from gptcli.src.modes.chat import Chat
 
 
 class TestChat:

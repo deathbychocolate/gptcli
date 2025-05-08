@@ -9,13 +9,13 @@ import os
 import readline
 from logging import Logger
 
-from gptcli.src.decorators import user_triggered_abort
-from gptcli.src.ingest import PDF, Text
-from gptcli.src.message import Message
-from gptcli.src.message import MessageFactory as mf
-from gptcli.src.message import Messages
-from gptcli.src.openai_api_helper import Chat as ch
-from gptcli.src.storage import Storage
+from gptcli.src.common.api.openai import Chat as ch
+from gptcli.src.common.decorators import user_triggered_abort
+from gptcli.src.common.ingest import PDF, Text
+from gptcli.src.common.message import Message
+from gptcli.src.common.message import MessageFactory as mf
+from gptcli.src.common.message import Messages
+from gptcli.src.common.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
 

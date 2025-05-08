@@ -9,8 +9,8 @@ from os import path
 from time import time
 from typing import Any
 
-from gptcli.definitions import GPTCLI_STORAGE_FILEPATH
-from gptcli.src.message import Message, MessageFactory, Messages
+from gptcli.constants import GPTCLI_STORAGE_FILEPATH
+from gptcli.src.common.message import Message, MessageFactory, Messages
 
 logger: Logger = logging.getLogger(__name__)
 

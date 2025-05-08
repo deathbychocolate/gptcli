@@ -4,11 +4,11 @@ import logging
 import os
 from logging import Logger
 
-from gptcli.definitions import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
-from gptcli.src.chat import ChatOpenai
-from gptcli.src.command_parser import CommandParser
+from gptcli.constants import GPTCLI_KEYS_OPENAI, OPENAI_API_KEY
+from gptcli.src.common.cli import CommandParser
 from gptcli.src.install import Install
-from gptcli.src.single_exchange import SingleExchange
+from gptcli.src.modes.chat import ChatOpenai
+from gptcli.src.modes.single_exchange import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
 
@@ -64,10 +64,10 @@ def main() -> None:
     load_api_key_to_environment_variable(parser=parser)
     Install().standard_install()
     match parser.args.subcommand_name:
-        case "se":
-            enter_single_exchange_mode(parser=parser)
         case "chat":
             enter_chat_mode(parser=parser)
+        case "se":
+            enter_single_exchange_mode(parser=parser)
         case _:
             parser.print_help()
 

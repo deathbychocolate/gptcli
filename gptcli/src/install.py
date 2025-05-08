@@ -4,7 +4,7 @@ import logging
 import os
 from logging import Logger
 
-from gptcli.definitions import (
+from gptcli.constants import (
     GPTCLI_INSTALL_SUCCESSFUL,
     GPTCLI_KEYS_FILEPATH,
     GPTCLI_KEYS_OPENAI,
@@ -12,10 +12,10 @@ from gptcli.definitions import (
     GPTCLI_STORAGE_FILEPATH,
     OPENAI_API_KEY,
 )
-from gptcli.src.chat import ChatInstall
-from gptcli.src.definitions import openai
-from gptcli.src.message import Message, MessageFactory, Messages
-from gptcli.src.openai_api_helper import SingleExchange
+from gptcli.src.common.api.openai import SingleExchange
+from gptcli.src.common.constants import openai
+from gptcli.src.common.message import Message, MessageFactory, Messages
+from gptcli.src.modes.chat import ChatInstall
 
 logger: Logger = logging.getLogger(__name__)
 
