@@ -1,11 +1,10 @@
 """File that will hold all the tests relating to chat.py."""
 
 import readline
-from typing import Any, Generator
+from typing import Generator
 from unittest.mock import patch
 
 import pytest
-from pytest import CaptureFixture
 
 from gptcli.src.modes.chat import Chat
 

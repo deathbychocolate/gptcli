@@ -21,6 +21,7 @@ pyclean = "*"
 scalene = "*"
 mypy = "*"
 pre-commit = "*"
+autoflake = "*"
 
 [requires]
 python_version = "3.11"

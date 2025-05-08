@@ -33,6 +33,7 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.words": [
+        "autoflake",
         "capsys",
         "commitizen",
         "dunder",
