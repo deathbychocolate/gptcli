@@ -159,12 +159,10 @@ class ChatOpenai(Chat):
     def _scan_multiline_input(self) -> str:
         logger.info("Scanning for multiline input")
 
-        multiline_input: set[str] = set(['"""'])
-
         user_input_multiline: list[str] = list()
         user_input_single_line = str(input("... "))
 
-        while user_input_single_line not in multiline_input:
+        while user_input_single_line != self._multiline_delimiter:
             user_input_multiline.append(user_input_single_line)
             user_input_single_line = str(input("... "))
 
