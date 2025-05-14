@@ -67,13 +67,7 @@ def _check_for_http_errors(response: Response | None) -> bool:
                 case _ if code >= 600:
                     logger.warning("Response code not recognized!")
             error = json.loads(response.content)["error"]
-            log_message = ":".join(
-                [
-                    error["message"],
-                    error["type"],
-                    error["code"],
-                ]
-            )
+            log_message = ":".join(v for v in error.values() if isinstance(v, str))
             print(log_message)
             logger.warning(log_message)
 
