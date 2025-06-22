@@ -5,28 +5,82 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File with Arguments",
+            "name": "gptcli openai chat --model o1-pro",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
+                "openai",
                 "chat",
-                "--model", "o1",
-                "--filepath", "",
-                "--context",
-                "--stream",
-                "--storage",
+                "--model",
+                "o1-pro"
             ],
-            "justMyCode": false,
+            "justMyCode": false
         },
         {
-            "name": "Python Debugger: Current File",
+            "name": "gptcli openai se hi",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false,
+            "args": [
+                "openai",
+                "se",
+                "hi"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "gptcli mistral chat",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "mistral",
+                "chat",
+                "--filepath", "",
+                "--context",
+                "--stream",
+                "--storage"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "gptcli openai chat",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "openai",
+                "chat",
+                "--filepath", "",
+                "--context",
+                "--stream",
+                "--storage"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "gptcli openai",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "openai"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "gptcli",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
