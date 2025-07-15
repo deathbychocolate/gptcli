@@ -7,19 +7,28 @@
 - Pypi:
     - Open your preferred terminal.
     - Install the project via pypi using `pip install dbc-gptcli`.
-    - Run `gptcli` or `gptcli [chat|se]`.
-    - For more info on usage, check the builtin help docs using `gptcli -h` or `gptcli [chat|se] [-h|--help`.
+    - Run `gptcli [mistral|openai] [chat|se]`.
+    - For more info on usage, check the builtin help docs using:
+      - `gptcli -h`
+      - `gptcli [mistral|openai] [-h|--help]`
+      - `gptcli [mistral|openai] [chat|se] [-h|--help]`.
 - Docker:
     - Open your preferred terminal.
     - Start docker via the desktop app or running `sudo systemctl start docker`.
     - Pull the docker image with `docker pull deathbychocolate/gptcli:latest`.
     - Start and enter a container with `docker run --rm -it --entrypoint /bin/bash deathbychocolate/gptcli:latest`.
-    - Run `gptcli` or `gptcli [chat|se]` or `python3 gptcli/main.py [chat|se]`.
+    - Run `gptcli [mistral|openai] [chat|se]` or `python3 gptcli/main.py [mistral|openai] [chat|se]`.
 
 # How do I get an API key?
-You need valid OpenAI credentials to communicate with the AI models. To do this:
+You need valid OpenAI credentials to communicate with the AI models.
+
+For OpenAI:
 - Create an OpenAI account here: https://chat.openai.com/
 - Generate an OpenAI API key here: https://platform.openai.com/api-keys
+
+For Mistral AI:
+- Create a Mistral AI account here: https://chat.mistral.ai/chat
+- Generate a Mistral AI API key here: https://console.mistral.ai/api-keys
 
 # How do I use the project's Makefile?
 From the project root directory, run `make` or `make help` to display all Makefile targets documentation.
@@ -27,46 +36,63 @@ From the project root directory, run `make` or `make help` to display all Makefi
 # How does GPTCLI work?
 The project uses the OpenAI API to query chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests. For now, GPTCLI is for purely text based LLMs.
 
-GPTCLI offers 2 modes to communicate with the LLM of your choosing, `Chat` and `Single-Exchange`:
+GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provider offers 2 modes to communicate with the LLM of your choosing, `Chat` and `Single-Exchange`:
 
 `Chat` mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. This mode will show you output similar to the following:
 ```text
-username@hostname ~/> gptcli chat
+username@hostname ~/> gptcli openai chat
 >>> hi
-Hello! How can I assist you today?
+>>> Hello! How can I assist you today?
 >>> exit
 username@hostname ~/>
 ```
 
-`Chat` mode also allows for multiline correspondence. This is useful in cases where you would like to copy and paste small to medium-large text or code samples; though there is no size limit. You may enter and exit this feature by typing and entering `"""` in the prompt. For example, you should see output similar to the following:
+`Chat` mode also allows for multiline correspondence. This is useful in cases where you would like to copy and paste small to medium-large text or code samples; though there is no size limit. You may enter and exit this feature by typing and entering `/m` in the prompt. For example, you should see output similar to the following:
 ```text
-username@hostname ~/> gptcli chat
->>> """
+username@hostname ~/> gptcli openai chat
+>>> /m
 ... What is the expected output of this code? Be concise.
 ...
 ... import json
 ... payload: dict = {'a': 1, 'b': 2}
-... print(json.dumps(payload, indent=4))
-... """
-The output is a pretty-printed JSON string of the dictionary:
+... print(json.dumps(payload, indent=4))  # Hit [ESC] followed by [ENTER] here
+>>> The output is a pretty-printed JSON string of the dictionary:
 
 {
     "a": 1,
     "b": 2
 }
 
->>> exit
+>>> /q
 username@hostname ~/>
+```
+
+`Chat` mode also allows loading of the last chat session as into your current session to continue the conversation. For example:
+```text
+username@hostname ~/> gptcli openai chat --load-last
+>>> What is the expected output of this code? Be concise.
+
+import json
+payload: dict = {'a': 1, 'b': 2}
+print(json.dumps(payload, indent=4))  # Hit [ESC] followed by [ENTER] here
+>>> The output is a pretty-printed JSON string of the dictionary:
+
+{
+    "a": 1,
+    "b": 2
+}
+
+>>> # Continue from here or quit.
 ```
 
 `Single-Exchange` is functionally similar to `Chat`, but it only allows a single exchange of messages to happen (1 sent from client-side, 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
 ```text
-username@hostname ~/> gptcli se "hello"
+username@hostname ~/> gptcli openai se "hello"
 Hello! How can I assist you today?
 username@hostname ~/>
 ```
 
 # How is GPTCLI different from other clients?
-- GPTCLI does not use any software developed by OpenAI. For example, it does not use the `openai` package supported by OpenAI (found [here](https://github.com/openai/openai-python?tab=readme-ov-file)), there are simply too many features in it that go unused (>200 MB) when for now we only really need 50-100 lines of Python code.
-- GPTCLI prioritizes features that make CLI usage easy and useful.
-- GPTCLI aims to eventually have all the features of ChatGPT in the terminal.
+- GPTCLI does not use any software developed by OpenAI or Mistral AI, except for tokenization (ie tiktoken, and mistral-common).
+- GPTCLI prioritizes features that make the CLI useful and easy to use.
+- GPTCLI aims to eventually have all the features of its WebApp counterparts in the terminal.
