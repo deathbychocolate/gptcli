@@ -82,7 +82,22 @@ print(json.dumps(payload, indent=4))  # Hit [ESC] followed by [ENTER] here
     "b": 2
 }
 
->>> # Continue from here or quit.
+>>> Send a message (/? for help)
+```
+
+`Chat` mode also allows for in-chat commands. For example:
+```text
+username@hostname ~/> gptcli openai chat
+>>> /?
+
+/?, /h, /help           Show help.
+/c, /cls, /clear        Clear screen.
+/m, /mult               Enter multiline mode.
+/e, /exit, /q, /quit    End program.
+↑/↓                     Navigate history.
+Enter                   Send message.
+
+>>> Send a message (/? for help)
 ```
 
 `Single-Exchange` is functionally similar to `Chat`, but it only allows a single exchange of messages to happen (1 sent from client-side, 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
