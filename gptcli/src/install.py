@@ -5,117 +5,131 @@ import os
 from logging import Logger
 
 from gptcli.constants import (
-    GPTCLI_INSTALL_SUCCESSFUL,
-    GPTCLI_KEYS_FILEPATH,
-    GPTCLI_KEYS_OPENAI,
-    GPTCLI_ROOT_FILEPATH,
-    GPTCLI_STORAGE_FILEPATH,
-    OPENAI_API_KEY,
+    GPTCLI_PROVIDER_MISTRAL_INSTALL_SUCCESSFUL_FILE,
+    GPTCLI_PROVIDER_MISTRAL_KEY_FILE,
+    GPTCLI_PROVIDER_MISTRAL_KEYS_DIR,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR,
+    GPTCLI_PROVIDER_OPENAI_INSTALL_SUCCESSFUL_FILE,
+    GPTCLI_PROVIDER_OPENAI_KEY_FILE,
+    GPTCLI_PROVIDER_OPENAI_KEYS_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
 )
-from gptcli.src.common.api.openai import SingleExchange
-from gptcli.src.common.constants import openai
+from gptcli.src.common.api import SingleExchange
+from gptcli.src.common.constants import (
+    MISTRAL,
+    OPENAI,
+    MistralModelsChat,
+    MistralUserRoles,
+    OpenaiModelsChat,
+    OpenaiUserRoles,
+    ProviderNames,
+)
 from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.modes.chat import ChatInstall
 
 logger: Logger = logging.getLogger(__name__)
 
+MESSAGE_FACTORY_MISTRAL: MessageFactory = MessageFactory(provider=ProviderNames.MISTRAL.value)
+MESSAGE_FACTORY_OPENAI: MessageFactory = MessageFactory(provider=ProviderNames.OPENAI.value)
 
-class Install:
-    """Class to hold all the install tools for the local machine"""
 
-    def standard_install(self) -> None:
-        """Performs standard install by creating local file directory with needed config files"""
-        logger.info("Performing standard install.")
-        if not self._is_installed():
-            self._create_folder_structure()
-            openai_api_key = self._setup_api_key()
-            self._write_api_key_to_openai_file(openai_api_key=openai_api_key)
-            self._load_api_key_to_environment_variable()
-            self._mark_install_as_successful()
-        else:
-            logger.info("GPTCLI already installed.")
+class Mistral:
+    """Class to hold all the installation tools for the local machine - specific to Mistral AI needs."""
 
-    def _is_installed(self) -> bool:
-        logger.info("Checking if GPTCLI is installed.")
+    def install(self) -> None:
+        """Creates local file directory with needed config files - specific to Mistral AI needs."""
+        logger.info("Performing install for Mistral AI.")
+        if self._is_install_successful():
+            return None
+
+        chat: ChatInstall = ChatInstall(provider=ProviderNames.MISTRAL.value)
+        key: str = chat.prompt(">>> ")
+        while not self._is_valid_api_key(key=key):
+            key = chat.prompt(">>> ")
+
+        os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_MISTRAL_KEYS_DIR, exist_ok=True)
+        with open(GPTCLI_PROVIDER_MISTRAL_KEY_FILE, "w", encoding="utf8") as fp:
+            fp.write(key)
+        open(GPTCLI_PROVIDER_MISTRAL_INSTALL_SUCCESSFUL_FILE, "w", encoding="utf8").close()
+
+        return None
+
+    @staticmethod
+    def _is_valid_api_key(key: str) -> bool:
+        logger.info("Checking if provided API key is valid.")
+        model: str = MistralModelsChat.default()
+        role: str = MistralUserRoles.default()
+        message: Message = MESSAGE_FACTORY_MISTRAL.user_message(role=role, content="Hi!", model=model)
+        messages: Messages = Messages()
+        messages.add(message)
+        is_valid = SingleExchange(provider=MISTRAL, model=role, messages=messages).is_valid_api_key(key)
+
+        return is_valid
+
+    @staticmethod
+    def _is_install_successful() -> bool:
+        logger.info("Checking if Mistral setup has been successful.")
         is_installed = False
         try:
-            with open(GPTCLI_INSTALL_SUCCESSFUL, "r", encoding="utf8"):
+            with open(GPTCLI_PROVIDER_MISTRAL_INSTALL_SUCCESSFUL_FILE, "r", encoding="utf8"):
                 is_installed = True
         except FileNotFoundError:
             logger.exception("FileNotFoundError: install marker not found")
 
         return is_installed
 
-    def _create_folder_structure(self) -> None:
-        if not self._is_gptcli_folder_present():
-            logger.info("Creating basic folder structure.")
-            os.mkdir(GPTCLI_ROOT_FILEPATH)
-            os.mkdir(GPTCLI_STORAGE_FILEPATH)
-            os.mkdir(GPTCLI_KEYS_FILEPATH)
-            with open(GPTCLI_KEYS_OPENAI, "w", encoding="utf8"):
-                pass  # no need to do anything as file was created
-        else:
-            logger.info(".gptcli config folder is already present")
 
-    def _is_gptcli_folder_present(self) -> bool:
-        logger.info("Checking for .gptcli")
-        is_present = os.path.exists(GPTCLI_ROOT_FILEPATH)
+class Openai:
+    """Class to hold all the installation tools for the local machine - specific to OpenAI needs."""
 
-        return is_present
+    def install(self) -> None:
+        """Creates local file directory with needed config files - specific to OpenAI needs."""
+        logger.info("Performing install for OpenAI.")
+        if self._is_install_successful():
+            return None
 
-    def _setup_api_key(self) -> str:
-        logger.info("Asking user for OpenAI API key.")
-        chat: ChatInstall = ChatInstall()
-        openai_api_key: str = ""
-        while True:
-            openai_api_key = chat.prompt("Enter your OpenAI API key: ")
-            if self._is_valid_openai_api_key(openai_api_key):
-                logger.info("Valid API key detected.")
-                break
-            else:
-                print("Invalid OpenAI API key detected...")
-        return openai_api_key
+        chat: ChatInstall = ChatInstall(provider=ProviderNames.OPENAI.value)
+        key: str = chat.prompt(">>> ")
+        while not self._is_valid_api_key(key=key):
+            key = chat.prompt(">>> ")
 
-    def _write_api_key_to_openai_file(self, openai_api_key: str) -> None:
-        logger.info("Loading API key to OpenAI file.")
-        if self._is_openai_file_present():
-            file_permissions = 0o600
-            with open(GPTCLI_KEYS_OPENAI, "w", encoding="utf8", newline="") as filepointer:
-                os.chmod(GPTCLI_KEYS_OPENAI, file_permissions)
-                filepointer.write(openai_api_key)
-        else:
-            logger.info("Failed to load API key to OpenAI file")
+        os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_OPENAI_KEYS_DIR, exist_ok=True)
+        with open(GPTCLI_PROVIDER_OPENAI_KEY_FILE, "w", encoding="utf8") as fp:
+            fp.write(key)
+        open(GPTCLI_PROVIDER_OPENAI_INSTALL_SUCCESSFUL_FILE, "w", encoding="utf8").close()
 
-    def _is_openai_file_present(self) -> bool:
-        logger.info("Checking for '.gptcli/keys/OpenAI'.")
-        is_present = False
-        try:
-            with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8"):
-                is_present = True
-        except FileNotFoundError:
-            is_present = False
+        return None
 
-        return is_present
-
-    def _load_api_key_to_environment_variable(self) -> None:
-        logger.info("Loading API key to environment variable.")
-        api_key = os.getenv(OPENAI_API_KEY)
-        if api_key is None:
-            with open(GPTCLI_KEYS_OPENAI, "r", encoding="utf8") as filepointer:
-                os.environ[OPENAI_API_KEY] = filepointer.readline()
-        else:
-            logger.info("API key already loaded")
-
-    def _is_valid_openai_api_key(self, key: str) -> bool:
-        logger.info("Checking if OpenAI API key is valid.")
-        message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model=openai["O4_MINI"])
+    @staticmethod
+    def _is_valid_api_key(key: str) -> bool:
+        logger.info("Checking if provided API key is valid.")
+        model: str = OpenaiModelsChat.default()
+        role: str = OpenaiUserRoles.default()
+        message: Message = MESSAGE_FACTORY_OPENAI.user_message(role=role, content="Hi!", model=model)
         messages: Messages = Messages()
-        messages.add_message(message)
-        is_valid = SingleExchange(model=openai["O4_MINI"], messages=messages).is_valid_api_key(key)
+        messages.add(message)
+        is_valid = SingleExchange(provider=OPENAI, model=model, messages=messages).is_valid_api_key(key)
 
         return is_valid
 
-    def _mark_install_as_successful(self) -> None:
-        logger.info("Marking install as successful.")
-        with open(GPTCLI_INSTALL_SUCCESSFUL, "w", encoding="utf8"):
-            pass  # simply create the file
+    @staticmethod
+    def _is_install_successful() -> bool:
+        logger.info("Checking if OpenAI setup has been successful.")
+        is_installed = False
+        try:
+            with open(GPTCLI_PROVIDER_OPENAI_INSTALL_SUCCESSFUL_FILE, "r", encoding="utf8"):
+                is_installed = True
+        except FileNotFoundError:
+            logger.exception("FileNotFoundError: install marker not found")
+
+        return is_installed

@@ -9,54 +9,86 @@ from os import path
 from time import time
 from typing import Any
 
-from gptcli.constants import GPTCLI_STORAGE_FILEPATH
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import ANSI
+
+from gptcli.constants import (
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
+)
+from gptcli.src.common.constants import GRN, MGA, MISTRAL, OPENAI, RST
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
 logger: Logger = logging.getLogger(__name__)
 
 
-supported_storage_types = set(["chat", "single_exchange", "metadata"])
+supported_storage_types = ["json", "db"]
 
 
 class Storage:
     """The basic representation of storage."""
 
-    def store_messages(self, messages: Messages, storage_type: str) -> None:
+    def __init__(self, provider: str) -> None:
+        self._provider: str = provider
+
+    def store_messages(self, messages: Messages) -> None:
         """Stores Messages objects to ~/.gptcli/storage/
 
         Args:
             messages (Messages): A Messages object holds Message objects.
-            storage_type (str): A string to describe the type of storage we want. See: supported_storage_types.
         """
         logger.info("Storing Messages to local filesystem.")
         if len(messages) > 0:
-            filepath = self._generate_filepath(storage_type)
-            with open(filepath, "w", encoding="utf8") as filepointer:
-                filepointer.write(messages.to_json(indent=4))
+            filepath = self._generate_filepath()
+            with open(filepath, "w", encoding="utf8") as fp:
+                fp.write(messages.to_json())
 
-    def _generate_filepath(self, storage_type: str) -> str:
-        logger.info("Generating filepath for storing a '%s' storage type.", storage_type)
-        if storage_type.casefold() not in supported_storage_types:
-            raise NotImplementedError(f"The storage type '{storage_type}' is not supported.")
+    def _generate_filepath(self) -> str:
+        logger.info("Generating filepath for storing chat session.")
 
+        if self._provider == MISTRAL:
+            json_directory = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
+        elif self._provider == OPENAI:
+            json_directory = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
+        else:
+            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+
+        # build filepath
         epoch: str = str(int(time()))
         datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S_")
-        filename: str = "_".join([epoch, datetime_now_utc, storage_type]) + ".json"
-        filepath: str = path.join(GPTCLI_STORAGE_FILEPATH, filename)
+        filename: str = "_".join([epoch, datetime_now_utc, "chat"]) + ".json"
+        filepath: str = path.join(json_directory, filename)
 
         return filepath
 
     def extract_messages(self) -> Messages:
-        filepaths: list[str] = glob(path.expanduser("~/.gptcli/storage/*.json"))
+        logger.info("Extracting messages from storage.")
+
+        if self._provider == MISTRAL:
+            json_directory = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
+        elif self._provider == OPENAI:
+            json_directory = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
+        else:
+            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+
+        filepaths: list[str] = glob(path.expanduser(path.join(json_directory, "*.json")))
         last_chat_session: str = max(filepaths, key=path.getctime)
 
         file_contents_messages: list[dict[str, Any]] = []
-        with open(last_chat_session, "r", encoding="utf8") as filepointer:
-            file_contents_messages = json.load(filepointer)["messages"]
+        with open(last_chat_session, "r", encoding="utf8") as fp:
+            file_contents_messages = json.load(fp)["messages"]
 
         messages: Messages = Messages()
         for message in file_contents_messages:
-            m: Message = MessageFactory.create_message_from_dict(message=message)
-            messages.add_message(message=m)
+            m: Message = MessageFactory.message_from_dict(message=message)
+            messages.add(message=m)
 
         return messages
+
+    def show_messages(self) -> None:
+        messages: Messages = self.extract_messages()
+        for message in messages:
+            if message.is_reply:
+                print_formatted_text(ANSI(f"{MGA}>>>{RST} " + message.content))
+            else:
+                print_formatted_text(ANSI(f"{GRN}>>>{RST} " + message.content))

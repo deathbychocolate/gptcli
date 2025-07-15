@@ -1,12 +1,14 @@
 """File that will hold all the tests relating to chat.py."""
 
-import readline
-from typing import Generator
-from unittest.mock import patch
+from typing import Any, Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
+from prompt_toolkit.history import History, InMemoryHistory
+from prompt_toolkit.key_binding import KeyBindings
 
-from gptcli.src.modes.chat import Chat
+from gptcli.src.common.constants import OpenaiModelsChat, ProviderNames
+from gptcli.src.modes.chat import Chat, ChatInstall, ChatUser
 
 
 class TestChat:
@@ -14,72 +16,80 @@ class TestChat:
 
     @pytest.fixture(scope="session")
     def setup_teardown(self) -> Generator[Chat, None, None]:
-        c: Chat = Chat()
-        yield c
+        """Generate a ChatInstall object."""
+        yield Chat()
 
-    def test_should_configure_chat(self, setup_teardown: Chat) -> None:
-        with patch.object(target=Chat, attribute="_configure_chat") as mock__configure_chat:
+    class TestInMemoryHistory:
+        """Holds tests for confirming we are using InMemoryHistory."""
+
+        def test_session_uses_in_memory_history(self, setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
-            chat.__init__()  # type: ignore # pylint:disable=C2801:unnecessary-dunder-call
-            mock__configure_chat.assert_called()
+            assert isinstance(chat.session.history, InMemoryHistory)
 
-    class TestConfigureChat:
-        """Holds tests for the _configure_chat() method."""
+        def test_history_collects_strings(self, setup_teardown: Chat) -> None:
+            chat: Chat = setup_teardown
+            history: History | None | InMemoryHistory = chat.session.history
+            if isinstance(history, type(None)):
+                assert False
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_clear_history") as mock__clear_history:
+            first_line: str = "first line"
+            second_line: str = "second line"
+            history.append_string(first_line)
+            history.append_string(second_line)
+
+            lines = [line for line in history._storage]
+
+            assert lines == [first_line, second_line]
+
+    class TestKeyBindings:
+        """Holds the tests for checking key bindings."""
+
+        def test_should_configure_key_bindings(self, setup_teardown: Chat) -> None:
+            with patch.object(target=Chat, attribute="_configure_key_bindings") as mock__configure_key_bindings:
                 chat: Chat = setup_teardown
-                chat._configure_chat()  # pylint:disable=W0212:protected-access
-                mock__clear_history.assert_called()
+                chat.__init__()  # type: ignore # pylint:disable=C2801:unnecessary-dunder-call
+                mock__configure_key_bindings.assert_called()
 
-        def test_should_add_arrow_key_support(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_add_arrow_key_support") as mock__add_arrow_key_support:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock__add_arrow_key_support.assert_called()
+        @staticmethod
+        def _handler_for(kb: KeyBindings, *keys: str) -> Any:
+            """Returns the handler that is registered for "up" or "down" and down sequences."""
+            return kb.get_bindings_for_keys(keys)[0].handler
 
-    class TestClearHistory:
-        """Holds tests for the _clear_history() method."""
+        def test_key_binding_for_up_arrow_is_registered(self, setup_teardown: Chat) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("up",)), "No binding for <up> arrow"
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="clear_history") as mock_clear_history:
-                chat: Chat = setup_teardown
-                chat._clear_history()  # pylint:disable=W0212:protected-access
-                mock_clear_history.assert_called()
+        def test_key_binding_for_down_arrow_is_registered(self, setup_teardown: Chat) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("down",)), "No binding for <down> arrow"
 
-    class TestAddArrowKeySupport:
-        """Holds tests for the _add_arrow_key_support() method."""
+        def test_up_arrow_moves_history_backward(self, setup_teardown: Chat) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "up")
 
-        def test_should_add_history_search_backward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
+            # Build a minimal fake event object that contains the bits the
+            # handler touches:  event.app.current_buffer.history_backward()
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
 
-        def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
+            handler(fake_event)
 
-        def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
+            fake_buffer.history_backward.assert_called_once()
+            fake_buffer.history_forward.assert_not_called()
 
-        def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
+        def test_down_arrow_moves_history_forward(self, setup_teardown: Chat) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "down")
 
-        def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
-            with pytest.raises(expected_exception=AssertionError):
-                with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                    chat: Chat = setup_teardown
-                    chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                    mock_parse_and_bind.assert_any_call(r"not a real call")
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
+
+            handler(fake_event)
+
+            fake_buffer.history_forward.assert_called_once()
+            fake_buffer.history_backward.assert_not_called()
 
 
 class TestChatInstall:
@@ -94,150 +104,165 @@ class TestChatInstall:
     """
 
     @pytest.fixture(scope="session")
-    def setup_teardown(self) -> Generator[Chat, None, None]:
-        c: Chat = Chat()
-        yield c
+    def setup_teardown(self) -> Generator[ChatInstall, None, None]:
+        """Generate a ChatInstall object."""
+        yield ChatInstall(provider=ProviderNames.OPENAI.value)
 
-    def test_should_configure_chat(self, setup_teardown: Chat) -> None:
-        with patch.object(target=Chat, attribute="_configure_chat") as mock__configure_chat:
-            chat: Chat = setup_teardown
-            chat.__init__()  # type: ignore # pylint:disable=C2801:unnecessary-dunder-call
-            mock__configure_chat.assert_called()
+    class TestInMemoryHistory:
+        """Holds tests that confirm we are using InMemoryHistory."""
 
-    class TestConfigureChat:
-        """Holds tests for the _configure_chat() method."""
+        def test_session_uses_in_memory_history(self, setup_teardown: ChatInstall) -> None:
+            chat: ChatInstall = setup_teardown
+            assert isinstance(chat.session.history, InMemoryHistory)
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_clear_history") as mock__clear_history:
-                chat: Chat = setup_teardown
-                chat._configure_chat()  # pylint:disable=W0212:protected-access
-                mock__clear_history.assert_called()
+        def test_history_collects_strings(self, setup_teardown: ChatInstall) -> None:
+            chat: ChatInstall = setup_teardown
+            history: History | None | InMemoryHistory = chat.session.history
+            if isinstance(history, type(None)):
+                assert False
 
-        def test_should_add_arrow_key_support(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_add_arrow_key_support") as mock__add_arrow_key_support:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock__add_arrow_key_support.assert_called()
+            first_line: str = "first line"
+            second_line: str = "second line"
+            history.append_string(first_line)
+            history.append_string(second_line)
 
-    class TestClearHistory:
-        """Holds tests for the _clear_history() method."""
+            lines = [line for line in history._storage]
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="clear_history") as mock_clear_history:
-                chat: Chat = setup_teardown
-                chat._clear_history()  # pylint:disable=W0212:protected-access
-                mock_clear_history.assert_called()
+            assert lines == [first_line, second_line]
 
-    class TestAddArrowKeySupport:
-        """Holds tests for the _add_arrow_key_support() method."""
+    class TestKeyBindings:
+        """Holds the tests for checking key bindings."""
 
-        def test_should_add_history_search_backward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
+        def test_should_configure_key_bindings(self, setup_teardown: ChatInstall) -> None:
+            with patch.object(target=Chat, attribute="_configure_key_bindings") as mock__configure_key_bindings:
+                chat: ChatInstall = setup_teardown
+                chat.__init__(provider=ProviderNames.OPENAI.value)  # type: ignore[misc]
+                mock__configure_key_bindings.assert_called()
 
-        def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
+        @staticmethod
+        def _handler_for(kb: KeyBindings, *keys: str) -> Any:
+            """Returns the handler that is registered for "up" or "down" and down sequences."""
+            return kb.get_bindings_for_keys(keys)[0].handler
 
-        def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
+        def test_key_binding_for_up_arrow_is_registered(self, setup_teardown: ChatInstall) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("up",)), "No binding for <up> arrow"
 
-        def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
+        def test_key_binding_for_down_arrow_is_registered(self, setup_teardown: ChatInstall) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("down",)), "No binding for <down> arrow"
 
-        def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
-            with pytest.raises(expected_exception=AssertionError):
-                with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                    chat: Chat = setup_teardown
-                    chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                    mock_parse_and_bind.assert_any_call(r"not a real call")
+        def test_up_arrow_moves_history_backward(self, setup_teardown: ChatInstall) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "up")
+
+            # Build a minimal fake event object that contains the bits the
+            # handler touches:  event.app.current_buffer.history_backward()
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
+
+            handler(fake_event)
+
+            fake_buffer.history_backward.assert_called_once()
+            fake_buffer.history_forward.assert_not_called()
+
+        def test_down_arrow_moves_history_forward(self, setup_teardown: ChatInstall) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "down")
+
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
+
+            handler(fake_event)
+
+            fake_buffer.history_forward.assert_called_once()
+            fake_buffer.history_backward.assert_not_called()
 
 
-class TestChatOpenai:
-    """Holds tests for the ChatOpenai class.
+class TestChatUser:
+    """Holds tests for the ChatUser class.
 
-    This class contains all tests from TestChat and more.
-    The reason is, we want to confirm that all inherited
-    methods work the same as when they were inherited.
+    The tests are identical to TestChat.
+    This is desirable as ChatInstall only inherits from Chat,
+    and has no additional methods (for now).
+
+    Feel free to add functionality to it as you please,
+    but new functionality should be covered.
 
     TODO: Add more tests to cover the unique functionality of the ChatOpenai class.
     """
 
     @pytest.fixture(scope="session")
-    def setup_teardown(self) -> Generator[Chat, None, None]:
-        c: Chat = Chat()
-        yield c
+    def setup_teardown(self) -> Generator[ChatUser, None, None]:
+        """Generate a ChatUser object."""
+        yield ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
 
-    def test_should_configure_chat(self, setup_teardown: Chat) -> None:
-        with patch.object(target=Chat, attribute="_configure_chat") as mock__configure_chat:
-            chat: Chat = setup_teardown
-            chat.__init__()  # type: ignore # pylint:disable=C2801:unnecessary-dunder-call
-            mock__configure_chat.assert_called()
+    class TestInMemoryHistory:
+        """Holds tests for confirming we are using InMemoryHistory."""
 
-    class TestConfigureChat:
-        """Holds tests for the _configure_chat() method."""
+        def test_session_uses_in_memory_history(self, setup_teardown: ChatUser) -> None:
+            assert isinstance(setup_teardown.session.history, InMemoryHistory)
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_clear_history") as mock__clear_history:
-                chat: Chat = setup_teardown
-                chat._configure_chat()  # pylint:disable=W0212:protected-access
-                mock__clear_history.assert_called()
+        def test_history_collects_strings(self, setup_teardown: ChatUser) -> None:
+            history: InMemoryHistory = setup_teardown.session.history
 
-        def test_should_add_arrow_key_support(self, setup_teardown: Chat) -> None:
-            with patch.object(target=Chat, attribute="_add_arrow_key_support") as mock__add_arrow_key_support:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock__add_arrow_key_support.assert_called()
+            first_line: str = "first line"
+            second_line: str = "second line"
+            history.append_string(first_line)
+            history.append_string(second_line)
 
-    class TestClearHistory:
-        """Holds tests for the _clear_history() method."""
+            lines = [line for line in history._storage]
 
-        def test_should_clear_history(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="clear_history") as mock_clear_history:
-                chat: Chat = setup_teardown
-                chat._clear_history()  # pylint:disable=W0212:protected-access
-                mock_clear_history.assert_called()
+            assert lines == [first_line, second_line]
 
-    class TestAddArrowKeySupport:
-        """Holds tests for the _add_arrow_key_support() method."""
+    class TestKeyBindings:
+        """Holds the tests for checking key bindings."""
 
-        def test_should_add_history_search_backward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[A": history-search-backward')
+        def test_should_configure_key_bindings(self, setup_teardown: ChatUser) -> None:
+            with patch.object(target=Chat, attribute="_configure_key_bindings") as mock__configure_key_bindings:
+                chat: ChatUser = setup_teardown
+                chat.__init__(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)  # type: ignore[misc]
+                mock__configure_key_bindings.assert_called()
 
-        def test_should_add_history_search_forward(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[B": history-search-forward')
+        @staticmethod
+        def _handler_for(kb: KeyBindings, *keys: str) -> Any:
+            """Returns the handler that is registered for "up" or "down" and down sequences."""
+            return kb.get_bindings_for_keys(keys)[0].handler
 
-        def test_should_add_forward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[C": forward-char')
+        def test_key_binding_for_up_arrow_is_registered(self, setup_teardown: ChatUser) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("up",)), "No binding for <up> arrow"
 
-        def test_should_add_backward_char(self, setup_teardown: Chat) -> None:
-            with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                chat: Chat = setup_teardown
-                chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                mock_parse_and_bind.assert_any_call(r'"\e[D": backward-char')
+        def test_key_binding_for_down_arrow_is_registered(self, setup_teardown: ChatUser) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            assert kb.get_bindings_for_keys(("down",)), "No binding for <down> arrow"
 
-        def test_should_fail_due_to_not_adding_support(self, setup_teardown: Chat) -> None:
-            with pytest.raises(expected_exception=AssertionError):
-                with patch.object(target=readline, attribute="parse_and_bind") as mock_parse_and_bind:
-                    chat: Chat = setup_teardown
-                    chat._add_arrow_key_support()  # pylint:disable=W0212:protected-access
-                    mock_parse_and_bind.assert_any_call(r"not a real call")
+        def test_up_arrow_moves_history_backward(self, setup_teardown: ChatUser) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "up")
+
+            # Build a minimal fake event object that contains the bits the
+            # handler touches:  event.app.current_buffer.history_backward()
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
+
+            handler(fake_event)
+
+            fake_buffer.history_backward.assert_called_once()
+            fake_buffer.history_forward.assert_not_called()
+
+        def test_down_arrow_moves_history_forward(self, setup_teardown: ChatUser) -> None:
+            kb: KeyBindings = setup_teardown._configure_key_bindings()
+            handler = self._handler_for(kb, "down")
+
+            fake_buffer = MagicMock()
+            fake_event = MagicMock()
+            fake_event.app.current_buffer = fake_buffer
+
+            handler(fake_event)
+
+            fake_buffer.history_forward.assert_called_once()
+            fake_buffer.history_backward.assert_not_called()

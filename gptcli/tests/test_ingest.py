@@ -96,7 +96,7 @@ class TestPDF:
     def setup_teardown(self) -> Generator[None, None, None]:
         yield
 
-    class TestExtractTest:
+    class TestExtractText:
         """Test the extract_text method"""
 
         @pytest.fixture(scope="session")

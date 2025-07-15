@@ -6,8 +6,14 @@ from typing import Any, Generator
 import pytest
 from requests import Response
 
-from gptcli.src.common.api.openai import SingleExchange as seh
-from gptcli.src.common.constants import openai, output_types
+from gptcli.src.common.api import SingleExchange as seh
+from gptcli.src.common.constants import (
+    OpenaiModelRoles,
+    OpenaiModelsChat,
+    OpenaiUserRoles,
+    OutputTypes,
+    ProviderNames,
+)
 from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.modes.single_exchange import SingleExchange
 
@@ -20,23 +26,23 @@ class TestSingleExchange:
     def single_exchange_fixture(self) -> Generator[SingleExchange, None, None]:
         se: SingleExchange = SingleExchange(
             input_string="Say, hi! Nothing else please.",
-            model=openai["GPT_3_5_TURBO"],
-            role_user="user",
-            role_model="assistant",
+            model=OpenaiModelsChat.GPT_3_5_TURBO.value,
+            provider=ProviderNames.OPENAI.value,
+            role_user=OpenaiUserRoles.USER.value,
+            role_model=OpenaiModelRoles.ASSISTANT.value,
             filepath="",
-            storage=True,
         )
         yield se
 
     @pytest.fixture(scope="session")
     def response_fixture(self) -> Generator[Response, None, None]:
-        message: Message = MessageFactory.create_user_message(
-            role="user",
+        message: Message = MessageFactory(provider=ProviderNames.OPENAI.value).user_message(
+            role=OpenaiUserRoles.USER.value,
             content="Hi!",
-            model=openai["GPT_4O"],
+            model=OpenaiModelsChat.GPT_4O.value,
         )
         messages: Messages = Messages(messages=[message])
-        helper: seh = seh(model=openai["GPT_4O"], messages=messages)
+        helper: seh = seh(provider=ProviderNames.OPENAI.value, model=OpenaiModelsChat.GPT_4O.value, messages=messages)
         response: Response = helper.send()
         yield response
 
@@ -73,7 +79,7 @@ class TestSingleExchange:
             response: Response = response_fixture
             python_object: str | list[dict[str, Any]] | dict[str, Any] = se._choose_output(
                 response=response,
-                output=output_types[extraction_type],
+                output=extraction_type,
             )
             assert isinstance(python_object, expected_type)
 
@@ -86,7 +92,7 @@ class TestSingleExchange:
             with pytest.raises(ValueError):
                 se._choose_output(
                     response=response,  # type: ignore
-                    output=output_types["plain"],
+                    output=OutputTypes.PLAIN.value,
                 )
 
         def test_should_raise_value_error_when_parameter_extraction_type_is_not_string_object(

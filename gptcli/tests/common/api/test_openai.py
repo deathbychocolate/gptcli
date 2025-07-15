@@ -5,11 +5,11 @@ from typing import Generator
 import pytest
 import requests
 
-from gptcli.src.common.api.openai import (
+from gptcli.src.common.api import (
     Chat,
     SingleExchange,
-    _export_api_key_to_environment_variable,
 )
+from gptcli.src.common.constants import ProviderNames
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
 
@@ -30,9 +30,13 @@ class TestOpenAiHelper:
 
         @pytest.fixture(scope="session")
         def setup_teardown(self) -> Generator[Chat, None, None]:
-            message: Message = MessageFactory.create_user_message(role="user", content="Hi!", model="gpt-4o")
+            message: Message = MessageFactory(provider=ProviderNames.OPENAI.value).user_message(
+                role="user",
+                content="Hi!",
+                model="gpt-4o",
+            )
             messages: Messages = Messages(messages=[message])
-            helper = Chat(model="gpt-4o", messages=messages, stream=False)
+            helper = Chat(provider=ProviderNames.OPENAI.value, model="gpt-4o", messages=messages, stream=False)
             yield helper
 
         class TestSend:
@@ -42,10 +46,3 @@ class TestOpenAiHelper:
                 helper: Chat = setup_teardown
                 response: Message = helper.send()
                 assert isinstance(response, requests.Response)
-
-    class TestExportApiKeyToEnvironmentVariable:
-        """Holds tests for _export_api_key_to_environment_variable()."""
-
-        def test_should_return_a_response_object(self) -> None:
-            result = _export_api_key_to_environment_variable()  # type: ignore
-            assert result is None
