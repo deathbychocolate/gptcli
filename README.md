@@ -43,7 +43,7 @@ GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provid
 username@hostname ~/> gptcli openai chat
 >>> hi
 >>> Hello! How can I assist you today?
->>> exit
+>>> /q
 username@hostname ~/>
 ```
 
