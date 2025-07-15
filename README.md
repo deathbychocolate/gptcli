@@ -67,7 +67,7 @@ username@hostname ~/> gptcli openai chat
 username@hostname ~/>
 ```
 
-`Chat` mode also allows loading of the last chat session as your current session to continue the conversation. For example:
+`Chat` mode also allows loading of the last chat session as your current session. For example:
 ```text
 username@hostname ~/> gptcli openai chat --load-last
 >>> What is the expected output of this code? Be concise.
