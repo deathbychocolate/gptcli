@@ -9,6 +9,7 @@ requests = "<3.0.0,>=2.32.4"
 prompt-toolkit = "<4.0.0,>=3.0.51"
 tiktoken = "<1.0.0,>=0.9.0"
 pypdf = "<6.0.0,>=5.7.0"
+mistral-common = "<2.0.0,>=1.8.1"
 
 [dev-packages]
 pytest = "*"
