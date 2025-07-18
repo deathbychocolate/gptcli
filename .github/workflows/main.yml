@@ -1,9 +1,9 @@
-name: Quality and Tests
+name: Quality checks and Tests on main branch.
 
 on:
   push:
     branches: [main]
-  merge_group:
+  pull_request:
     branches: [main]
 
 jobs:
@@ -20,6 +20,7 @@ jobs:
           extra_args: --show-diff-on-failure
 
   tests:
+    needs: [code-quality]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
