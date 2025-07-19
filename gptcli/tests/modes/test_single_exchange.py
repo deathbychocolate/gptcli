@@ -6,7 +6,6 @@ from typing import Any, Generator
 import pytest
 from requests import Response
 
-from gptcli.src.common.api import SingleExchange as seh
 from gptcli.src.common.constants import (
     OpenaiModelRoles,
     OpenaiModelsChat,
@@ -14,7 +13,6 @@ from gptcli.src.common.constants import (
     OutputTypes,
     ProviderNames,
 )
-from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.modes.single_exchange import SingleExchange
 
 
@@ -36,14 +34,42 @@ class TestSingleExchange:
 
     @pytest.fixture(scope="session")
     def response_fixture(self) -> Generator[Response, None, None]:
-        message: Message = MessageFactory(provider=ProviderNames.OPENAI.value).user_message(
-            role=OpenaiUserRoles.USER.value,
-            content="Hi!",
-            model=OpenaiModelsChat.GPT_4O.value,
-        )
-        messages: Messages = Messages(messages=[message])
-        helper: seh = seh(provider=ProviderNames.OPENAI.value, model=OpenaiModelsChat.GPT_4O.value, messages=messages)
-        response: Response = helper.send()
+        """Generate a custom/fake response to avoid making an over the wire API call."""
+        fake_response_payload: dict[str, Any] = {
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "index": 0,
+                    "message": {
+                        "annotations": [],
+                        "content": "Hello! How can I assist you today?",
+                        "refusal": None,
+                        "role": "assistant",
+                    },
+                }
+            ],
+            "created": 1752870195,
+            "id": "chatcmpl-Bultr8SYJNuW5CBybbUG1xOq57M8u",
+            "model": "o4-mini-2025-04-16",
+            "object": "chat.completion",
+            "service_tier": "default",
+            "system_fingerprint": None,
+            "usage": {
+                "completion_tokens": 91,
+                "completion_tokens_details": {
+                    "accepted_prediction_tokens": 0,
+                    "audio_tokens": 0,
+                    "reasoning_tokens": 64,
+                    "rejected_prediction_tokens": 0,
+                },
+                "prompt_tokens": 7,
+                "prompt_tokens_details": {"audio_tokens": 0, "cached_tokens": 0},
+                "total_tokens": 98,
+            },
+        }
+        response: Response = Response()
+        response.status_code = 200
+        response._content = json.dumps(fake_response_payload).encode()
         yield response
 
     class TestBuildMessageAndGenerateResponse:
