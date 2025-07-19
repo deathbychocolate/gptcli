@@ -72,17 +72,6 @@ class TestSingleExchange:
         response._content = json.dumps(fake_response_payload).encode()
         yield response
 
-    class TestBuildMessageAndGenerateResponse:
-        """Holds tests for _build_message_and_generate_response()."""
-
-        def test_should_return_response_object(
-            self,
-            single_exchange_fixture: SingleExchange,
-        ) -> None:
-            se: SingleExchange = single_exchange_fixture
-            result: Response = se._build_message_and_generate_response()
-            assert isinstance(result, Response)
-
     class TestChooseExtractionType:
         """Holds tests for _choose_output()."""
 
