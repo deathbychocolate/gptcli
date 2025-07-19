@@ -20,7 +20,7 @@
     - Run `gptcli [mistral|openai] [chat|se]` or `python3 gptcli/main.py [mistral|openai] [chat|se]`.
 
 # How do I get an API key?
-You need valid OpenAI credentials to communicate with the AI models.
+You need valid API keys to communicate with the AI models.
 
 For OpenAI:
 - Create an OpenAI account here: https://chat.openai.com/
