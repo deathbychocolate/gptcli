@@ -30,9 +30,6 @@ For Mistral AI:
 - Create a Mistral AI account here: https://chat.mistral.ai/chat
 - Generate a Mistral AI API key here: https://console.mistral.ai/api-keys
 
-# How do I use the project's Makefile?
-From the project root directory, run `make` or `make help` to display all Makefile targets documentation.
-
 # How does GPTCLI work?
 The project uses the OpenAI API to query chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests. For now, GPTCLI is for purely text based LLMs.
 
