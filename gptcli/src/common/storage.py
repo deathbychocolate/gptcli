@@ -31,6 +31,14 @@ class Storage:
     def __init__(self, provider: str) -> None:
         self._provider: str = provider
 
+        self._json_dir: str = ""
+        if self._provider == MISTRAL:
+            self._json_dir = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
+        elif self._provider == OPENAI:
+            self._json_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
+        else:
+            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+
     def store_messages(self, messages: Messages) -> None:
         """Stores Messages objects to ~/.gptcli/storage/
 
@@ -39,39 +47,20 @@ class Storage:
         """
         logger.info("Storing Messages to local filesystem.")
         if len(messages) > 0:
-            filepath = self._generate_filepath()
+            filepath = self._create_json_filepath()
             with open(filepath, "w", encoding="utf8") as fp:
                 fp.write(messages.to_json())
 
-    def _generate_filepath(self) -> str:
-        logger.info("Generating filepath for storing chat session.")
-
-        if self._provider == MISTRAL:
-            json_directory = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
-        elif self._provider == OPENAI:
-            json_directory = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
-        else:
-            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
-
-        # build filepath
+    def _create_json_filepath(self) -> str:
         epoch: str = str(int(time()))
         datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S_")
         filename: str = "_".join([epoch, datetime_now_utc, "chat"]) + ".json"
-        filepath: str = path.join(json_directory, filename)
-
+        filepath: str = path.join(self._json_dir, filename)
         return filepath
 
     def extract_messages(self) -> Messages:
         logger.info("Extracting messages from storage.")
-
-        if self._provider == MISTRAL:
-            json_directory = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
-        elif self._provider == OPENAI:
-            json_directory = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
-        else:
-            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
-
-        filepaths: list[str] = glob(path.expanduser(path.join(json_directory, "*.json")))
+        filepaths: list[str] = glob(path.expanduser(path.join(self._json_dir, "*.json")))
         last_chat_session: str = max(filepaths, key=path.getctime)
 
         file_contents_messages: list[dict[str, Any]] = []
