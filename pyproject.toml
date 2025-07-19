@@ -6,12 +6,16 @@ description = "A CLI tool for talking to the Openai API"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "GPL-3.0"
 keywords = ["openai", "gpt", "cli", "gptcli", "terminal", "chat", "api"]
-dependencies = ["requests", "prompt-toolkit", "tiktoken", "filetype", "pypdf"]
+dependencies = ["requests", "prompt-toolkit", "tiktoken", "mistral-common", "filetype", "pypdf"]
 classifiers = [
     "Intended Audience :: Developers",
+    "Operating System :: Unix :: Linux :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: Unix",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]

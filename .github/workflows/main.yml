@@ -7,13 +7,14 @@ on:
     branches: [main]
 
 jobs:
+
   code-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Run the project defined pre-commit.
         uses: pre-commit/action@v3.0.1
         with:
@@ -21,12 +22,18 @@ jobs:
 
   tests:
     needs: [code-quality]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python3 -c "import sys; print(sys.version)"
       - name: Install dependencies with pipenv and run pytest with pipenv run.
         run: |
           python -m pip install pipenv

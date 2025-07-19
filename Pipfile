@@ -24,6 +24,3 @@ mypy = "*"
 pre-commit = "*"
 autoflake = "*"
 types-requests = "*"
-
-[requires]
-python_version = "3.11"
