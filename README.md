@@ -1,6 +1,7 @@
 ![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20version)
 ![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=repo%20version)
 ![Supported Python Versions](https://img.shields.io/pypi/pyversions/dbc-gptcli)
+![Supported OS](https://img.shields.io/pypi/classifiers/dbc-gptcli?label=Supported%20OS&prefix=Operating%20System&color=brightgreen)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
 
 # How do I run it?

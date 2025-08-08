@@ -9,7 +9,10 @@ keywords = ["openai", "gpt", "cli", "gptcli", "terminal", "chat", "api"]
 dependencies = ["requests", "prompt-toolkit", "tiktoken", "mistral-common", "filetype", "pypdf"]
 classifiers = [
     "Intended Audience :: Developers",
-    "Operating System :: Unix :: Linux :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: Linux",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
