@@ -26,6 +26,10 @@ install: has_pipenv ## Install project dependencies and the project (locally) us
 test: has_pipenv ## Run tests with pytest.
 	@pipenv run pytest -x --log-cli-level=ERROR
 
+.PHONY: test_nox
+test_nox: has_pipenv ## Run tests with pytest on all supported Python versions.
+	@nox --session test
+
 .PHONY: coverage
 coverage: has_pipenv ## Run tests with pytest and generate code coverage report (html).
 	@pipenv run pytest -x --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch

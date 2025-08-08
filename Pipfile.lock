@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fbff6974760f9d4b69de8452f5a8680be84d8aa8841d5c457d48d4acb8707f28"
+            "sha256": "df8331e6314a72bd2b2e091bd913269cd05fdcdef857a2ae2499c8494f7f82a3"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -819,6 +819,7 @@
                 "sha256:fb89f811e5efd18bab141afc3fea3de141c3f69f3fe9e898f710ae7fe3aab251",
                 "sha256:ff88712338b01031910e8e61e7239aff3ce8869ee31a47df63cb38aadd591bea"
             ],
+            "index": "pypi",
             "version": "==0.2.0"
         },
         "tiktoken": {
@@ -915,6 +916,14 @@
             ],
             "markers": "python_full_version >= '3.9.0'",
             "version": "==3.3.11"
+        },
+        "attrs": {
+            "hashes": [
+                "sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3",
+                "sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==25.3.0"
         },
         "autoflake": {
             "hashes": [
@@ -1084,6 +1093,14 @@
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6'",
             "version": "==0.4.6"
         },
+        "colorlog": {
+            "hashes": [
+                "sha256:5906e71acd67cb07a71e779c47c4bcb45fb8c2993eebe9e5adcd6a6f1b283eff",
+                "sha256:bfba54a1b93b94f54e1f4fe48395725a3d92fd2a4af702f6bd70946bdc0c6ac2"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==6.9.0"
+        },
         "commitizen": {
             "hashes": [
                 "sha256:303ebdc271217aadbb6a73a015612121291d180c8cdd05b5251c7923d4a14195",
@@ -1176,6 +1193,14 @@
             ],
             "markers": "python_version >= '3.9'",
             "version": "==0.6.3"
+        },
+        "dependency-groups": {
+            "hashes": [
+                "sha256:51aeaa0dfad72430fcfb7bcdbefbd75f3792e5919563077f30bc0d73f4493030",
+                "sha256:78078301090517fd938c19f64a53ce98c32834dfe0dee6b88004a569a6adfefd"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==1.3.1"
         },
         "dill": {
             "hashes": [
@@ -1386,6 +1411,15 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6'",
             "version": "==1.9.1"
+        },
+        "nox": {
+            "hashes": [
+                "sha256:2a571dfa7a58acc726521ac3cd8184455ebcdcbf26401c7b737b5bc6701427b2",
+                "sha256:56abd55cf37ff523c254fcec4d152ed51e5fe80e2ab8317221d8b828ac970a31"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==2025.5.1"
         },
         "numpy": {
             "hashes": [
