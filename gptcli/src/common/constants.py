@@ -203,6 +203,9 @@ class OpenaiModelsChat(BaseEnum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    GPT_5 = "gpt-5"
+    GPT_5_MINI = "gpt-5-mini"
+    GPT_5_NANO = "gpt-5-nano"
     O1 = "o1"
     O1_MINI = "o1-mini"
     O1_PREVIEW = "o1-preview"
@@ -213,7 +216,7 @@ class OpenaiModelsChat(BaseEnum):
     @classmethod
     def default(cls) -> str:
         """Returns the default value."""
-        return cls.O4_MINI.value
+        return cls.GPT_5_MINI.value
 
 
 class MistralUserRoles(BaseEnum):
