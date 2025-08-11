@@ -1,3 +1,26 @@
+## 0.21.0 (2025-08-11)
+
+### Feat
+
+- Migrate legacy folder structure to new structure if it exists and salvage OpenAI API key and old messages.
+- Add GPT-5 and variants, and make gpt-5-mini the default LLM.
+- Add Mistral AI support.
+- **chat**: Add multiline-delimiter option.
+
+### Fix
+
+- **api**: Issue where we would concatenate None with strings.
+- **chat**: Issue where """ is still used as the delimiter to close multiline chat, even though --multiline-delimiter is given by user.
+
+### Refactor
+
+- Isolate creation of JSON filepath and place provider check at top level.
+- Rename and move file.
+- **cli**: Move cli out of common. It is not used for anything other than making gptcli cli compatible.
+- Restructure folder set up to make more sense.
+- Remove remnants of GPTCLI tag in print statements.
+- **project**: Remove prints that start with [GPTCLI].
+
 ## 0.20.2 (2025-04-23)
 
 ### Fix
