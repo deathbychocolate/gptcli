@@ -1,8 +1,9 @@
-![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=pypi%20version)
-![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=repo%20version)
+![PyPI](https://img.shields.io/pypi/v/dbc-gptcli?label=PyPI%20version)
+![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=Repo%20version)
 ![Supported Python Versions](https://img.shields.io/pypi/pyversions/dbc-gptcli)
-![Supported OS](https://img.shields.io/pypi/classifiers/dbc-gptcli?label=Supported%20OS&prefix=Operating%20System&color=brightgreen)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
+![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux%20%7C%20MacOS%20-blueviolet)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads)](https://pepy.tech/projects/dbc-gptcli)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=month&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads/month)](https://pepy.tech/projects/dbc-gptcli)
 
 # How do I run it?
 - Pypi:
