@@ -200,6 +200,7 @@ class OpenaiModelsChat(BaseEnum):
     GPT_4 = "gpt-4"
     GPT_4_1 = "gpt-4.1"
     GPT_4_1_MINI = "gpt-4.1-mini"
+    GPT_4_1_NANO = "gpt-4.1-nano"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
