@@ -6,7 +6,6 @@ PROJECT_ROOT_DIRECTORY: str = os.getcwd()
 
 # Common
 GPTCLI_ROOT_FILEPATH: str = os.path.expanduser("~/.gptcli")
-GPTCLI_INSTALL_SUCCESSFUL: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".install_successful")
 
 
 # OpenAI
@@ -29,3 +28,10 @@ GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR: str = os.path.join(GPTCLI_PROVIDER_MISTR
 GPTCLI_PROVIDER_MISTRAL_KEYS_DIR: str = os.path.join(GPTCLI_PROVIDER_MISTRAL, "keys")
 GPTCLI_PROVIDER_MISTRAL_KEY_FILE: str = os.path.join(GPTCLI_PROVIDER_MISTRAL_KEYS_DIR, "main")
 MISTRAL_API_KEY: str = "DBC_GPTCLI_MISTRAL_API_KEY"  # The key we use to search in os.environ.
+
+
+# Legacy (up to version 0.20.2)
+GPTCLI_LEGACY_INSTALL_SUCCESSFUL: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".install_successful")
+GPTCLI_LEGACY_KEYS: str = os.path.join(GPTCLI_ROOT_FILEPATH, "keys")
+GPTCLI_LEGACY_API_KEY: str = os.path.join(GPTCLI_LEGACY_KEYS, "openai")
+GPTCLI_LEGACY_STORAGE: str = os.path.join(GPTCLI_ROOT_FILEPATH, "storage")

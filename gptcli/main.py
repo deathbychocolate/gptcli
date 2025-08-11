@@ -12,7 +12,7 @@ from gptcli.constants import (
 )
 from gptcli.src.cli import CommandParser
 from gptcli.src.common.constants import ProviderNames
-from gptcli.src.install import Mistral, Openai
+from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.single_exchange import SingleExchange
 
@@ -88,6 +88,8 @@ def main() -> None:
     elif not parser.args.mode_name:  # mode is missing
         parser.print_help_provider(provider=parser.args.provider)
         return None
+
+    Migrate().from__0_20_2__to__latest()
 
     # install
     match parser.args.provider:
