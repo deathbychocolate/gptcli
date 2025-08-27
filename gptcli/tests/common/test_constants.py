@@ -1,5 +1,7 @@
 """File that will hold all the tests relating to test_constants.py."""
 
+import os
+
 import pytest
 import requests
 from requests import Response
@@ -14,7 +16,7 @@ class TestMistralModelsChat:
         url: str = "https://api.mistral.ai/v1/chat/completions"
         headers = {
             "Accept": "text/event-stream",
-            "Authorization": "Bearer Sn5WvVZGDA0jKykp3v59kUeche4KjAjQ",
+            "Authorization": "Bearer " + os.environ["DBC_GPTCLI_MISTRAL_API_KEY"],
         }
         body = {
             "model": model,
