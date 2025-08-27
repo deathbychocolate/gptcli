@@ -1,3 +1,13 @@
+## 0.21.2 (2025-08-27)
+
+### Feat
+
+- Use the latest Mistral models.
+
+### Fix
+
+- **message**: Use tokenizer v3 (tekken) by default when model not found in MistralTokenizer.
+
 ## 0.21.1 (2025-08-11)
 
 ### Feat

@@ -1,7 +1,7 @@
 [project]
 authors = [{ name = "Damian Vonapartis", email = "damianosvon@gmail.com" }]
 name = "dbc-gptcli"
-version = "0.21.1"
+version = "0.21.2"
 description = "A CLI tool for talking to the Openai API"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "GPL-3.0"
