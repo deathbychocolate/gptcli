@@ -270,7 +270,7 @@ class MistralModelsChat(BaseEnum):
     MISTRAL_SMALL = "mistral-small-latest"
     MISTRAL_MEDIUM = "mistral-medium-latest"
     MISTRAL_LARGE = "mistral-large-latest"
-    MISTRAL_NEMO = "open-mistral-nemo-latest"
+    MISTRAL_NEMO = "open-mistral-nemo"
     PIXTRAL_12B = "pixtral-12b-latest"
     PIXTRAL_LARGE = "pixtral-large-latest"
 
