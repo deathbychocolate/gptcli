@@ -1,3 +1,9 @@
+## 0.21.3 (2025-08-27)
+
+### Fix
+
+- Correct Mistral Nemo name.
+
 ## 0.21.2 (2025-08-27)
 
 ### Feat
