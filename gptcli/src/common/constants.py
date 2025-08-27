@@ -266,13 +266,13 @@ class MistralModelsChat(BaseEnum):
         -H "Content-Type: application/json"`
     """
 
-    MISTRAL_TINY = "mistral-tiny-2407"
-    MISTRAL_SMALL = "mistral-small-2409"
-    MISTRAL_MEDIUM = "mistral-medium-2312"
-    MISTRAL_LARGE = "mistral-large-2411"
-    MISTRAL_NEMO = "open-mistral-nemo-2407"
-    PIXTRAL_12B = "pixtral-12b-2409"
-    PIXTRAL_LARGE = "pixtral-large-2411"
+    MISTRAL_TINY = "mistral-tiny-latest"
+    MISTRAL_SMALL = "mistral-small-latest"
+    MISTRAL_MEDIUM = "mistral-medium-latest"
+    MISTRAL_LARGE = "mistral-large-latest"
+    MISTRAL_NEMO = "open-mistral-nemo-latest"
+    PIXTRAL_12B = "pixtral-12b-latest"
+    PIXTRAL_LARGE = "pixtral-large-latest"
 
     @classmethod
     def default(cls) -> str:
