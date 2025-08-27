@@ -15,7 +15,10 @@ from uuid import uuid4
 import tiktoken
 from mistral_common.protocol.instruct.messages import UserMessage
 from mistral_common.protocol.instruct.request import ChatCompletionRequest
-from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+from mistral_common.tokens.tokenizers.mistral import (
+    MistralTokenizer,
+    TokenizerException,
+)
 from tiktoken import Encoding
 
 from gptcli.src.common.constants import (
@@ -126,7 +129,10 @@ class Message:
             int: The number of tokens in this message.
         """
         # Load Mistral tokenizer
-        tokenizer = MistralTokenizer.from_model(self._model, strict=True)
+        try:
+            tokenizer = MistralTokenizer.from_model(self._model, strict=True)
+        except TokenizerException:
+            tokenizer = MistralTokenizer.v3(is_tekken=True)  # default if model not found
 
         # Tokenize a list of messages
         tokenized = tokenizer.encode_chat_completion(
