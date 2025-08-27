@@ -1,4 +1,4 @@
-"""File that will hold all the tests relating to constants.py."""
+"""File that will hold all the tests relating to test_constants.py."""
 
 import pytest
 import requests
