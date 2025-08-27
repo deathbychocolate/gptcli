@@ -2,7 +2,7 @@
 
 import pytest
 import requests
-from aiohttp.web_response import Response
+from requests import Response
 
 from gptcli.src.common.constants import MistralModelsChat
 
