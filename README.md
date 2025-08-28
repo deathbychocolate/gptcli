@@ -2,8 +2,8 @@
 ![Repo](https://img.shields.io/github/v/tag/deathbychocolate/gptcli?label=Repo%20version)
 ![Supported Python Versions](https://img.shields.io/pypi/pyversions/dbc-gptcli)
 ![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux%20%7C%20MacOS%20-blueviolet)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads)](https://pepy.tech/projects/dbc-gptcli)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=month&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads/month)](https://pepy.tech/projects/dbc-gptcli)
+![PyPI Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=total&units=international_system&left_color=grey&right_color=green&left_text=downloads)](https://pepy.tech/projects/dbc-gptcli)
 
 # How do I run it?
 - Pypi:
