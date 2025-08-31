@@ -37,6 +37,7 @@ jobs:
       - name: Install dependencies with pipenv and run pytest with pipenv run.
         env:
           DBC_GPTCLI_MISTRAL_API_KEY: ${{ secrets.DBC_GPTCLI_MISTRAL_API_KEY }}
+          DBC_GPTCLI_OPENAI_API_KEY: ${{ secrets.DBC_GPTCLI_OPENAI_API_KEY }}
         run: |
           python -m pip install pipenv
           pipenv install --dev
