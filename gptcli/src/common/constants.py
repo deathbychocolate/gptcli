@@ -209,7 +209,6 @@ class OpenaiModelsChat(BaseEnum):
     GPT_5_NANO = "gpt-5-nano"
     O1 = "o1"
     O1_MINI = "o1-mini"
-    O1_PREVIEW = "o1-preview"
     O3 = "o3"
     O3_MINI = "o3-mini"
     O4_MINI = "o4-mini"
