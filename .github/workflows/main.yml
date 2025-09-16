@@ -39,6 +39,11 @@ jobs:
           DBC_GPTCLI_MISTRAL_API_KEY: ${{ secrets.DBC_GPTCLI_MISTRAL_API_KEY }}
           DBC_GPTCLI_OPENAI_API_KEY: ${{ secrets.DBC_GPTCLI_OPENAI_API_KEY }}
         run: |
+
+          pip install cmake
+          export CMAKE_POLICY_VERSION_MINIMUM=3.5
+          pip install sentencepiece --no-cache-dir
+
           python -m pip install pipenv
           pipenv install --dev
           pipenv run python -m pip install -e .
