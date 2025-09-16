@@ -52,23 +52,23 @@ GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provid
 
 Chat mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread:
 
-[![GPTCLI Hi](./docs/README/gptcli_openai_chat__hi.jpg)](https://github.com/deathbychocolate/gptcli/raw/main/gptcli/docs/README/gptcli_openai_chat__hi.mp4)
+[![GPTCLI Hi](docs/README/gptcli_openai_chat__hi.jpg)](docs/README/gptcli_openai_chat__hi.mp4)
 
 ---
 
 Chat mode also allows for multiline correspondence. This is useful in cases where you would like to copy and paste small to medium-large text or code samples; though there is no size limit. You may enter and exit this feature by typing and entering `/m` in the prompt:
 
-[![GPTCLI Multiline](./docs/README/gptcli_openai_chat__multiline.jpg)](https://github.com/deathbychocolate/gptcli/raw/main/gptcli/docs/README/gptcli_openai_chat__multiline.mp4)
+[![GPTCLI Multiline](docs/README/gptcli_openai_chat__multiline.jpg)](docs/README/gptcli_openai_chat__multiline.mp4)
 
 ---
 Chat mode also allows loading of the last chat session as your current session:
 
-[![GPTCLI Load Last](./docs/README/gptcli_openai_chat__load_last.jpg)](https://github.com/deathbychocolate/gptcli/raw/main/gptcli/docs/README/gptcli_openai_chat__load_last.mp4)
+[![GPTCLI Load Last](docs/README/gptcli_openai_chat__load_last.jpg)](docs/README/gptcli_openai_chat__load_last.mp4)
 
 ---
 Chat mode also allows for in-chat commands:
 
-[![GPTCLI Help](./docs/README/gptcli_openai_chat__help.jpg)](https://github.com/deathbychocolate/gptcli/raw/main/gptcli/docs/README/gptcli_openai_chat__help.mp4)
+[![GPTCLI Help](docs/README/gptcli_openai_chat__help.jpg)](docs/README/gptcli_openai_chat__help.mp4)
 
 Chat mode also automatically:
 
@@ -80,7 +80,7 @@ Chat mode also automatically:
 
 Single-Exchange is functionally similar to chat mode, but it only allows one exchange of messages to happen (1 sent from client-side, 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
 
-[![GPTCLI Help](./docs/README/gptcli_openai_se__hi.jpg)](https://github.com/deathbychocolate/gptcli/raw/main/gptcli/docs/README/gptcli_openai_se__hi.mp4)
+[![GPTCLI SE](docs/README/gptcli_openai_se__hi.jpg)](docs/README/gptcli_openai_se__hi.mp4)
 
 This mode does not store chats locally. It is expected the user implements their own solution via piping or similar.
 
