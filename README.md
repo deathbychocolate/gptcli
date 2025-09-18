@@ -42,7 +42,7 @@ For Mistral AI:
 
 ## How it works
 
-The project uses the OpenAI API to query chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests. For now, GPTCLI is for purely text based LLMs.
+The project uses the API of LLM providers to perform chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests. For now, GPTCLI is for purely text based LLMs.
 
 GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provider offers 2 modes to communicate with the LLM of your choosing, `Chat` and `Single-Exchange`:
 
@@ -50,23 +50,13 @@ GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provid
 
 #### Chat
 
-Chat mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread:
+Chat mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. Here are some of the core features:
 
 [![GPTCLI Hi](docs/README/gptcli_openai_chat__hi.jpg)](docs/README/gptcli_openai_chat__hi.mp4)
 
----
-
-Chat mode also allows for multiline correspondence. This is useful in cases where you would like to copy and paste small to medium-large text or code samples; though there is no size limit. You may enter and exit this feature by typing and entering `/m` in the prompt:
-
 [![GPTCLI Multiline](docs/README/gptcli_openai_chat__multiline.jpg)](docs/README/gptcli_openai_chat__multiline.mp4)
 
----
-Chat mode also allows loading of the last chat session as your current session:
-
 [![GPTCLI Load Last](docs/README/gptcli_openai_chat__load_last.jpg)](docs/README/gptcli_openai_chat__load_last.mp4)
-
----
-Chat mode also allows for in-chat commands:
 
 [![GPTCLI Help](docs/README/gptcli_openai_chat__help.jpg)](docs/README/gptcli_openai_chat__help.mp4)
 
@@ -91,7 +81,7 @@ This mode does not store chats locally. It is expected the user implements their
 - [x] Send text based messages to Mistral AI API.
 - [x] Send text based messages to OpenAI API.
 - [x] Store API keys locally.
-- [x] Allow context retention in the form of chats for all providers.
+- [x] Allow context retention for chats with all providers.
 - [x] Allow streaming of text based messages for all providers.
 - [x] Allow storage of chats locally for all providers.
 - [x] Allow loading of chats from local storage as context for all providers.
