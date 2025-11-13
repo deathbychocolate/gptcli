@@ -6,11 +6,17 @@ In order to make a call, it has to do 3 steps in order:
 3 - Receive a payload back (message/messages as a reply) from the API.
 """
 
+import itertools
 import json
 import logging
 import os
+import sys
+import threading
+import time
 from http import HTTPStatus
 from logging import Logger
+from types import TracebackType
+from typing import Optional, Self, Type
 
 import requests
 from prompt_toolkit import print_formatted_text
@@ -29,6 +35,47 @@ from gptcli.src.common.decorators import allow_graceful_stream_exit
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
 logger: Logger = logging.getLogger(__name__)
+
+
+class SpinnerThinking:
+
+    def __init__(self, interval: float = 0.1) -> None:
+        """Simulates a thinking animation when we send requests to an AI provider's AI model.
+
+        Args:
+            interval (float, optional): Interval in seconds which determines the speed of the animation; lower is faster. Defaults to 0.1.
+        """
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._interval = interval
+
+    def _animate(self) -> None:
+        for c in itertools.cycle(["-", "\\", "|", "/"]):
+            if self._stop.is_set():
+                break
+            sys.stdout.write(f"\rThinking {c}")
+            sys.stdout.flush()
+            time.sleep(self._interval)
+        sys.stdout.write("\r")
+
+    def __enter__(self) -> Self:
+        self._thread = threading.Thread(target=self._animate, daemon=True)
+        self._thread.start()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
+        self._stop.set()
+        if self._thread:
+            self._thread.join()
+        return None  # let errors propagate
+
+
+thinking_spinner: SpinnerThinking = SpinnerThinking()
 
 
 class EndpointHelper:
@@ -233,18 +280,21 @@ class Chat(EndpointHelper):
 
         content: str = ""
         session: Session = requests.Session()
-        with session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=60) as response:
-            found_errors: bool = self._check_for_http_errors(response=response)
-            if not found_errors:  # don't bother printing
-                print_formatted_text(ANSI(f"{MGA}>>>{RST} "), end="")
-                for line in response.iter_lines(decode_unicode=True):
-                    if len(line) == 0:  # iter_lines has an extra chunk that is empty; skip it, TODO: find out why
-                        continue
-                    elif "content" in line:  # not all chunks have content we want to print
-                        chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
-                        print(chunk, end="", flush=True)
-                        content = "".join([content, chunk])
-                print("")
+
+        with thinking_spinner:
+            response = session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=60)
+
+        found_errors: bool = self._check_for_http_errors(response=response)
+        if not found_errors:  # don't bother printing
+            print_formatted_text(ANSI(f"{MGA}>>>{RST} "), end="")
+            for line in response.iter_lines(decode_unicode=True):
+                if len(line) == 0:  # iter_lines has an extra chunk that is empty; skip it
+                    continue
+                elif "content" in line:  # not all chunks have content we want to print
+                    chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
+                    print(chunk, end="", flush=True)
+                    content = "".join([content, chunk])
+            print("")
 
         message: Message = self._message_factory.reply_message(content=content, model=self._model)
 
