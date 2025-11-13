@@ -43,7 +43,7 @@ class SpinnerThinking:
         """Simulates a thinking animation when we send requests to an AI provider's AI model.
 
         Args:
-            interval (float, optional): Interval in seconds which determines the speed of the animation; lower is faster. Defaults to 0.1.
+            interval (float, optional): Time interval that controls animation speed; lower is faster. Defaults to 0.1s.
         """
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
