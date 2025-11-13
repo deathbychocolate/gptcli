@@ -16,7 +16,7 @@ import time
 from http import HTTPStatus
 from logging import Logger
 from types import TracebackType
-from typing import Optional, Self, Type
+from typing import Self, Type
 
 import requests
 from prompt_toolkit import print_formatted_text
@@ -65,10 +65,10 @@ class SpinnerThinking:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: Type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         self._stop.set()
         if self._thread:
             self._thread.join()
