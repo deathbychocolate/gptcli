@@ -1,23 +1,63 @@
 """Holds the tests for api_helper.py"""
 
+import time
 from typing import Generator
 
 import pytest
 import requests
+from pytest import CaptureFixture
 
 from gptcli.src.common.api import (
     Chat,
     SingleExchange,
+    SpinnerThinking,
 )
 from gptcli.src.common.constants import ProviderNames
 from gptcli.src.common.message import Message, MessageFactory, Messages
+
+
+class TestSpinnerThinking:
+
+    @pytest.fixture(scope="session")
+    def setup_teardown(self) -> Generator[SpinnerThinking, None, None]:
+        thinking_spinner: SpinnerThinking = SpinnerThinking(interval=0.01)
+        yield thinking_spinner
+
+    def test_spinner_starts_printing_frames(self, setup_teardown: SpinnerThinking, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a Spinner.
+        thinking_spinner: SpinnerThinking = setup_teardown
+
+        # When run the Spinner for 0.05 seconds.
+        with thinking_spinner:
+            time.sleep(0.05)
+
+        # Then the output to stdout should be 'Thinking ' followed by a line bar.
+        out, err = capfd.readouterr()
+        assert out.startswith("\rThinking ")
+
+    def test_spinner_stops_printing_frames(self, setup_teardown: SpinnerThinking, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a Spinner.
+        thinking_spinner: SpinnerThinking = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with thinking_spinner:
+            time.sleep(0.05)
+        capfd.readouterr()  # drain output
+
+        # When we wait for the printing to stop.
+        time.sleep(0.05)
+        out, err = capfd.readouterr()
+
+        # Then no new spinner output should have appeared after exit.
+        assert out == ""
 
 
 class TestOpenAiHelper:
     """Holds tests for the class OpenAiHelper."""
 
     class SingleExchange:
-
         class TestIsValidApiKey:
             """Holds tests for is_valid_api_key()."""
 
