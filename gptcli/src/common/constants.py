@@ -21,6 +21,7 @@ class ChatColours(BaseEnum):
     GRY = "\033[38;5;245m"  # darker ANSI grey - for placeholder
     GRN = "\033[1;38;5;2m"  # bold green - for user
     MGA = "\033[1;38;5;13m"  # bold magenta - for AI
+    RED = "\033[1;38;5;9m"  # bold bright red - for errors, warnings, or important messages
     RST = "\033[0m"  # reset the colour to default
 
     @classmethod
@@ -39,6 +40,11 @@ class ChatColours(BaseEnum):
         return cls.MGA.value
 
     @classmethod
+    def red(cls) -> str:
+        """Return the colour code for bold bright red."""
+        return cls.RED.value
+
+    @classmethod
     def reset(cls) -> str:
         """Return the colour code reset."""
         return cls.RST.value
@@ -48,6 +54,7 @@ class ChatColours(BaseEnum):
 GRY: str = ChatColours.GRY.value
 GRN: str = ChatColours.GRN.value
 MGA: str = ChatColours.MGA.value
+RED: str = ChatColours.RED.value
 RST: str = ChatColours.RST.value
 
 
@@ -277,6 +284,17 @@ class MistralModelsChat(BaseEnum):
     def default(cls) -> str:
         """Returns the default value."""
         return cls.MISTRAL_LARGE.value
+
+
+class MistralModelsOcr(BaseEnum):
+    """The models that can be used in OCR mode without issue."""
+
+    MISTRAL_OCR = "mistral-ocr-latest"
+
+    @classmethod
+    def default(cls) -> str:
+        """Returns the default value."""
+        return cls.MISTRAL_OCR.value
 
 
 class OutputTypes(BaseEnum):

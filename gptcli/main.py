@@ -14,6 +14,9 @@ from gptcli.src.cli import CommandParser
 from gptcli.src.common.constants import ProviderNames
 from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
+from gptcli.src.modes.optical_character_recognition import (
+    OpticalCharacterRecognition,
+)
 from gptcli.src.modes.single_exchange import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
@@ -77,6 +80,20 @@ def enter_chat_mode(parser: CommandParser) -> None:
     ).start()
 
 
+def enter_ocr_mode(parser: CommandParser) -> None:
+    logger.info("Entering OCR mode.")
+    OpticalCharacterRecognition(
+        model=parser.args.model,
+        provider=parser.args.provider,
+        store=parser.args.store,
+        load_last=parser.args.load_last,
+        display=parser.args.display,
+        filelist=parser.args.filelist,
+        output_dir=parser.args.output_dir,
+        inputs=parser.args.inputs,
+    ).start()
+
+
 def main() -> None:
     """This is the main function."""
     parser: CommandParser = run_and_configure_argparse()
@@ -108,6 +125,9 @@ def main() -> None:
             return None
         case "chat":
             enter_chat_mode(parser=parser)
+            return None
+        case "ocr":
+            enter_ocr_mode(parser=parser)
             return None
 
     return None

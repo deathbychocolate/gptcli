@@ -144,7 +144,7 @@ class ChatUser(Chat):
         if self._filepath is not None and len(self._filepath) > 0:
             self._extract_file_content_to_message()
         if self._load_last:
-            self._storage.show_messages()
+            self._storage.extract_and_show_messages_for_display()
         if self._load_last:
             count_when_loaded = len(self._messages)
 

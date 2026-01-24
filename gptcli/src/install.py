@@ -16,12 +16,14 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR,
     GPTCLI_PROVIDER_OPENAI_INSTALL_SUCCESSFUL_FILE,
     GPTCLI_PROVIDER_OPENAI_KEY_FILE,
     GPTCLI_PROVIDER_OPENAI_KEYS_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
 )
 from gptcli.src.common.api import SingleExchange
 from gptcli.src.common.constants import (
@@ -133,6 +135,7 @@ class Mistral:
 
         os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_MISTRAL_KEYS_DIR, exist_ok=True)
         with open(GPTCLI_PROVIDER_MISTRAL_KEY_FILE, "w", encoding="utf8") as fp:
@@ -182,6 +185,7 @@ class Openai:
 
         os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR, exist_ok=True)
+        os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR, exist_ok=True)
         os.makedirs(GPTCLI_PROVIDER_OPENAI_KEYS_DIR, exist_ok=True)
         with open(GPTCLI_PROVIDER_OPENAI_KEY_FILE, "w", encoding="utf8") as fp:

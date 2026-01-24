@@ -14,6 +14,7 @@ from gptcli.constants import (
 from gptcli.src.common.constants import (
     MistralModelRoles,
     MistralModelsChat,
+    MistralModelsOcr,
     MistralUserRoles,
     OpenaiModelRoles,
     OpenaiModelsChat,
@@ -43,25 +44,29 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         SubParsersAction: The subparser with all modes and mode flags added.
     """
 
-    all_models: list[str] = []
+    all_chat_models: list[str] = []
+    all_ocr_models: list[str] = []
     default_key: str = ""
-    default_model: str = ""
+    default_chat_model: str = ""
+    default_ocr_model: str = ""
     default_role_user: str = ""
     default_role_model: str = ""
     default_role_user_choices: list[str] = []
     default_role_model_choices: list[str] = []
     if provider == ProviderNames.MISTRAL.value:
-        all_models = MistralModelsChat.to_list()
+        all_chat_models = MistralModelsChat.to_list()
+        all_ocr_models = MistralModelsOcr.to_list()
         default_key = GPTCLI_PROVIDER_MISTRAL_KEY_FILE
-        default_model = MistralModelsChat.default()
+        default_chat_model = MistralModelsChat.default()
+        default_ocr_model = MistralModelsOcr.default()
         default_role_user = MistralUserRoles.default()
         default_role_model = MistralModelRoles.default()
         default_role_user_choices = MistralUserRoles.to_list()
         default_role_model_choices = MistralModelRoles.to_list()
     elif provider == ProviderNames.OPENAI.value:
-        all_models = OpenaiModelsChat.to_list()
+        all_chat_models = OpenaiModelsChat.to_list()
         default_key = GPTCLI_PROVIDER_OPENAI_KEY_FILE
-        default_model = OpenaiModelsChat.default()
+        default_chat_model = OpenaiModelsChat.default()
         default_role_user = OpenaiUserRoles.default()
         default_role_model = OpenaiModelRoles.default()
         default_role_user_choices = OpenaiUserRoles.to_list()
@@ -76,9 +81,9 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
     parser_se.add_argument(
         "--model",
         type=str,
-        choices=all_models,
-        default=default_model,
-        help=f"Defaults to '{default_model}'. The model to use.",
+        choices=all_chat_models,
+        default=default_chat_model,
+        help=f"Defaults to '{default_chat_model}'. The model to use.",
     )
     parser_se.add_argument(
         "--key",
@@ -129,9 +134,9 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
     parser_chat.add_argument(
         "--model",
         type=str,
-        choices=all_models,
-        default=default_model,
-        help=f"Defaults to '{default_model}'. The model to use.",
+        choices=all_chat_models,
+        default=default_chat_model,
+        help=f"Defaults to '{default_chat_model}'. The model to use.",
     )
     parser_chat.add_argument(
         "--key",
@@ -186,6 +191,64 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         default=False,
         help="Enable or disable loading your last chat session from storage.",
     )
+
+    # parser options for 'ocr' mode
+    if provider == ProviderNames.MISTRAL.value:  # for now, only Mistral will have OCR mode
+        parser_ocr = subparser_modes.add_parser(
+            "ocr",
+            formatter_class=custom_formatter,
+            help="'OCR' mode is optimized for generating Markdown text given local filepaths or URLs of files.",
+        )
+        parser_ocr.add_argument(
+            "--model",
+            type=str,
+            choices=all_ocr_models,
+            default=default_ocr_model,
+            help=f"Defaults to '{default_ocr_model}'. The model to use.",
+        )
+        parser_ocr.add_argument(
+            "--key",
+            type=str,
+            help=f"Defaults to the value in '{default_key}'. The API key to use for the run.",
+            metavar="<string>",
+        )
+        parser_ocr.add_argument(
+            "--store",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Enable or disable local storage of your last OCR session.",
+        )
+        parser_ocr.add_argument(
+            "--load-last",
+            action=argparse.BooleanOptionalAction,
+            default=False,
+            help="Enable or disable loading your last OCR session from storage.",
+        )
+        parser_ocr.add_argument(
+            "--display",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="Display the result of the OCR call to stdout.",
+        )
+        parser_ocr.add_argument(
+            "--filelist",
+            type=str,
+            help=f"Provide a list of files to convert to Markdown using local filepaths or URLs separated by newlines.",
+            metavar="<string>",
+        )
+        parser_ocr.add_argument(
+            "--output-dir",
+            type=str,
+            help=f"Provide a custom directory to save converted Markdown files.",
+            metavar="<string>",
+        )
+        parser_ocr.add_argument(
+            "inputs",
+            type=str,
+            nargs="*",
+            help="Specify the local filepath(s) and/or url(s) of document(s) to convert to Markdown.",
+            metavar="<filepaths|urls>",
+        )
 
     return subparser_modes
 
