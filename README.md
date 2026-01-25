@@ -50,15 +50,21 @@ GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provid
 
 #### Chat
 
-Chat mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. Here are some of the core features:
+Chat mode allows the user to have a conversation that is similar to ChatGPT by creating a MESSAGE-REPLY thread. For example, you say hello:
 
-[![GPTCLI Hi](docs/README/gptcli_openai_chat__hi.jpg)](docs/README/gptcli_openai_chat__hi.mp4)
+![Chat - Hi](./docs/README/gptcli_openai_chat__hi.gif)
 
-[![GPTCLI Multiline](docs/README/gptcli_openai_chat__multiline.jpg)](docs/README/gptcli_openai_chat__multiline.mp4)
+You can have a conversation multiline conversations:
 
-[![GPTCLI Load Last](docs/README/gptcli_openai_chat__load_last.jpg)](docs/README/gptcli_openai_chat__load_last.mp4)
+![Chat - Multiline](./docs/README/gptcli_openai_chat__multiline.gif)
 
-[![GPTCLI Help](docs/README/gptcli_openai_chat__help.jpg)](docs/README/gptcli_openai_chat__help.mp4)
+You can load the last conversation you had with the LLM provider (OpenAI, Mistral):
+
+![Chat - Load last](./docs/README/gptcli_openai_chat__load_last.gif)
+
+And if you want to know about in-chat commands, you can view them by asking for help:
+
+![Chat - Help](./docs/README/gptcli_openai_chat__help.gif)
 
 Chat mode also automatically:
 
@@ -68,9 +74,9 @@ Chat mode also automatically:
 
 #### Single-Exchange (SE)
 
-Single-Exchange is functionally similar to chat mode, but it only allows one exchange of messages to happen (1 sent from client-side, 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
+Single-Exchange is functionally similar to chat mode, but it only allows one exchange of messages to happen (1 message sent from client-side and 1 response message from server-side) and then exit. This encourages loading all the context and instructions in one message. It is also more suitable for automating multiple calls to the API with different payloads, and flags. This mode will show you output similar to the following:
 
-[![GPTCLI SE](docs/README/gptcli_openai_se__hi.jpg)](docs/README/gptcli_openai_se__hi.mp4)
+![Single Exchange - Hi](./docs/README/gptcli_openai_se__hi.gif)
 
 This mode does not store chats locally. It is expected the user implements their own solution via piping or similar.
 
@@ -87,13 +93,14 @@ This mode does not store chats locally. It is expected the user implements their
 - [x] Allow loading of chats from local storage as context for all providers.
 - [x] Add in-chat commands.
 - [x] Add multiline option for chat mode.
+- [x] Add spinner animation for chat mode.
+- [x] Add OCR as a new mode.
+- [x] Send OCR queries for images and PDF documents to Mistral AI API.
+- [x] Allow storage of OCR results locally.
 
 ### In Development
 
-- [ ] Add OCR as a new mode.
-- [ ] Send OCR queries for images and text to Mistral AI API.
-- [ ] Send OCR queries for images and text to OpenAI API.
-- [ ] Allow storage of OCR results locally.
+- [ ] Send OCR queries for images and PDF documents to OpenAI API.
 - [ ] Add FTS for chats in storage.
 - [ ] Add FTS for OCR results in storage.
 - [ ] Add role-based messages for Mistral AI:
