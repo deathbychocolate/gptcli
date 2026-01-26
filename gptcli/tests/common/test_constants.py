@@ -30,7 +30,7 @@ class TestMistralModelsChat:
             "messages": [{"role": "user", "content": "Only show the number, which is bigger? 1 or 2?"}],
         }
         response: Response = requests.post(url=url, headers=headers, stream=False, json=body, timeout=30)
-        assert response.status_code == 200
+        assert response.status_code == 200, f"API request failed: {response.status_code} - {response.text}"
 
     class TestDefault:
 
@@ -53,7 +53,7 @@ class TestOpenaiModelsChat:
             "messages": [{"role": "user", "content": "Only show the number, which is bigger? 1 or 2?"}],
         }
         response: Response = requests.post(url=url, headers=headers, stream=False, json=body, timeout=30)
-        assert response.status_code == 200
+        assert response.status_code == 200, f"API request failed: {response.status_code} - {response.text}"
 
     class TestDefault:
 
