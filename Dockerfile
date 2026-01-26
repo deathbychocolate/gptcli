@@ -10,11 +10,9 @@ RUN pip install --upgrade pip
 # Remove high risk vulnerability in setuptools
 RUN pip install -U setuptools
 
-# Install Rust so that pipenv functions
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN pip install pipenv
+# Install uv
+RUN pip install uv
 
 # Install our app
-RUN pipenv install --system --deploy
-RUN pip install --editable .
+RUN uv sync --frozen --no-dev
+RUN uv pip install --system -e .

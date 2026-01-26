@@ -13,9 +13,8 @@ GPTCLI is a Python CLI client for accessing LLM providers (OpenAI and Mistral AI
 
 ### Initial Setup
 ```bash
-make setup    # One-time: Install pre-commit hooks, pipenv
-make install  # Install dependencies, mypy types, project in editable mode
-pipenv shell  # Activate virtual environment
+make setup    # One-time: Install pre-commit hooks
+make install  # Install dependencies and mypy types using uv
 ```
 
 ### Testing
@@ -35,9 +34,9 @@ Pre-commit hooks run automatically on commit:
 
 Manual execution:
 ```bash
-pipenv run mypy gptcli/
-pipenv run black gptcli/
-pipenv run isort gptcli/
+uv run mypy gptcli/
+uv run black gptcli/
+uv run isort gptcli/
 ```
 
 ### Build & Clean
@@ -279,7 +278,7 @@ GitHub Actions (`.github/workflows/main.yml`) runs on push/PR to main:
 
 1. **Code Quality** (Ubuntu, Python 3.11): Pre-commit hooks
 2. **Tests Matrix** (Linux + macOS × Python 3.11-3.14):
-   - Install cmake/sentencepiece (mistral-common dependency)
+   - Install dependencies using uv
    - Run full pytest suite
    - Requires secrets: `DBC_GPTCLI_MISTRAL_API_KEY`, `DBC_GPTCLI_OPENAI_API_KEY`
 
