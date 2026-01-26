@@ -1,3 +1,9 @@
+## 0.23.0 (2026-01-26)
+
+### Feat
+
+- Add 7 new models to OpenAI chat mode.
+
 ## 0.22.0 (2026-01-26)
 
 ### Feat
