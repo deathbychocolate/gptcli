@@ -1,3 +1,22 @@
+## 0.22.0 (2026-01-26)
+
+### Feat
+
+- **ocr**: Add OCR mode and store OCR responses to ~/.gptcli.
+- Add support for Python 3.14 (nox).
+- Add support for Python 3.14.
+- Add GPT-5.1 to available models.
+- Add spinner animation to show the AI is thinking.
+
+### Fix
+
+- Remove deprecated model.
+- Remove depricated model.
+
+### Refactor
+
+- Remove Optional type.
+
 ## 0.21.3 (2025-08-27)
 
 ### Fix
