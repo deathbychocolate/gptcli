@@ -124,6 +124,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         type=str,
         help="Accepts a string input of any size.",
     )
+    parser_se.set_defaults(parser=parser_se)
 
     # parser options for 'chat' mode
     parser_chat = subparser_modes.add_parser(
@@ -191,6 +192,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         default=False,
         help="Enable or disable loading your last chat session from storage.",
     )
+    parser_chat.set_defaults(parser=parser_chat)
 
     # parser options for 'ocr' mode
     if provider == ProviderNames.MISTRAL.value:  # for now, only Mistral will have OCR mode
@@ -249,6 +251,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             help="Specify the local filepath(s) and/or url(s) of document(s) to convert to Markdown.",
             metavar="<filepaths|urls>",
         )
+        parser_ocr.set_defaults(parser=parser_ocr)
 
     return subparser_modes
 
@@ -302,10 +305,14 @@ class CommandParser:
             "mistral",
             help="Provides access to French/EU based AI models by Mistral AI.",
         )
+        parser_mistral.set_defaults(parser=parser_mistral)
+
         parser_openai = subparsers.add_parser(
             "openai",
             help="Provides access to American based AI models by OpenAI.",
         )
+        parser_openai.set_defaults(parser=parser_openai)
+
         subparser_modes_mistral = parser_mistral.add_subparsers(
             help="The modes available to Mistral AI.",
             dest="mode_name",
@@ -339,29 +346,6 @@ class CommandParser:
 
     def print_help(self) -> None:
         """Prints the help doc when the user types `gptcli`."""
-        self.parser.print_help()
-
-    def print_help_provider(self, provider: str) -> None:
-        """Print the help doc when the user types `gptcli openai` or similar.
-
-        In order to print the help doc for a subparser using argparse,
-        we have to manually search for the subparser and use the format_help() function.
-        This method does just that; given a `provider`.
-
-        Args:
-            provider (str): The name of the provider chosen by the user, for example `openai` or `mistral`.
-        """
-
-        # retrieve subparsers from parser
-        subparsers_actions: list[Any] = self._get_subparser_actions()
-        for subparsers_action in subparsers_actions:
-            for choice, subparser in subparsers_action.choices.items():
-                if choice == provider:
-                    print(subparser.format_help())
-                    break
-
-    def print_help_provider_mode(self) -> None:
-        """Prints the help doc when the user types commands similar to `gptcli openai chat`."""
         self.parser.print_help()
 
     def _get_subparser_actions(self) -> list[argparse._SubParsersAction]:  # type: ignore[type-arg]

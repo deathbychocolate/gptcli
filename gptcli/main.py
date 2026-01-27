@@ -103,7 +103,10 @@ def main() -> None:
         parser.print_help()
         return None
     elif not parser.args.mode_name:  # mode is missing
-        parser.print_help_provider(provider=parser.args.provider)
+        parser.args.parser.print_help()
+        return None
+    elif parser.args.mode_name == "ocr" and not (parser.args.inputs or parser.args.filelist or parser.args.load_last):
+        parser.args.parser.print_help()
         return None
 
     Migrate().from__0_20_2__to__latest()
