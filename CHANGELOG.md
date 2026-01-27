@@ -1,3 +1,9 @@
+## 0.23.1 (2026-01-27)
+
+### Refactor
+
+- Use more idiomatic set_defaults to show the help docs of each parser.
+
 ## 0.23.0 (2026-01-26)
 
 ### Feat
