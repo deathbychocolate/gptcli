@@ -32,6 +32,18 @@
             "justMyCode": false
         },
         {
+            "name": "gptcli openai se",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "openai",
+                "se",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "gptcli mistral chat",
             "type": "debugpy",
             "request": "launch",
@@ -44,6 +56,18 @@
                 "--context",
                 "--stream",
                 "--storage"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "gptcli mistral ocr",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "mistral",
+                "ocr",
             ],
             "justMyCode": false
         },
