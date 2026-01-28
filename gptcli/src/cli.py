@@ -221,10 +221,10 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             help="Enable or disable local storage of your last OCR session.",
         )
         parser_ocr.add_argument(
-            "--load-last",
+            "--display-last",
             action=argparse.BooleanOptionalAction,
             default=False,
-            help="Enable or disable loading your last OCR session from storage.",
+            help="Display your most recent OCR session from storage.",
         )
         parser_ocr.add_argument(
             "--display",

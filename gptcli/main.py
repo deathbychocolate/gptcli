@@ -86,7 +86,7 @@ def enter_ocr_mode(parser: CommandParser) -> None:
         model=parser.args.model,
         provider=parser.args.provider,
         store=parser.args.store,
-        load_last=parser.args.load_last,
+        display_last=parser.args.display_last,
         display=parser.args.display,
         filelist=parser.args.filelist,
         output_dir=parser.args.output_dir,

@@ -33,7 +33,7 @@ class OpticalCharacterRecognition:
         model: str,
         provider: str,
         store: bool,
-        load_last: bool,
+        display_last: bool,
         display: bool,
         filelist: str,
         output_dir: str,
@@ -45,7 +45,7 @@ class OpticalCharacterRecognition:
             model (str): The OCR model to use for document conversion.
             provider (str): The API provider name (e.g., 'mistral').
             store (bool): Whether to store the OCR results locally.
-            load_last (bool): Whether to load the last OCR session from storage.
+            display_last (bool): Whether to display the last OCR session from storage.
             display (bool): Whether to display the OCR result to stdout.
             filelist (str): Path to a file containing a list of documents to process.
             output_dir (str): Directory path for saving converted Markdown files.
@@ -54,7 +54,7 @@ class OpticalCharacterRecognition:
         self._model: str = model
         self._provider: str = provider
         self._store: bool = store
-        self._load_last: bool = load_last  # TODO: implement
+        self._display_last: bool = display_last  # TODO: implement
         self._display: bool = display
         self._filelist: str = filelist  # TODO: implement
         self._output_dir: str = output_dir  # TODO: implement
