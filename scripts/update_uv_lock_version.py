@@ -6,6 +6,7 @@ only the dbc-gptcli package version in uv.lock, leaving all other
 package versions untouched.
 """
 
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -19,7 +20,7 @@ def get_project_version() -> str:
 
 
 def update_uv_lock_version(new_version: str) -> bool:
-    """Update the dbc-gptcli version in uv.lock.
+    """Update the dbc-gptcli version in uv.lock and stage the file.
 
     Args:
         new_version (str): The new version string to set.
@@ -40,6 +41,7 @@ def update_uv_lock_version(new_version: str) -> bool:
         if found_package and line.startswith("version = "):
             lines[i] = f'version = "{new_version}"'
             lock_file.write_text("\n".join(lines) + "\n")
+            subprocess.run(["git", "add", "uv.lock"], check=True)
             return True
 
     return False
