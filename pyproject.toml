@@ -74,6 +74,7 @@ version_files = ["./pyproject.toml", "./gptcli/_version.py:__version__"]
 version_scheme = "semver"
 version_provider = "pep621"
 update_changelog_on_bump = true
+post_bump_hooks = ["python3 scripts/update_uv_lock_version.py"]
 
 [tool.setuptools.packages.find]
 include = ["gptcli*"]
