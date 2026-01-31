@@ -1,3 +1,9 @@
+## 0.23.2 (2026-01-31)
+
+### Refactor
+
+- Rename OCR's --load-last to --display-last.
+
 ## 0.23.1 (2026-01-27)
 
 ### Refactor

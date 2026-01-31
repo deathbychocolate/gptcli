@@ -1,7 +1,7 @@
 [project]
 authors = [{ name = "Damian Vonapartis", email = "damianosvon@gmail.com" }]
 name = "dbc-gptcli"
-version = "0.23.1"
+version = "0.23.2"
 description = "A CLI tool for accessing OpenAI and Mistral AI LLMs"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "GPL-3.0"
