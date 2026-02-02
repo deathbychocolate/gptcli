@@ -51,13 +51,22 @@ class TestIsFilepath:
     @pytest.mark.parametrize(
         "path",
         [
-            pytest.param("/home/user/file.txt", id="absolute_path"),
-            pytest.param("/var/log/syslog", id="system_path"),
             pytest.param("/", id="root"),
+            pytest.param("/tmp", id="tmp_dir"),
         ],
     )
-    def test_absolute_paths_return_true(self, path: str) -> None:
+    def test_existing_absolute_paths_return_true(self, path: str) -> None:
         assert is_filepath(path) is True
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            pytest.param("/nonexistent/path/file.txt", id="nonexistent_absolute_path"),
+            pytest.param("/home/user/file.txt", id="nonexistent_home_path"),
+        ],
+    )
+    def test_nonexistent_absolute_paths_return_false(self, path: str) -> None:
+        assert is_filepath(path) is False
 
     def test_existing_relative_path_returns_true(self) -> None:
         original_cwd = os.getcwd()
@@ -100,13 +109,27 @@ class TestClassifyInput:
     @pytest.mark.parametrize(
         "path",
         [
-            pytest.param("/path/to/file", id="absolute_path"),
-            pytest.param("example.com", id="domain_without_scheme"),
-            pytest.param("arbitrary text", id="arbitrary_text"),
+            pytest.param("/", id="root"),
+            pytest.param("/tmp", id="tmp_dir"),
         ],
     )
-    def test_non_urls_classified_as_filepath(self, path: str) -> None:
+    def test_existing_filepaths_classified_as_filepath(self, path: str) -> None:
         assert classify_input(path) == InputType.FILEPATH
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            pytest.param("example.com", id="domain_without_scheme"),
+            pytest.param("arbitrary text", id="arbitrary_text"),
+            pytest.param("relative/path/to/file.txt", id="relative_path"),
+            pytest.param("just-a-filename.pdf", id="filename_only"),
+            pytest.param("", id="empty_string"),
+            pytest.param("/nonexistent/absolute/path.pdf", id="nonexistent_absolute_path"),
+            pytest.param("/home/user/documents/file.txt", id="nonexistent_home_path"),
+        ],
+    )
+    def test_unsupported_classified_as_unsupported(self, path: str) -> None:
+        assert classify_input(path) == InputType.UNSUPPORTED
 
 
 class TestInputType:
@@ -115,3 +138,4 @@ class TestInputType:
     def test_enum_values(self) -> None:
         assert InputType.URL.value == "url"
         assert InputType.FILEPATH.value == "filepath"
+        assert InputType.UNSUPPORTED.value == "unsupported"

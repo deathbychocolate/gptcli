@@ -11,6 +11,7 @@ class InputType(Enum):
 
     URL = "url"
     FILEPATH = "filepath"
+    UNSUPPORTED = "unsupported"
 
 
 def is_url(document: str) -> bool:
@@ -26,26 +27,31 @@ def is_url(document: str) -> bool:
 
 
 def is_filepath(document: str) -> bool:
-    """Check if the given document is a valid filepath (not a URL).
+    """Check if the given document is a valid filepath that exists.
 
     Args:
         document (str): The string to validate.
 
     Returns:
-        bool: True if the document is a filepath, False otherwise.
+        bool: True if the document is an existing filepath, False otherwise.
     """
     if is_url(document):
         return False
-    return path.isabs(document) or path.exists(document)
+    return path.exists(document)
 
 
 def classify_input(document: str) -> InputType:
-    """Classify input as URL or FILEPATH.
+    """Classify input as URL, FILEPATH, or UNSUPPORTED.
 
     Args:
         document (str): The string to classify.
 
     Returns:
-        InputType: InputType.URL if the document is a valid URL, InputType.FILEPATH otherwise.
+        InputType: The classified input type (URL, FILEPATH, or UNSUPPORTED).
     """
-    return InputType.URL if is_url(document) else InputType.FILEPATH
+    if is_url(document=document):
+        return InputType.URL
+    elif is_filepath(document=document):
+        return InputType.FILEPATH
+    else:
+        return InputType.UNSUPPORTED

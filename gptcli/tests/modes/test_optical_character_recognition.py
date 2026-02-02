@@ -3,6 +3,7 @@
 import base64
 import io
 import os
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -701,6 +702,245 @@ class TestStartWithStoreFlag:
             ocr.start()
 
         mock_storage.store_ocr_result.assert_not_called()
+
+
+# =============================================================================
+# Unit Tests: OpticalCharacterRecognition.start with --filelist flag (mocked)
+# =============================================================================
+class TestStartWithFilelist:
+
+    @pytest.fixture
+    def mock_ocr_response(self) -> bytes:
+        return b"""{
+            "pages": [{"index": 0, "markdown": "Filelist content", "images": []}]
+        }"""
+
+    @pytest.fixture
+    def filelist_file(self, tmp_path: Path) -> Path:
+        """Create a temporary filelist file with sample paths."""
+        filelist = tmp_path / "filelist.txt"
+        filelist.write_text("/fake/doc1.pdf\n/fake/doc2.pdf\n")
+        return filelist
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_processes_documents_from_filelist(
+        self,
+        _mock_encode: MagicMock,
+        mock_post: MagicMock,
+        mock_ocr_response: bytes,
+        filelist_file: Path,
+    ) -> None:
+        mock_post.return_value.content = mock_ocr_response
+
+        with patch("os.path.exists", return_value=True):
+            ocr = OpticalCharacterRecognition(
+                model=MistralModelsOcr.default(),
+                provider=ProviderNames.MISTRAL.value,
+                store=False,
+                display_last=False,
+                display=False,
+                filelist=str(filelist_file),
+                output_dir="",
+                inputs=[],
+            )
+            ocr.start()
+
+        assert mock_post.call_count == 2
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_empty_filelist_string_does_not_open_file(
+        self,
+        _mock_encode: MagicMock,
+        mock_post: MagicMock,
+        mock_ocr_response: bytes,
+    ) -> None:
+        mock_post.return_value.content = mock_ocr_response
+
+        with patch("os.path.exists", return_value=True):
+            ocr = OpticalCharacterRecognition(
+                model=MistralModelsOcr.default(),
+                provider=ProviderNames.MISTRAL.value,
+                store=False,
+                display_last=False,
+                display=False,
+                filelist="",
+                output_dir="",
+                inputs=["/fake/path.pdf"],
+            )
+            ocr.start()
+
+        assert mock_post.call_count == 1
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_processes_both_inputs_and_filelist(
+        self,
+        _mock_encode: MagicMock,
+        mock_post: MagicMock,
+        mock_ocr_response: bytes,
+        filelist_file: Path,
+    ) -> None:
+        mock_post.return_value.content = mock_ocr_response
+
+        with patch("os.path.exists", return_value=True):
+            ocr = OpticalCharacterRecognition(
+                model=MistralModelsOcr.default(),
+                provider=ProviderNames.MISTRAL.value,
+                store=False,
+                display_last=False,
+                display=False,
+                filelist=str(filelist_file),
+                output_dir="",
+                inputs=["/fake/input.pdf"],
+            )
+            ocr.start()
+
+        assert mock_post.call_count == 3
+
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_filelist_path_does_not_exist_raises_error(self) -> None:
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="/nonexistent/filelist.txt",
+            output_dir="",
+            inputs=[],
+        )
+
+        with pytest.raises(FileNotFoundError):
+            ocr.start()
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_filelist_with_only_empty_lines(
+        self,
+        mock_post: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        filelist = tmp_path / "empty_lines.txt"
+        filelist.write_text("\n\n\n")
+
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist=str(filelist),
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+
+        mock_post.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_filelist_with_only_whitespace_lines(
+        self,
+        mock_post: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        filelist = tmp_path / "whitespace_lines.txt"
+        filelist.write_text("   \n\t\t\n  \t  \n")
+
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist=str(filelist),
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+
+        mock_post.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_filelist_with_nonexistent_filepath_skips_file(
+        self,
+        mock_post: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        filelist = tmp_path / "nonexistent_paths.txt"
+        filelist.write_text("/nonexistent/file1.pdf\n/nonexistent/file2.pdf\n")
+
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist=str(filelist),
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+
+        mock_post.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_filelist_with_mix_of_valid_and_invalid_processes_valid_only(
+        self,
+        _mock_encode: MagicMock,
+        mock_post: MagicMock,
+        mock_ocr_response: bytes,
+        tmp_path: Path,
+    ) -> None:
+        mock_post.return_value.content = mock_ocr_response
+
+        valid_file = tmp_path / "valid.pdf"
+        valid_file.write_bytes(b"%PDF-1.4 test content")
+
+        filelist = tmp_path / "mixed.txt"
+        filelist.write_text(f"/nonexistent/file.pdf\n{valid_file}\n/another/nonexistent.pdf\n")
+
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist=str(filelist),
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+
+        assert mock_post.call_count == 1
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_empty_inputs_and_empty_filelist_does_nothing(
+        self,
+        mock_post: MagicMock,
+    ) -> None:
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+
+        mock_post.assert_not_called()
 
 
 # =============================================================================

@@ -56,7 +56,7 @@ class OpticalCharacterRecognition:
         self._store: bool = store
         self._display_last: bool = display_last  # TODO: implement
         self._display: bool = display
-        self._filelist: str = filelist  # TODO: implement
+        self._filelist: str = filelist
         self._output_dir: str = output_dir  # TODO: implement
         self._inputs: list[str] = inputs
 
@@ -79,27 +79,46 @@ class OpticalCharacterRecognition:
         logger.info("Starting Optical Character Recognition.")
 
         for document in self._inputs:
-            input_type = classify_input(document)
-            if input_type == InputType.URL:
-                document_as_markdown, image_data, page_count = self._perform_ocr_from_url(url=document)
-            elif input_type == InputType.FILEPATH:
-                document_as_markdown, image_data, page_count = self._perform_ocr_from_filepath(filepath=document)
-            else:
-                logger.error(f"Received input type '{input_type}' which is neither a URL nor a filepath.")
-                continue
+            self._generate_markdown_from(document=document)
 
-            if self._store:
-                session_dir = self._storage.store_ocr_result(
-                    source=document,
-                    markdown_content=document_as_markdown,
-                    model=self._model,
-                    page_count=page_count,
-                    image_data=image_data,
-                )
-                logger.info(f"Stored OCR result to: {session_dir}")
+        if self._filelist:
+            with open(self._filelist, "r", encoding="utf8") as fp:
+                for line in fp:
+                    if document := line.strip():
+                        self._generate_markdown_from(document=document)
 
-            if self._display:
-                print(document_as_markdown)
+    def _generate_markdown_from(self, document: str) -> None:
+        """Perform OCR on a document and optionally store/display the result.
+
+        Args:
+            document (str): The filepath or URL of the document to process.
+        """
+        input_type = classify_input(document)
+        if input_type == InputType.URL:
+            document_as_markdown, image_data, page_count = self._perform_ocr_from_url(url=document)
+        elif input_type == InputType.FILEPATH:
+            document_as_markdown, image_data, page_count = self._perform_ocr_from_filepath(filepath=document)
+        elif input_type == InputType.UNSUPPORTED:
+            logger.warning("Detected unsupported input type, it is likely neither a URL nor a valid filepath.")
+            logger.warning(f"Skipping '{document}'.")
+            return None
+        else:
+            logger.warning(f"Received an unexpected input type.")
+            logger.warning(f"Skipping '{document}'.")
+            return None
+
+        if self._store:
+            session_dir = self._storage.store_ocr_result(
+                source=document,
+                markdown_content=document_as_markdown,
+                model=self._model,
+                page_count=page_count,
+                image_data=image_data,
+            )
+            logger.info(f"Stored OCR result to: {session_dir}")
+
+        if self._display:
+            print(document_as_markdown)
 
     def _build_headers(self) -> dict[str, str]:
         """Build HTTP headers for the OCR API request.
