@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 GPTCLI is a Python CLI client for accessing LLM providers (OpenAI and Mistral AI) via their APIs. Published on PyPI as `dbc-gptcli`. Supports Python 3.11-3.14 on Linux and macOS.
 
 **Entry Point:** `gptcli/main.py:main()` → installed as `gptcli` command
-**Current Version:** 0.21.3
+**Current Version:** 0.23.2
 
 ## Development Commands
 
@@ -128,7 +128,7 @@ gptcli
 ├── mistral
 │   ├── chat [--context] [--stream] [--store] [--load-last]
 │   ├── se [--output plain|choices|all]
-│   └── ocr [--display] [--store] [--load-last]
+│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir]
 └── openai
     ├── chat
     └── se
@@ -242,7 +242,7 @@ class TestStorage:
 - File ingestion (text, PDF)
 
 ### In Development (TODOs in README)
-- OCR mode: `store()`, `load_last()`, `display()` methods, filepath support
+- OCR mode: `output_dir` flag
 - Full Text Search for chat storage
 - Full Text Search for OCR results
 - Additional role types (developer, tool, function)
