@@ -202,12 +202,12 @@ class OpticalCharacterRecognition:
         for page in pages:
             page_index = page["index"] + 1
             page_markdown = page["markdown"]
-            markdown_parts.append(f"\n\n### Page {page_index}\n{page_markdown}")
+            markdown_parts.append(f"### Page {page_index}\n{page_markdown}")
             for image in page["images"]:
                 image_bytes = base64.b64decode(image["image_base64"].split(",", maxsplit=1)[1])
                 image_data_list.append((image["id"], image_bytes))
 
-        document_as_markdown = "".join(markdown_parts)
+        document_as_markdown = "\n\n".join(markdown_parts)
         return document_as_markdown, image_data_list, len(pages)
 
     def _perform_ocr_from_url(self, url: str) -> tuple[str, list[tuple[str, bytes]], int]:
