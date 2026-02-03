@@ -633,10 +633,40 @@ class TestStorage:
             storage._json_dir = str(tmp_path)
             return storage
 
-        def test_prints_storage_empty_warning_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
+        @staticmethod
+        def _create_chat_file(tmp_path: str, filename: str, content: str) -> None:
+            """Create a test chat JSON file with a single message."""
+            chat_data: dict[str, list[dict[str, Any]]] = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": content,
+                        "model": "mistral-large-latest",
+                        "provider": "mistral",
+                        "is_reply": False,
+                        "created": 1704067200.0,
+                        "uuid": "00000000-0000-0000-0000-000000000000",
+                        "tokens": 5,
+                    }
+                ]
+            }
+            filepath = os.path.join(tmp_path, filename)
+            with open(filepath, "w", encoding="utf8") as f:
+                json.dump(chat_data, f)
+
+        def test_raises_storage_empty_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
             with pytest.raises(StorageEmpty) as exc_info:
                 storage_with_empty_tmp_dir.extract_messages()
             assert "No chat sessions found" in str(exc_info.value)
+
+        def test_selects_newest_by_epoch(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
+            # Create the newer epoch first so its filesystem ctime is older,
+            # ensuring the test fails if selection relies on ctime instead of the filename.
+            self._create_chat_file(str(tmp_path), "200__2024_01_02__12_00_00__chat.json", "New message")
+            self._create_chat_file(str(tmp_path), "100__2024_01_01__12_00_00__chat.json", "Old message")
+            messages = storage_with_empty_tmp_dir.extract_messages()
+            first_message = next(iter(messages))
+            assert first_message.content == "New message"
 
     class TestExtractFormatAndShowMessagesForDisplay:
 

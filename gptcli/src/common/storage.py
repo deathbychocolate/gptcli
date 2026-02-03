@@ -313,8 +313,8 @@ class Storage:
     def extract_messages(self) -> Messages:
         """Extract messages from the most recent chat session.
 
-        Reads the newest JSON file from storage and reconstructs
-        the Messages collection.
+        Finds the newest JSON file by epoch prefix in the filename
+        and reconstructs the Messages collection.
 
         Returns:
             A Messages collection containing all messages from the last session.
@@ -328,7 +328,7 @@ class Storage:
         if not filepaths:
             raise StorageEmpty(f"No chat sessions found in {self._json_dir}")
 
-        last_chat_session: str = max(filepaths, key=path.getctime)
+        last_chat_session: str = max(filepaths, key=lambda p: path.basename(p))
 
         file_contents_messages: list[dict[str, Any]] = []
         with open(last_chat_session, "r", encoding="utf8") as fp:
