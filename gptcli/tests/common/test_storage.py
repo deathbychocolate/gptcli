@@ -670,8 +670,6 @@ class TestStorage:
 
     class TestExtractFormatAndShowMessagesForDisplay:
 
-        URL: str = "https://example.com"
-
         @pytest.fixture
         def storage_with_empty_tmp_dir(self, tmp_path: str) -> Storage:
             storage = Storage(provider=ProviderNames.MISTRAL.value)
