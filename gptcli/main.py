@@ -2,6 +2,7 @@
 
 import logging
 import os
+from argparse import Namespace
 from logging import Logger
 
 from gptcli.constants import (
@@ -97,15 +98,16 @@ def enter_ocr_mode(parser: CommandParser) -> None:
 def main() -> None:
     """This is the main function."""
     parser: CommandParser = run_and_configure_argparse()
+    args: Namespace = parser.args
 
     # print help when ...
-    if not parser.args.provider:  # provider is missing
+    if not args.provider:  # provider is missing
         parser.print_help()
         return None
-    elif not parser.args.mode_name:  # mode is missing
-        parser.args.parser.print_help()
+    elif not args.mode_name:  # mode is missing
+        args.parser.print_help()
         return None
-    elif parser.args.mode_name == "ocr" and not (parser.args.inputs or parser.args.filelist or parser.args.load_last):
+    elif args.mode_name == "ocr" and not (args.inputs or args.filelist or args.display_last):
         parser.args.parser.print_help()
         return None
 
