@@ -23,7 +23,8 @@
         "cli",
         "makefile",
         "docker",
-        "storage"
+        "storage",
+        "ocr"
     ],
     "python.analysis.typeCheckingMode": "off",
     "python.analysis.autoImportCompletions": true,
