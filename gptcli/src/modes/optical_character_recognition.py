@@ -54,7 +54,7 @@ class OpticalCharacterRecognition:
         self._model: str = model
         self._provider: str = provider
         self._store: bool = store
-        self._display_last: bool = display_last  # TODO: implement
+        self._display_last: bool = display_last
         self._display: bool = display
         self._filelist: str = filelist
         self._output_dir: str = output_dir  # TODO: implement
@@ -77,6 +77,10 @@ class OpticalCharacterRecognition:
     def start(self) -> None:
         """Send a list of filepaths and/or URLs and receive Markdown text."""
         logger.info("Starting Optical Character Recognition.")
+
+        if self._display_last:
+            self._storage.extract_and_show_last_ocr_result_for_display()
+            return None
 
         for document in self._inputs:
             self._generate_markdown_from(document=document)

@@ -944,6 +944,122 @@ class TestStartWithFilelist:
 
 
 # =============================================================================
+# Unit Tests: OpticalCharacterRecognition.start with --display-last (mocked)
+# =============================================================================
+class TestStartWithDisplayLast:
+
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_calls_extract_and_show(self, mock_storage: MagicMock) -> None:
+        mock_storage_instance = mock_storage.return_value
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=True,
+            display=True,
+            filelist="",
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_returns_none(self, mock_storage: MagicMock) -> None:
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=True,
+            display=True,
+            filelist="",
+            output_dir="",
+            inputs=[],
+        )
+        result = ocr.start()
+        assert result is None
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_does_not_process_inputs(self, mock_storage: MagicMock, mock_post: MagicMock) -> None:
+        mock_storage_instance = mock_storage.return_value
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=True,
+            display=True,
+            filelist="",
+            output_dir="",
+            inputs=["/fake/document.pdf"],
+        )
+        ocr.start()
+        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_post.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_does_not_process_filelist(
+        self, mock_storage: MagicMock, mock_post: MagicMock, tmp_path: Path
+    ) -> None:
+        mock_storage_instance = mock_storage.return_value
+        filelist = tmp_path / "filelist.txt"
+        filelist.write_text("/fake/doc1.pdf\n/fake/doc2.pdf\n")
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=True,
+            display=True,
+            filelist=str(filelist),
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_post.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_does_not_store(self, mock_storage: MagicMock) -> None:
+        mock_storage_instance = mock_storage.return_value
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=True,
+            display_last=True,
+            display=True,
+            filelist="",
+            output_dir="",
+            inputs=["/fake/document.pdf"],
+        )
+        ocr.start()
+        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.store_ocr_result.assert_not_called()
+
+    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
+    def test_display_last_ignores_no_display_flag(self, mock_storage: MagicMock) -> None:
+        mock_storage_instance = mock_storage.return_value
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=True,
+            display=False,
+            filelist="",
+            output_dir="",
+            inputs=[],
+        )
+        ocr.start()
+        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+
+
+# =============================================================================
 # Integration Tests: Filepath Input (requires Mistral API)
 # =============================================================================
 class TestOcrFromFilepathIntegration:

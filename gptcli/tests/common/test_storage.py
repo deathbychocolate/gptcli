@@ -15,6 +15,23 @@ from gptcli.src.common.storage import Storage, StorageEmpty
 
 class TestStorage:
 
+    @pytest.fixture
+    def storage_with_ocr_tmp_dir(self, tmp_path: str) -> Storage:
+        """Create a Storage instance with OCR directory set to a temporary path."""
+        storage = Storage(provider=ProviderNames.MISTRAL.value)
+        storage._ocr_dir = str(tmp_path)
+        return storage
+
+    @staticmethod
+    def _create_ocr_session(tmp_path: str, folder_name: str, md_filename: str, md_content: str) -> str:
+        """Create a test OCR session directory with a markdown file."""
+        session_dir = os.path.join(tmp_path, folder_name)
+        os.makedirs(session_dir)
+        md_path = os.path.join(session_dir, md_filename)
+        with open(md_path, "w", encoding="utf8") as f:
+            f.write(md_content)
+        return session_dir
+
     class TestCreateJsonFilepath:
 
         @pytest.fixture(scope="session", params=ProviderNames.to_list())
@@ -659,3 +676,69 @@ class TestStorage:
 
             # Should not raise any exception
             storage_with_empty_tmp_dir.extract_and_show_messages_for_display()
+
+    class TestExtractLastOcrResult:
+
+        def test_returns_str_type(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Hello")
+            result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
+            assert isinstance(result, str)
+
+        def test_returns_markdown_content(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            TestStorage._create_ocr_session(
+                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Title\n\nBody text."
+            )
+            result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
+            assert result == "# Title\n\nBody text."
+
+        def test_selects_newest_by_epoch(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            # Create the newer epoch first so its filesystem ctime is older,
+            # ensuring the test fails if selection relies on ctime instead of the directory name.
+            TestStorage._create_ocr_session(str(tmp_path), "200__2024_01_02__12_00_00__ocr", "new.md", "New content")
+            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "old.md", "Old content")
+            result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
+            assert result == "New content"
+
+        def test_raises_storage_empty_when_no_sessions(self, storage_with_ocr_tmp_dir: Storage) -> None:
+            with pytest.raises(StorageEmpty):
+                storage_with_ocr_tmp_dir.extract_last_ocr_result()
+
+        def test_raises_storage_empty_when_dir_does_not_exist(self) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value)
+            storage._ocr_dir = "/nonexistent/path/that/does/not/exist"
+            with pytest.raises(StorageEmpty):
+                storage.extract_last_ocr_result()
+
+        def test_handles_empty_markdown_file(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "")
+            result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
+            assert result == ""
+
+    class TestExtractAndShowLastOcrResultForDisplay:
+
+        def test_returns_none(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Hello")
+            result = storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()  # type: ignore[func-returns-value]
+            assert result is None
+
+        def test_prints_markdown_content(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str, capsys: pytest.CaptureFixture[str]
+        ) -> None:
+            TestStorage._create_ocr_session(
+                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Title\n\nBody text."
+            )
+            storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()
+            captured = capsys.readouterr()
+            assert "# Title" in captured.out
+            assert "Body text." in captured.out
+
+        def test_returns_none_when_no_sessions(self, storage_with_ocr_tmp_dir: Storage) -> None:
+            result = storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()  # type: ignore[func-returns-value]
+            assert result is None
+
+        def test_prints_warning_when_no_sessions(self, storage_with_ocr_tmp_dir: Storage) -> None:
+            with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
+                storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()
+                mock_print.assert_called_once()
+                call_args = str(mock_print.call_args)
+                assert "No OCR results found in storage" in call_args

@@ -264,6 +264,52 @@ class Storage:
 
         return session_dir
 
+    def extract_last_ocr_result(self) -> str:
+        """Extract the markdown content from the most recent OCR session.
+
+        Finds the newest session directory by epoch prefix in the directory
+        name, locates the markdown file within it, and returns its content.
+
+        Returns:
+            str: The markdown content from the most recent OCR session.
+
+        Raises:
+            StorageEmpty: If no OCR sessions exist in storage.
+        """
+        logger.info("Extracting last OCR result from storage.")
+        session_dirs: list[str] = glob(path.join(self._ocr_dir, "*__ocr"))
+
+        if not session_dirs:
+            raise StorageEmpty(f"No OCR sessions found in {self._ocr_dir}")
+
+        last_session_dir: str = max(session_dirs, key=lambda p: path.basename(p))
+
+        markdown_files: list[str] = sorted(glob(path.join(last_session_dir, "*.md")))
+        if not markdown_files:
+            raise StorageEmpty(f"No markdown file found in {last_session_dir}")
+
+        content: str = ""
+        with open(markdown_files[0], "r", encoding="utf8") as fp:
+            content = fp.read()
+
+        return content
+
+    def extract_and_show_last_ocr_result_for_display(self) -> None:
+        """Extract and display the markdown content from the most recent OCR session.
+
+        Retrieves the last OCR result from storage and prints it to the
+        terminal. Prints a warning if no OCR sessions exist.
+        """
+        logger.info("Extracting last OCR result from storage.")
+        try:
+            content: str = self.extract_last_ocr_result()
+        except StorageEmpty:
+            print_formatted_text(ANSI(f"{RED}>>>{RST} No OCR results found in storage; storage is likely empty."))
+            return None
+
+        print(content)
+        return None
+
     def extract_messages(self) -> Messages:
         """Extract messages from the most recent chat session.
 
