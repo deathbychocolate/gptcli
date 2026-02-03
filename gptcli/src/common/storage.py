@@ -129,7 +129,7 @@ class Storage:
 
     @staticmethod
     def derive_markdown_filename_from_source(source: str) -> str:
-        """Derive a markdown filename from a source URL or filepath.
+        """Derive a Markdown filename from a source URL or filepath.
 
         Extracts the base filename and replaces its extension with .md.
         Falls back to 'document.md' if no filename can be derived.
@@ -174,7 +174,7 @@ class Storage:
             source: The original input source (URL or filepath).
             model: The OCR model used for processing.
             page_count: Number of pages processed.
-            markdown_file: Name of the generated markdown file.
+            markdown_file: Name of the generated Markdown file.
             images: List of generated image filenames.
 
         Returns:
@@ -214,13 +214,13 @@ class Storage:
         """Store an OCR processing result to local storage.
 
         Creates a session directory containing:
-        - A markdown file with the extracted text
+        - A Markdown file with the extracted text
         - Any extracted images
         - A metadata.json file with processing details
 
         Args:
             source: The original input source (URL or filepath) that was processed.
-            markdown_content: The extracted markdown text content.
+            markdown_content: The extracted Markdown text content.
             model: The OCR model used for processing.
             page_count: Number of pages processed from the source.
             image_data: List of (filename, bytes) tuples for extracted images.
@@ -265,13 +265,13 @@ class Storage:
         return session_dir
 
     def extract_last_ocr_result(self) -> str:
-        """Extract the markdown content from the most recent OCR session.
+        """Extract the Markdown content from the most recent OCR session.
 
         Finds the newest session directory by epoch prefix in the directory
-        name, locates the markdown file within it, and returns its content.
+        name, locates the Markdown file within it, and returns its content.
 
         Returns:
-            str: The markdown content from the most recent OCR session.
+            str: The Markdown content from the most recent OCR session.
 
         Raises:
             StorageEmpty: If no OCR sessions exist in storage.
@@ -295,7 +295,7 @@ class Storage:
         return content
 
     def extract_and_show_last_ocr_result_for_display(self) -> None:
-        """Extract and display the markdown content from the most recent OCR session.
+        """Extract and display the Markdown content from the most recent OCR session.
 
         Retrieves the last OCR result from storage and prints it to the
         terminal. Prints a warning if no OCR sessions exist.
