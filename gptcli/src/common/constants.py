@@ -220,7 +220,6 @@ class OpenaiModelsChat(BaseEnum):
     GPT_5_1_CHAT_LATEST = "gpt-5.1-chat-latest"
     GPT_5_2 = "gpt-5.2"
     GPT_5_2_CHAT_LATEST = "gpt-5.2-chat-latest"
-    CHATGPT_4O_LATEST = "chatgpt-4o-latest"
     O1 = "o1"
     O3 = "o3"
     O3_MINI = "o3-mini"
