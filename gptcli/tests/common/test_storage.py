@@ -88,45 +88,45 @@ class TestStorage:
         # Filepath cases
 
         def test_simple_filepath(self) -> None:
-            assert Storage._extract_filename_from_source("/path/to/document.pdf") == "document.pdf"
+            assert Storage.extract_filename_from_source("/path/to/document.pdf") == "document.pdf"
 
         def test_filepath_with_nested_directories(self) -> None:
-            assert Storage._extract_filename_from_source("/a/b/c/d/file.txt") == "file.txt"
+            assert Storage.extract_filename_from_source("/a/b/c/d/file.txt") == "file.txt"
 
         def test_filepath_with_spaces(self) -> None:
-            assert Storage._extract_filename_from_source("/path/to/my file.pdf") == "my file.pdf"
+            assert Storage.extract_filename_from_source("/path/to/my file.pdf") == "my file.pdf"
 
         def test_filepath_with_no_extension(self) -> None:
-            assert Storage._extract_filename_from_source("/path/to/noextension") == "noextension"
+            assert Storage.extract_filename_from_source("/path/to/noextension") == "noextension"
 
         def test_filepath_root_file(self) -> None:
-            assert Storage._extract_filename_from_source("/file.pdf") == "file.pdf"
+            assert Storage.extract_filename_from_source("/file.pdf") == "file.pdf"
 
         def test_filepath_hidden_file(self) -> None:
-            assert Storage._extract_filename_from_source("/path/to/.hidden") == ".hidden"
+            assert Storage.extract_filename_from_source("/path/to/.hidden") == ".hidden"
 
         # URL cases
 
         def test_simple_url(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/files/doc.pdf") == "doc.pdf"
+            assert Storage.extract_filename_from_source(f"{self.URL}/files/doc.pdf") == "doc.pdf"
 
         def test_url_with_query_params(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/doc.pdf?token=abc") == "doc.pdf"
+            assert Storage.extract_filename_from_source(f"{self.URL}/doc.pdf?token=abc") == "doc.pdf"
 
         def test_url_with_fragment(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/doc.pdf#page=1") == "doc.pdf"
+            assert Storage.extract_filename_from_source(f"{self.URL}/doc.pdf#page=1") == "doc.pdf"
 
         def test_url_with_percent_encoded_spaces(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/my%20doc.pdf") == "my doc.pdf"
+            assert Storage.extract_filename_from_source(f"{self.URL}/my%20doc.pdf") == "my doc.pdf"
 
         def test_url_with_percent_encoded_unicode(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/%E6%96%87%E6%A1%A3.pdf") == "文档.pdf"
+            assert Storage.extract_filename_from_source(f"{self.URL}/%E6%96%87%E6%A1%A3.pdf") == "文档.pdf"
 
         def test_url_with_trailing_slash_returns_empty(self) -> None:
-            assert Storage._extract_filename_from_source(f"{self.URL}/") == ""
+            assert Storage.extract_filename_from_source(f"{self.URL}/") == ""
 
         def test_url_with_no_path_returns_empty(self) -> None:
-            assert Storage._extract_filename_from_source(self.URL) == ""
+            assert Storage.extract_filename_from_source(self.URL) == ""
 
     class TestDeriveMarkdownFilenameFromSource:
 

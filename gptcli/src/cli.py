@@ -229,7 +229,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         parser_ocr.add_argument(
             "--display",
             action=argparse.BooleanOptionalAction,
-            default=True,
+            default=False,
             help="Display the result of the OCR call to stdout.",
         )
         parser_ocr.add_argument(
@@ -238,11 +238,19 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             help=f"Provide a list of files to convert to Markdown using local filepaths or URLs separated by newlines.",
             metavar="<string>",
         )
-        parser_ocr.add_argument(
+        output_dir_group = parser_ocr.add_mutually_exclusive_group()
+        output_dir_group.add_argument(
             "--output-dir",
             type=str,
-            help=f"Provide a custom directory to save converted Markdown files.",
+            default=".",
+            help="Defaults to '.'. Provide a custom directory to save converted Markdown files.",
             metavar="<string>",
+        )
+        output_dir_group.add_argument(
+            "--no-output-dir",
+            action="store_true",
+            default=False,
+            help="Disable saving converted Markdown files to a local directory.",
         )
         parser_ocr.add_argument(
             "inputs",

@@ -37,6 +37,7 @@ class OpticalCharacterRecognition:
         display: bool,
         filelist: str,
         output_dir: str,
+        no_output_dir: bool,
         inputs: list[str],
     ):
         """Initialize an OCR session for converting documents to Markdown.
@@ -49,6 +50,7 @@ class OpticalCharacterRecognition:
             display (bool): Whether to display the OCR result to stdout.
             filelist (str): Path to a file containing a list of documents to process.
             output_dir (str): Directory path for saving converted Markdown files.
+            no_output_dir (bool): Whether to disable saving converted Markdown files to output_dir.
             inputs (list[str]): List of filepaths or URLs of documents to convert.
         """
         self._model: str = model
@@ -57,7 +59,7 @@ class OpticalCharacterRecognition:
         self._display_last: bool = display_last
         self._display: bool = display
         self._filelist: str = filelist
-        self._output_dir: str = output_dir  # TODO: implement
+        self._output_dir: str | None = None if no_output_dir else output_dir
         self._inputs: list[str] = inputs
 
         self._storage: Storage = Storage(provider=provider)
@@ -81,6 +83,8 @@ class OpticalCharacterRecognition:
         if self._display_last:
             self._storage.extract_and_show_last_ocr_result_for_display()
             return None
+
+        self._validate_output_dir()
 
         for document in self._inputs:
             self._generate_markdown_from(document=document)
@@ -121,8 +125,123 @@ class OpticalCharacterRecognition:
             )
             logger.info(f"Stored OCR result to: {session_dir}")
 
+        self._write_to_output_dir(
+            document=document,
+            markdown_content=document_as_markdown,
+            image_data=image_data,
+        )
+
         if self._display:
             print(document_as_markdown)
+
+    @staticmethod
+    def _derive_folder_name_from_source(provider: str, source: str) -> str:
+        """Derive a folder name from the provider and source document path or URL.
+
+        Args:
+            provider (str): The API provider name (e.g., 'mistral').
+            source (str): A URL or filesystem path to the source document.
+
+        Returns:
+            str: A folder name in the format 'gptcli__{provider}__ocr__{name}'.
+        """
+        filename = Storage.extract_filename_from_source(source)
+        if filename and "." in filename and not filename.startswith("."):
+            name = filename.rsplit(".", 1)[0]
+        else:
+            name = filename
+
+        return f"gptcli__{provider}__ocr__{name or 'document'}"
+
+    @staticmethod
+    def _resolve_folder_collision(base_path: str) -> str:
+        """Resolve folder name collisions by appending a numeric suffix.
+
+        Args:
+            base_path (str): The desired folder path.
+
+        Returns:
+            str: The original path if no collision, or path with '__1', '__2', etc. appended.
+        """
+        if not os.path.exists(base_path):
+            return base_path
+
+        counter = 1
+        while True:
+            candidate = f"{base_path}__{counter}"
+            if not os.path.exists(candidate):
+                return candidate
+            counter += 1
+
+    def _validate_output_dir(self) -> None:
+        """Validate that the output directory path is usable and create it if missing.
+
+        Does nothing when output_dir is None (output writing disabled).
+
+        Raises:
+            ValueError: If the path exists but is not a directory, or cannot be created.
+        """
+        if self._output_dir is None:
+            return None
+
+        if os.path.exists(self._output_dir) and not os.path.isdir(self._output_dir):
+            raise ValueError(f"Output path '{self._output_dir}' exists but is not a directory.")
+
+        try:
+            os.makedirs(self._output_dir, exist_ok=True)
+        except OSError as e:
+            raise ValueError(f"Cannot create output directory '{self._output_dir}': {e}") from e
+
+        return None
+
+    def _write_to_output_dir(
+        self,
+        document: str,
+        markdown_content: str,
+        image_data: list[tuple[str, bytes]],
+    ) -> None:
+        """Write OCR results to the output directory.
+
+        Creates a subfolder named after the provider and source document,
+        containing the Markdown file and any extracted images. The pattern
+        is `gptcli__{provider}__ocr__{document}` and an example subfolder
+        name could be `gptcli__mistral__ocr__invoice`.
+
+        Args:
+            document (str): The original source document path or URL.
+            markdown_content (str): The extracted Markdown text content.
+            image_data (list[tuple[str, bytes]]): List of (filename, bytes) tuples for extracted images.
+        """
+        if self._output_dir is None:
+            return None
+
+        folder_name = self._derive_folder_name_from_source(self._provider, document)
+        folder_path = os.path.join(self._output_dir, folder_name)
+        folder_path = self._resolve_folder_collision(folder_path)
+        os.makedirs(folder_path, exist_ok=True)
+
+        markdown_filename = Storage.derive_markdown_filename_from_source(document)
+        markdown_filepath = os.path.join(folder_path, markdown_filename)
+        with open(markdown_filepath, "w", encoding="utf8") as fp:
+            fp.write(markdown_content)
+
+        resolved_folder_path = os.path.realpath(folder_path)
+        for filename, data in image_data:
+            safe_filename = os.path.basename(filename)
+            if not safe_filename:
+                logger.warning("Possible malicious filename detected; path traversal.")
+                logger.warning(f"Filename of: '{filename}'")
+                continue
+            image_filepath = os.path.join(folder_path, safe_filename)
+            if not os.path.realpath(image_filepath).startswith(resolved_folder_path):
+                logger.warning(f"Image path escapes output folder; skipping '{filename}'.")
+                continue
+            with open(image_filepath, "wb") as fp:
+                fp.write(data)
+
+        print(f"OCR result saved to '{folder_path}'.")
+
+        return None
 
     def _build_headers(self) -> dict[str, str]:
         """Build HTTP headers for the OCR API request.

@@ -109,7 +109,7 @@ class Storage:
         return session_dir
 
     @staticmethod
-    def _extract_filename_from_source(source: str) -> str:
+    def extract_filename_from_source(source: str) -> str:
         """Extract the filename from a URL or filesystem path.
 
         Handles URL decoding for percent-encoded characters in URLs.
@@ -149,7 +149,7 @@ class Storage:
             raise ValueError("Source cannot be whitespace only.")
 
         source = source.strip()
-        filename = Storage._extract_filename_from_source(source)
+        filename = Storage.extract_filename_from_source(source)
 
         if not filename:
             return Storage._FALLBACK_MARKDOWN_FILENAME
@@ -182,7 +182,7 @@ class Storage:
             and output file references.
         """
         input_type = InputType.URL.value if is_url(source) else InputType.FILEPATH.value
-        filename = self._extract_filename_from_source(source)
+        filename = self.extract_filename_from_source(source)
 
         return {
             "source": {
@@ -238,7 +238,8 @@ class Storage:
         with open(markdown_filepath, "w", encoding="utf8") as fp:
             fp.write(markdown_content)
 
-        # Get filename safely using os.path.basename().
+        # Get filename safely using os.path.basename() and realpath check.
+        resolved_session_dir = os.path.realpath(session_dir)
         image_filenames: list[str] = []
         for filename, data in image_data:
             safe_filename = path.basename(filename)
@@ -247,6 +248,9 @@ class Storage:
                 logger.warning(f"Filename of: '{filename}'")
                 continue
             image_filepath = path.join(session_dir, safe_filename)
+            if not os.path.realpath(image_filepath).startswith(resolved_session_dir):
+                logger.warning(f"Image path escapes session folder; skipping '{filename}'.")
+                continue
             with open(image_filepath, "wb") as fp:
                 fp.write(data)
             image_filenames.append(safe_filename)
