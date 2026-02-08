@@ -1,3 +1,20 @@
+## 0.24.0 (2026-02-08)
+
+### Feat
+
+- **ocr**: Implement output-dir flag to allow storing OCR results in custom directories or the current one.
+- Enable display-last flag in OCR.
+- Add support for the filelist flag.
+
+### Fix
+
+- **ocr**: Add page breaks between the pages without any at the start or end of the document.
+- **ocr**: Correct flag name and clean up.
+
+### Refactor
+
+- **storage**: Make the extract_messages search by max epoch value (like extract_last_ocr_result).
+
 ## 0.23.2 (2026-01-31)
 
 ### Refactor
