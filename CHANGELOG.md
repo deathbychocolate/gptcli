@@ -1,3 +1,10 @@
+## 0.24.1 (2026-02-13)
+
+### Fix
+
+- **ocr**: Print carriage return only if we printed something and adjust test to check for specific string.
+- **ocr**: Update spinner animation and allow passing labels.
+
 ## 0.24.0 (2026-02-08)
 
 ### Feat
