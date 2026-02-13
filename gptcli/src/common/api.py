@@ -52,13 +52,17 @@ class Spinner:
         self.label: str = label
 
     def _animate(self) -> None:
+        printed: bool = False
         for c in itertools.cycle(["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]):
             if self._stop.is_set():
                 break
             sys.stdout.write(f"\r{c} {self.label}")
             sys.stdout.flush()
+            printed = True
             time.sleep(self._interval)
-        sys.stdout.write("\r")
+
+        if printed:
+            sys.stdout.write("\r")
 
     def __enter__(self) -> Self:
         self._stop.clear()

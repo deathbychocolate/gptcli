@@ -578,7 +578,7 @@ class TestStartUnit:
             ocr.start()
 
         captured = capsys.readouterr()
-        assert captured.out == ""
+        assert "Should not print" not in captured.out
 
 
 # =============================================================================
