@@ -288,7 +288,7 @@ class OpticalCharacterRecognition:
             Response | None: The Response object if successful, None if the request failed.
         """
         try:
-            recognizing_spinner.label = label
+            recognizing_spinner.label = f"Recognizing '{label}'"
             with recognizing_spinner:
                 response = post(url=self._ocr_endpoint, headers=headers, json=content, timeout=30)
             return response if response.ok else None
