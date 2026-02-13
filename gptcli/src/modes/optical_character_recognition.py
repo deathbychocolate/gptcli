@@ -18,6 +18,7 @@ from requests import Response, post
 from requests.exceptions import RequestException
 
 from gptcli.constants import MISTRAL_API_KEY, OPENAI_API_KEY
+from gptcli.src.common.api import recognizing_spinner
 from gptcli.src.common.constants import MISTRAL, OPENAI
 from gptcli.src.common.decorators import user_triggered_abort
 from gptcli.src.common.storage import Storage
@@ -274,32 +275,35 @@ class OpticalCharacterRecognition:
             return base64.b64encode(fp.read()).decode("utf8")
 
     def _make_ocr_request(
-        self, headers: dict[str, str], content: dict[str, str | bool | dict[str, str | None]]
+        self, headers: dict[str, str], content: dict[str, str | bool | dict[str, str | None]], label: str = ""
     ) -> Response | None:
         """Make an OCR API request, returning None on network or HTTP failure.
 
         Args:
             headers (dict[str, str]): HTTP headers for the request.
             content (dict): JSON payload for the OCR API.
+            label (str, optional): Human-readable document identifier shown in the spinner. Defaults to empty string.
 
         Returns:
             Response | None: The Response object if successful, None if the request failed.
         """
         try:
-            response = post(url=self._ocr_endpoint, headers=headers, json=content, timeout=30)
+            recognizing_spinner.label = label
+            with recognizing_spinner:
+                response = post(url=self._ocr_endpoint, headers=headers, json=content, timeout=30)
             return response if response.ok else None
         except RequestException:
             return None
 
     def _parse_ocr_response(self, response: Response) -> tuple[str, list[tuple[str, bytes]], int]:
-        """Parse the OCR API response and extract markdown content and images.
+        """Parse the OCR API response and extract Markdown content and images.
 
         Args:
             response (Response): The HTTP response from the OCR API.
 
         Returns:
             tuple[str, list[tuple[str, bytes]], int]: A tuple containing:
-                - The document content as markdown string.
+                - The document content as Markdown string.
                 - A list of tuples with (image_id, image_bytes) for extracted images.
                 - The total page count.
 
@@ -361,10 +365,10 @@ class OpticalCharacterRecognition:
             },
         }
 
-        response = self._make_ocr_request(headers, content_pdf)
+        response = self._make_ocr_request(headers, content_pdf, label=url)
         if response is None:
             logger.warning("Document request failed, trying as image.")
-            response = self._make_ocr_request(headers, content_img)
+            response = self._make_ocr_request(headers, content_img, label=url)
 
         if response is None:
             raise RuntimeError(f"OCR request failed for URL: {url}")
@@ -400,7 +404,7 @@ class OpticalCharacterRecognition:
             "include_image_base64": True,
         }
 
-        response = self._make_ocr_request(headers, content_pdf_local)
+        response = self._make_ocr_request(headers, content_pdf_local, label=filepath)
         if response is None:
             raise RuntimeError(f"OCR request failed for file: {filepath}")
 

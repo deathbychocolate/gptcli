@@ -10,15 +10,114 @@ from pytest import CaptureFixture
 from gptcli.src.common.api import (
     Chat,
     SingleExchange,
+    Spinner,
+    SpinnerRecognizing,
     SpinnerThinking,
 )
 from gptcli.src.common.constants import ProviderNames
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
 
+class TestSpinner:
+
+    @pytest.fixture(scope="function")
+    def setup_teardown(self) -> Generator[Spinner, None, None]:
+        spinner: Spinner = Spinner(label="Custom Message")
+        yield spinner
+
+    def test_spinner_starts_printing_frames(self, setup_teardown: Spinner, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a Spinner.
+        spinner: Spinner = setup_teardown
+
+        # When run the Spinner for 0.05 seconds.
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the output to stdout should contain the spinner label.
+        out, err = capfd.readouterr()
+        assert "Custom Message" in out
+
+    def test_spinner_stops_printing_frames(self, setup_teardown: Spinner, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a Spinner.
+        spinner: Spinner = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with spinner:
+            time.sleep(0.05)
+        capfd.readouterr()  # drain output
+
+        # When we wait for the printing to stop.
+        time.sleep(0.05)
+        out, err = capfd.readouterr()
+
+        # Then no new spinner output should have appeared after exit.
+        assert out == ""
+
+    def test_spinner_is_reusable(self, setup_teardown: Spinner, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a Spinner.
+        spinner: Spinner = setup_teardown
+
+        # When we run the Spinner twice in succession.
+        with spinner:
+            time.sleep(0.05)
+        capfd.readouterr()  # drain first run
+
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the second run should also produce output.
+        out, err = capfd.readouterr()
+        assert "Custom Message" in out
+
+
+class TestSpinnerRecognizing:
+
+    @pytest.fixture(scope="function")
+    def setup_teardown(self) -> Generator[SpinnerRecognizing, None, None]:
+        recognizing_spinner: SpinnerRecognizing = SpinnerRecognizing(interval=0.01)
+        yield recognizing_spinner
+
+    def test_spinner_starts_printing_frames(
+        self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a Spinner.
+        recognizing_spinner: SpinnerRecognizing = setup_teardown
+
+        # When run the Spinner for 0.05 seconds.
+        with recognizing_spinner:
+            time.sleep(0.05)
+
+        # Then the output to stdout should contain the word 'Recognizing'.
+        out, err = capfd.readouterr()
+        assert "Recognizing" in out
+
+    def test_spinner_stops_printing_frames(
+        self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a Spinner.
+        recognizing_spinner: SpinnerRecognizing = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with recognizing_spinner:
+            time.sleep(0.05)
+        capfd.readouterr()  # drain output
+
+        # When we wait for the printing to stop.
+        time.sleep(0.05)
+        out, err = capfd.readouterr()
+
+        # Then no new spinner output should have appeared after exit.
+        assert out == ""
+
+
 class TestSpinnerThinking:
 
-    @pytest.fixture(scope="session")
+    @pytest.fixture(scope="function")
     def setup_teardown(self) -> Generator[SpinnerThinking, None, None]:
         thinking_spinner: SpinnerThinking = SpinnerThinking(interval=0.01)
         yield thinking_spinner
@@ -32,9 +131,9 @@ class TestSpinnerThinking:
         with thinking_spinner:
             time.sleep(0.05)
 
-        # Then the output to stdout should be 'Thinking ' followed by a line bar.
+        # Then the output to stdout should contain the word 'Thinking'.
         out, err = capfd.readouterr()
-        assert out.startswith("\rThinking ")
+        assert "Thinking" in out
 
     def test_spinner_stops_printing_frames(self, setup_teardown: SpinnerThinking, capfd: CaptureFixture[str]) -> None:
 

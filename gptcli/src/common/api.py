@@ -37,28 +37,31 @@ from gptcli.src.common.message import Message, MessageFactory, Messages
 logger: Logger = logging.getLogger(__name__)
 
 
-class SpinnerThinking:
+class Spinner:
 
-    def __init__(self, interval: float = 0.1) -> None:
+    def __init__(self, interval: float = 0.1, label: str = "") -> None:
         """Simulates a thinking animation when we send requests to an AI provider's AI model.
 
         Args:
             interval (float, optional): Time interval that controls animation speed; lower is faster. Defaults to 0.1s.
+            label (str, optional): Label displayed next to the spinner character. Defaults to empty string.
         """
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._interval = interval
+        self.label: str = label
 
     def _animate(self) -> None:
-        for c in itertools.cycle(["-", "\\", "|", "/"]):
+        for c in itertools.cycle(["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]):
             if self._stop.is_set():
                 break
-            sys.stdout.write(f"\rThinking {c}")
+            sys.stdout.write(f"\r{c} {self.label}")
             sys.stdout.flush()
             time.sleep(self._interval)
         sys.stdout.write("\r")
 
     def __enter__(self) -> Self:
+        self._stop.clear()
         self._thread = threading.Thread(target=self._animate, daemon=True)
         self._thread.start()
         return self
@@ -75,6 +78,17 @@ class SpinnerThinking:
         return None  # let errors propagate
 
 
+class SpinnerRecognizing(Spinner):
+    def __init__(self, interval: float = 0.1, label: str = "Recognizing") -> None:
+        super().__init__(interval=interval, label=label)
+
+
+class SpinnerThinking(Spinner):
+    def __init__(self, interval: float = 0.1, label: str = "Thinking") -> None:
+        super().__init__(interval=interval, label=label)
+
+
+recognizing_spinner: SpinnerRecognizing = SpinnerRecognizing()
 thinking_spinner: SpinnerThinking = SpinnerThinking()
 
 
