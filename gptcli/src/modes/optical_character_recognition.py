@@ -12,15 +12,14 @@ import json
 import logging
 import os
 from logging import Logger
-from os import environ
 
 from requests import Response, post
 from requests.exceptions import RequestException
 
-from gptcli.constants import MISTRAL_API_KEY, OPENAI_API_KEY
 from gptcli.src.common.api import recognizing_spinner
 from gptcli.src.common.constants import MISTRAL, OPENAI
 from gptcli.src.common.decorators import user_triggered_abort
+from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.storage import Storage
 from gptcli.src.common.validators import InputType, classify_input
 
@@ -40,6 +39,8 @@ class OpticalCharacterRecognition:
         output_dir: str,
         no_output_dir: bool,
         inputs: list[str],
+        encryption: Encryption | None = None,
+        api_key: str = "",
     ):
         """Initialize an OCR session for converting documents to Markdown.
 
@@ -53,6 +54,8 @@ class OpticalCharacterRecognition:
             output_dir (str): Directory path for saving converted Markdown files.
             no_output_dir (bool): Whether to disable saving converted Markdown files to output_dir.
             inputs (list[str]): List of filepaths or URLs of documents to convert.
+            encryption (Encryption | None, optional): Encryption instance for encrypting stored data. Defaults to None.
+            api_key (str, optional): The API key for authentication. Defaults to "".
         """
         self._model: str = model
         self._provider: str = provider
@@ -63,15 +66,13 @@ class OpticalCharacterRecognition:
         self._output_dir: str | None = None if no_output_dir else output_dir
         self._inputs: list[str] = inputs
 
-        self._storage: Storage = Storage(provider=provider)
+        self._storage: Storage = Storage(provider=provider, encryption=encryption)
 
-        self._api_key: str = ""
+        self._api_key: str = api_key
         self._ocr_endpoint: str = ""
         if provider == MISTRAL:
-            self._api_key = MISTRAL_API_KEY
             self._ocr_endpoint = "https://api.mistral.ai/v1/ocr"
         elif provider == OPENAI:
-            self._api_key = OPENAI_API_KEY
             self._ocr_endpoint = ""  # TODO: Add OpenAI OCR endpoint when available
         else:
             raise NotImplementedError(f"Provider '{provider}' is not yet supported for OCR.")
@@ -82,7 +83,7 @@ class OpticalCharacterRecognition:
         logger.info("Starting Optical Character Recognition.")
 
         if self._display_last:
-            self._storage.extract_and_show_last_ocr_result_for_display()
+            self._storage.display_last_ocr_result()
             return None
 
         self._validate_output_dir()
@@ -251,14 +252,13 @@ class OpticalCharacterRecognition:
             dict[str, str]: Headers dictionary containing authorization and content-type.
 
         Raises:
-            ValueError: If the API key environment variable is not set.
+            ValueError: If the API key is not set.
         """
-        api_key = environ.get(self._api_key)
-        if not api_key:
-            raise ValueError(f"API key environment variable '{self._api_key}' is not set.")
+        if not self._api_key:
+            raise ValueError("API key is not set.")
         return {
             "accept": "application/json",
-            "authorization": f"Bearer {api_key}",
+            "authorization": f"Bearer {self._api_key}",
             "content-type": "application/json",
         }
 

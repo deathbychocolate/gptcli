@@ -36,6 +36,16 @@ MISTRAL_API_KEY: str = "DBC_GPTCLI_MISTRAL_API_KEY"  # The key we use to search 
 MISTRAL_ENDPOINT_CHAT_COMPLETIONS: str = "https://api.mistral.ai/v1/chat/completions"
 
 
+# Encryption
+GPTCLI_SALT_FILE: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".salt")
+GPTCLI_KEY_CACHE_FILE: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".key")
+GPTCLI_VERIFY_FILE: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".verify.enc")
+GPTCLI_KDF_PARAMS_FILE: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".kdf_params")
+# Predictable plaintext is intentional: AES-GCM with a random nonce means
+# encrypting known plaintext does not reveal key information.
+GPTCLI_VERIFICATION_PLAINTEXT: bytes = b"gptcli-verify"
+
+
 # Legacy (up to version 0.20.2)
 GPTCLI_LEGACY_INSTALL_SUCCESSFUL: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".install_successful")
 GPTCLI_LEGACY_KEYS: str = os.path.join(GPTCLI_ROOT_FILEPATH, "keys")

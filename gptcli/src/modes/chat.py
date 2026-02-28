@@ -20,6 +20,7 @@ from gptcli.src.common.constants import (
     UserRoles,
 )
 from gptcli.src.common.decorators import user_triggered_abort
+from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.ingest import PDF, Text
 from gptcli.src.common.message import MessageFactory, Messages
 from gptcli.src.common.storage import Storage
@@ -93,6 +94,8 @@ class ChatUser(Chat):
         filepath: str = "",
         store: bool = True,
         load_last: bool = False,
+        encryption: Encryption | None = None,
+        api_key: str = "",
     ) -> None:
         """A chat session for when the user is chatting with the AI.
 
@@ -106,6 +109,8 @@ class ChatUser(Chat):
             filepath (str, optional): The filepath of the file to load (text) contents from. Defaults to "".
             store (bool, optional): Store the chat messages to disk. Defaults to True.
             load_last (bool, optional): Load the most recent chat as context. Defaults to False.
+            encryption (Encryption | None, optional): Encryption instance for encrypting stored data. Defaults to None.
+            api_key (str, optional): The API key for authentication. Defaults to "".
         """
         Chat.__init__(self)
 
@@ -118,14 +123,17 @@ class ChatUser(Chat):
         self._filepath: str = filepath
         self._store: bool = store
         self._load_last: bool = load_last
-        self._storage: Storage = Storage(provider=provider)
-        self._messages: Messages = self._storage.extract_messages() if self._load_last else Messages()
+        self._storage: Storage = Storage(provider=provider, encryption=encryption)
+        loaded: Messages | None = self._storage.extract_messages() if self._load_last else Messages()
+        self._encryption_required: bool = self._load_last and loaded is None
+        self._messages: Messages = loaded if loaded is not None else Messages()
         self._message_factory: MessageFactory = MessageFactory(provider=provider)
         self._chat: ChatAPIHelper = ChatAPIHelper(
             provider=provider,
             model=model,
             messages=self._messages,
             stream=stream,
+            api_key=api_key,
         )
         self._session_multiline: PromptSession = PromptSession(history=InMemoryHistory(), multiline=True)
 
@@ -139,12 +147,16 @@ class ChatUser(Chat):
         """
         logger.info("Starting chat.")
 
+        if self._encryption_required:
+            print("Cannot load last session: encryption key required.")
+            return None
+
         # check if we should add file content to message
         count_when_loaded: int = 0
         if self._filepath is not None and len(self._filepath) > 0:
-            self._extract_file_content_to_message()
+            self._ingest_file_as_context()
         if self._load_last:
-            self._storage.extract_and_show_messages_for_display()
+            self._storage.display_last_chat()
         if self._load_last:
             count_when_loaded = len(self._messages)
 
@@ -197,7 +209,7 @@ class ChatUser(Chat):
             )
         )
 
-    def _extract_file_content_to_message(self) -> None:
+    def _ingest_file_as_context(self) -> None:
         logger.info("Extracting file content from '%s' to add to m.", self._filepath)
 
         print(f"Loading '{self._filepath}' content as context.")

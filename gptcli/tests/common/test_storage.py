@@ -10,6 +10,8 @@ import pytest
 from _pytest.fixtures import SubRequest
 
 from gptcli.src.common.constants import MistralModelsOcr, ProviderNames
+from gptcli.src.common.encryption import Encryption
+from gptcli.src.common.message import MessageFactory, Messages
 from gptcli.src.common.storage import Storage, StorageEmpty
 
 
@@ -214,84 +216,7 @@ class TestStorage:
         def storage(self) -> Storage:
             return Storage(provider=ProviderNames.MISTRAL.value)
 
-        # Structure and type validation
-
-        def test_returns_dict(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert isinstance(result, dict)
-
-        def test_contains_source_section(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert "source" in result
-            assert isinstance(result["source"], dict)
-
-        def test_contains_ocr_section(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert "ocr" in result
-            assert isinstance(result["ocr"], dict)
-
-        def test_contains_output_section(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert "output" in result
-            assert isinstance(result["output"], dict)
-
-        # Source section
-
-        def test_source_input_matches_provided_source(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["source"]["input"] == "/path/to/doc.pdf"
-
-        def test_source_input_type_is_filepath_for_local_path(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["source"]["input_type"] == "filepath"
-
-        def test_source_input_type_is_url_for_http_url(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source=f"{self.URL}/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["source"]["input_type"] == "url"
-
-        def test_source_filename_extracted_from_filepath(self, storage: Storage) -> None:
+        def test_metadata_captures_source_information(self, storage: Storage) -> None:
             result = storage._build_ocr_metadata(
                 source="/path/to/document.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
@@ -299,72 +224,21 @@ class TestStorage:
                 markdown_file="document.md",
                 images=[],
             )
+            assert result["source"]["input"] == "/path/to/document.pdf"
+            assert result["source"]["input_type"] == "filepath"
             assert result["source"]["filename"] == "document.pdf"
 
-        def test_source_filename_extracted_from_url(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
+            url_result = storage._build_ocr_metadata(
                 source=f"{self.URL}/files/report.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
                 markdown_file="report.md",
                 images=[],
             )
-            assert result["source"]["filename"] == "report.pdf"
+            assert url_result["source"]["input_type"] == "url"
+            assert url_result["source"]["filename"] == "report.pdf"
 
-        def test_source_filename_with_unicode(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/文档.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="文档.md",
-                images=[],
-            )
-            assert result["source"]["filename"] == "文档.pdf"
-
-        # OCR section
-
-        def test_ocr_created_is_float(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert isinstance(result["ocr"]["created"], float)
-
-        def test_ocr_uuid_is_valid_format(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-            assert re.match(uuid_pattern, result["ocr"]["uuid"])
-
-        def test_ocr_model_matches_provided_model(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["ocr"]["model"] == MistralModelsOcr.MISTRAL_OCR.value
-
-        def test_ocr_provider_matches_storage_provider(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["ocr"]["provider"] == ProviderNames.MISTRAL.value
-
-        def test_ocr_page_count_matches_provided_count(self, storage: Storage) -> None:
+        def test_metadata_captures_processing_details(self, storage: Storage) -> None:
             result = storage._build_ocr_metadata(
                 source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
@@ -372,31 +246,14 @@ class TestStorage:
                 markdown_file="doc.md",
                 images=[],
             )
+            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            assert isinstance(result["ocr"]["created"], float)
+            assert re.match(uuid_pattern, result["ocr"]["uuid"])
+            assert result["ocr"]["model"] == MistralModelsOcr.MISTRAL_OCR.value
+            assert result["ocr"]["provider"] == ProviderNames.MISTRAL.value
             assert result["ocr"]["page_count"] == 5
 
-        # Output section
-
-        def test_output_markdown_file_matches_provided_value(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["output"]["markdown_file"] == "doc.md"
-
-        def test_output_images_empty_list(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source="/path/to/doc.pdf",
-                model=MistralModelsOcr.MISTRAL_OCR.value,
-                page_count=1,
-                markdown_file="doc.md",
-                images=[],
-            )
-            assert result["output"]["images"] == []
-
-        def test_output_images_with_multiple_files(self, storage: Storage) -> None:
+        def test_metadata_captures_output_references(self, storage: Storage) -> None:
             images = ["page_1_img_0.png", "page_1_img_1.jpg", "page_2_img_0.png"]
             result = storage._build_ocr_metadata(
                 source="/path/to/doc.pdf",
@@ -405,21 +262,19 @@ class TestStorage:
                 markdown_file="doc.md",
                 images=images,
             )
+            assert result["output"]["markdown_file"] == "doc.md"
             assert result["output"]["images"] == images
 
-        # Edge cases
-
-        def test_url_with_query_params_extracts_filename_correctly(self, storage: Storage) -> None:
-            result = storage._build_ocr_metadata(
-                source=f"{self.URL}/doc.pdf?token=abc123",
+            empty_result = storage._build_ocr_metadata(
+                source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
                 markdown_file="doc.md",
                 images=[],
             )
-            assert result["source"]["filename"] == "doc.pdf"
+            assert empty_result["output"]["images"] == []
 
-        def test_consecutive_calls_produce_different_uuids(self, storage: Storage) -> None:
+        def test_consecutive_calls_produce_unique_identifiers(self, storage: Storage) -> None:
             uuids: set[str] = set()
             for _ in range(5):
                 result = storage._build_ocr_metadata(
@@ -431,6 +286,25 @@ class TestStorage:
                 )
                 uuids.add(result["ocr"]["uuid"])
             assert len(uuids) == 5
+
+        def test_handles_unicode_filenames_and_url_query_params(self, storage: Storage) -> None:
+            unicode_result = storage._build_ocr_metadata(
+                source="/path/to/文档.pdf",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                markdown_file="文档.md",
+                images=[],
+            )
+            assert unicode_result["source"]["filename"] == "文档.pdf"
+
+            url_result = storage._build_ocr_metadata(
+                source=f"{self.URL}/doc.pdf?token=abc123",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                markdown_file="doc.md",
+                images=[],
+            )
+            assert url_result["source"]["filename"] == "doc.pdf"
 
     class TestStoreOcrResult:
 
@@ -665,10 +539,11 @@ class TestStorage:
             self._create_chat_file(str(tmp_path), "200__2024_01_02__12_00_00__chat.json", "New message")
             self._create_chat_file(str(tmp_path), "100__2024_01_01__12_00_00__chat.json", "Old message")
             messages = storage_with_empty_tmp_dir.extract_messages()
+            assert messages is not None
             first_message = next(iter(messages))
             assert first_message.content == "New message"
 
-    class TestExtractFormatAndShowMessagesForDisplay:
+    class TestDisplayLastChat:
 
         @pytest.fixture
         def storage_with_empty_tmp_dir(self, tmp_path: str) -> Storage:
@@ -677,12 +552,12 @@ class TestStorage:
             return storage
 
         def test_returns_none_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
-            result = storage_with_empty_tmp_dir.extract_and_show_messages_for_display()  # type: ignore[func-returns-value]
+            result = storage_with_empty_tmp_dir.display_last_chat()  # type: ignore[func-returns-value]
             assert result is None
 
         def test_prints_warning_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
             with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
-                storage_with_empty_tmp_dir.extract_and_show_messages_for_display()
+                storage_with_empty_tmp_dir.display_last_chat()
                 mock_print.assert_called_once()
                 call_args = str(mock_print.call_args)
                 assert "No chats found in storage" in call_args
@@ -693,7 +568,7 @@ class TestStorage:
             with open(chat_file, "w", encoding="utf8") as f:
                 json.dump(chat_data, f)
 
-            result = storage_with_empty_tmp_dir.extract_and_show_messages_for_display()  # type: ignore[func-returns-value]
+            result = storage_with_empty_tmp_dir.display_last_chat()  # type: ignore[func-returns-value]
             assert result is None
 
         def test_does_not_raise_for_empty_messages(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
@@ -703,7 +578,7 @@ class TestStorage:
                 json.dump(chat_data, f)
 
             # Should not raise any exception
-            storage_with_empty_tmp_dir.extract_and_show_messages_for_display()
+            storage_with_empty_tmp_dir.display_last_chat()
 
     class TestExtractLastOcrResult:
 
@@ -742,11 +617,11 @@ class TestStorage:
             result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
             assert result == ""
 
-    class TestExtractAndShowLastOcrResultForDisplay:
+    class TestDisplayLastOcrResult:
 
         def test_returns_none(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
             TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Hello")
-            result = storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()  # type: ignore[func-returns-value]
+            result = storage_with_ocr_tmp_dir.display_last_ocr_result()  # type: ignore[func-returns-value]
             assert result is None
 
         def test_prints_markdown_content(
@@ -755,18 +630,353 @@ class TestStorage:
             TestStorage._create_ocr_session(
                 str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Title\n\nBody text."
             )
-            storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()
+            storage_with_ocr_tmp_dir.display_last_ocr_result()
             captured = capsys.readouterr()
             assert "# Title" in captured.out
             assert "Body text." in captured.out
 
         def test_returns_none_when_no_sessions(self, storage_with_ocr_tmp_dir: Storage) -> None:
-            result = storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()  # type: ignore[func-returns-value]
+            result = storage_with_ocr_tmp_dir.display_last_ocr_result()  # type: ignore[func-returns-value]
             assert result is None
 
         def test_prints_warning_when_no_sessions(self, storage_with_ocr_tmp_dir: Storage) -> None:
             with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
-                storage_with_ocr_tmp_dir.extract_and_show_last_ocr_result_for_display()
+                storage_with_ocr_tmp_dir.display_last_ocr_result()
                 mock_print.assert_called_once()
                 call_args = str(mock_print.call_args)
                 assert "No OCR results found in storage" in call_args
+
+    class TestStoreMessagesEncrypted:
+
+        @pytest.fixture
+        def encryption(self) -> Encryption:
+            key = os.urandom(32)
+            return Encryption(key=key)
+
+        @pytest.fixture
+        def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
+            storage._json_dir = str(tmp_path)
+            return storage
+
+        @staticmethod
+        def _create_messages() -> Messages:
+            factory = MessageFactory(provider=ProviderNames.MISTRAL.value)
+            messages = Messages()
+            msg = factory.user_message(role="user", content="Hello!", model="mistral-large-latest")
+            messages.add(msg)
+            return messages
+
+        def test_creates_enc_file_when_encryption_provided(
+            self, storage_with_encryption: Storage, tmp_path: str
+        ) -> None:
+            messages = self._create_messages()
+            storage_with_encryption.store_messages(messages)
+            enc_files = [f for f in os.listdir(tmp_path) if f.endswith(".json.enc")]
+            assert len(enc_files) == 1
+
+        def test_enc_file_content_is_not_readable_json(self, storage_with_encryption: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_encryption.store_messages(messages)
+            enc_files = [f for f in os.listdir(tmp_path) if f.endswith(".json.enc")]
+            filepath = os.path.join(str(tmp_path), enc_files[0])
+            with open(filepath, "rb") as f:
+                content = f.read()
+            with pytest.raises(Exception):
+                json.loads(content)
+
+        def test_does_not_create_cleartext_json_file(self, storage_with_encryption: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_encryption.store_messages(messages)
+            json_files = [f for f in os.listdir(tmp_path) if f.endswith(".json") and not f.endswith(".json.enc")]
+            assert len(json_files) == 0
+
+    class TestExtractMessagesEncrypted:
+
+        @pytest.fixture
+        def key(self) -> bytes:
+            return os.urandom(32)
+
+        @pytest.fixture
+        def encryption(self, key: bytes) -> Encryption:
+            return Encryption(key=key)
+
+        @pytest.fixture
+        def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
+            storage._json_dir = str(tmp_path)
+            return storage
+
+        @staticmethod
+        def _create_encrypted_chat_file(tmp_path: str, filename: str, content: str, encryption: Encryption) -> None:
+            """Create an encrypted test chat JSON file."""
+            chat_data: dict[str, list[dict[str, Any]]] = {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": content,
+                        "model": "mistral-large-latest",
+                        "provider": "mistral",
+                        "is_reply": False,
+                        "created": 1704067200.0,
+                        "uuid": "00000000-0000-0000-0000-000000000000",
+                        "tokens": 5,
+                    }
+                ]
+            }
+            json_bytes = json.dumps(chat_data).encode("utf-8")
+            encrypted = encryption.encrypt(json_bytes)
+            filepath = os.path.join(tmp_path, filename)
+            with open(filepath, "wb") as f:
+                f.write(encrypted)
+
+        def test_extracts_from_enc_file(
+            self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
+        ) -> None:
+            self._create_encrypted_chat_file(
+                str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc", "Hello encrypted", encryption
+            )
+            messages = storage_with_encryption.extract_messages()
+            assert messages is not None
+            first_message = next(iter(messages))
+            assert first_message.content == "Hello encrypted"
+
+        def test_roundtrip_store_then_extract_with_encryption(self, storage_with_encryption: Storage) -> None:
+            factory = MessageFactory(provider=ProviderNames.MISTRAL.value)
+            messages = Messages()
+            msg = factory.user_message(role="user", content="Roundtrip test", model="mistral-large-latest")
+            messages.add(msg)
+            storage_with_encryption.store_messages(messages)
+            extracted = storage_with_encryption.extract_messages()
+            assert extracted is not None
+            first_message = next(iter(extracted))
+            assert first_message.content == "Roundtrip test"
+
+        def test_selects_newest_enc_file_by_epoch(
+            self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
+        ) -> None:
+            self._create_encrypted_chat_file(
+                str(tmp_path), "200__2024_01_02__12_00_00__chat.json.enc", "New message", encryption
+            )
+            self._create_encrypted_chat_file(
+                str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc", "Old message", encryption
+            )
+            messages = storage_with_encryption.extract_messages()
+            assert messages is not None
+            first_message = next(iter(messages))
+            assert first_message.content == "New message"
+
+    class TestStoreOcrResultEncrypted:
+
+        @pytest.fixture
+        def encryption(self) -> Encryption:
+            return Encryption(key=os.urandom(32))
+
+        @pytest.fixture
+        def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
+            storage._ocr_dir = str(tmp_path)
+            return storage
+
+        def test_creates_enc_files_for_markdown_metadata_and_images(
+            self, storage_with_encryption: Storage, tmp_path: str
+        ) -> None:
+            session_dir = storage_with_encryption.store_ocr_result(
+                source="/path/to/doc.pdf",
+                markdown_content="# Test",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[("img1.png", b"fake image data")],
+            )
+            files = os.listdir(session_dir)
+            assert "doc.md.enc" in files
+            assert "metadata.json.enc" in files
+            assert "img1.png.enc" in files
+            assert "doc.md" not in files
+            assert "metadata.json" not in files
+            assert "img1.png" not in files
+
+        def test_enc_markdown_content_is_not_readable(self, storage_with_encryption: Storage, tmp_path: str) -> None:
+            session_dir = storage_with_encryption.store_ocr_result(
+                source="/path/to/doc.pdf",
+                markdown_content="# Test content here",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[],
+            )
+            enc_file = os.path.join(session_dir, "doc.md.enc")
+            with open(enc_file, "rb") as f:
+                content = f.read()
+            assert b"# Test content here" not in content
+
+        def test_metadata_json_enc_is_not_readable_json(self, storage_with_encryption: Storage, tmp_path: str) -> None:
+            session_dir = storage_with_encryption.store_ocr_result(
+                source="/path/to/doc.pdf",
+                markdown_content="# Test",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[],
+            )
+            enc_file = os.path.join(session_dir, "metadata.json.enc")
+            with open(enc_file, "rb") as f:
+                content = f.read()
+            with pytest.raises(Exception):
+                json.loads(content)
+
+    class TestExtractLastOcrResultEncrypted:
+
+        @pytest.fixture
+        def encryption(self) -> Encryption:
+            return Encryption(key=os.urandom(32))
+
+        @pytest.fixture
+        def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
+            storage._ocr_dir = str(tmp_path)
+            return storage
+
+        @staticmethod
+        def _create_encrypted_ocr_session(
+            tmp_path: str, folder_name: str, md_filename: str, md_content: str, encryption: Encryption
+        ) -> str:
+            """Create an encrypted test OCR session."""
+            session_dir = os.path.join(tmp_path, folder_name)
+            os.makedirs(session_dir)
+            encrypted = encryption.encrypt(md_content.encode("utf-8"))
+            enc_path = os.path.join(session_dir, md_filename + ".enc")
+            with open(enc_path, "wb") as f:
+                f.write(encrypted)
+            return session_dir
+
+        def test_extracts_and_decrypts_markdown(
+            self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
+        ) -> None:
+            self._create_encrypted_ocr_session(
+                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Encrypted content", encryption
+            )
+            result = storage_with_encryption.extract_last_ocr_result()
+            assert result == "# Encrypted content"
+
+        def test_roundtrip_store_then_extract_with_encryption(self, storage_with_encryption: Storage) -> None:
+            storage_with_encryption.store_ocr_result(
+                source="/path/to/doc.pdf",
+                markdown_content="# OCR roundtrip",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[],
+            )
+            result = storage_with_encryption.extract_last_ocr_result()
+            assert result == "# OCR roundtrip"
+
+        def test_selects_newest_enc_session_by_epoch(
+            self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
+        ) -> None:
+            self._create_encrypted_ocr_session(
+                str(tmp_path), "200__2024_01_02__12_00_00__ocr", "new.md", "New content", encryption
+            )
+            self._create_encrypted_ocr_session(
+                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "old.md", "Old content", encryption
+            )
+            result = storage_with_encryption.extract_last_ocr_result()
+            assert result == "New content"
+
+    class TestEncryptionRequiredError:
+
+        def test_extract_messages_returns_none_when_enc_file_without_key(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            storage._json_dir = str(tmp_path)
+            filepath = os.path.join(str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc")
+            with open(filepath, "wb") as f:
+                f.write(b"encrypted data")
+            with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
+                result = storage.extract_messages()
+                assert result is None
+                mock_print.assert_called_once()
+                assert "Encrypted data found but no encryption key provided" in str(mock_print.call_args)
+
+        def test_extract_last_ocr_result_returns_none_when_enc_file_without_key(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            storage._ocr_dir = str(tmp_path)
+            session_dir = os.path.join(str(tmp_path), "100__2024_01_01__12_00_00__ocr")
+            os.makedirs(session_dir)
+            enc_path = os.path.join(session_dir, "doc.md.enc")
+            with open(enc_path, "wb") as f:
+                f.write(b"encrypted data")
+            with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
+                result = storage.extract_last_ocr_result()
+                assert result is None
+                mock_print.assert_called_once()
+                assert "Encrypted data found but no encryption key provided" in str(mock_print.call_args)
+
+    class TestWriteText:
+
+        def test_writes_plaintext_when_no_encryption(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            storage._write_text(filepath, "hello world")
+            assert os.path.exists(filepath)
+            assert not os.path.exists(filepath + ".enc")
+            with open(filepath, "r", encoding="utf8") as f:
+                assert f.read() == "hello world"
+
+        def test_writes_encrypted_when_encryption_enabled(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            storage._write_text(filepath, "hello world")
+            assert os.path.exists(filepath + ".enc")
+            assert not os.path.exists(filepath)
+
+        def test_encrypted_content_is_decryptable(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            storage._write_text(filepath, "hello world")
+            decrypted = enc.decrypt_file(filepath + ".enc")
+            assert decrypted is not None
+            assert decrypted.decode("utf-8") == "hello world"
+
+    class TestReadText:
+
+        def test_reads_plaintext_file(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            with open(filepath, "w", encoding="utf8") as f:
+                f.write("hello world")
+            assert storage._read_text(filepath) == "hello world"
+
+        def test_reads_encrypted_file_when_encryption_enabled(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            with open(filepath, "w", encoding="utf8") as f:
+                f.write("plaintext content")
+            enc.encrypt_file(filepath)
+            assert storage._read_text(filepath) == "plaintext content"
+
+        def test_returns_none_when_encrypted_file_without_key(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage_no_key = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            with open(filepath, "w", encoding="utf8") as f:
+                f.write("content")
+            enc.encrypt_file(filepath)
+            with patch("gptcli.src.common.storage.print_formatted_text"):
+                assert storage_no_key._read_text(filepath) is None
+
+        def test_returns_none_when_no_file_exists(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            filepath = os.path.join(str(tmp_path), "nonexistent.json")
+            assert storage._read_text(filepath) is None
+
+        def test_prefers_encrypted_file_over_plaintext(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "test.json")
+            with open(filepath, "w", encoding="utf8") as f:
+                f.write("old plaintext")
+            enc_path = filepath + ".enc"
+            encrypted = enc.encrypt(b"new encrypted content")
+            with open(enc_path, "wb") as f:
+                f.write(encrypted)
+            assert storage._read_text(filepath) == "new encrypted content"

@@ -28,18 +28,18 @@ class TestEncodePdfToBase64:
     @pytest.fixture
     def ocr_instance(self) -> OpticalCharacterRecognition:
         """Fixture providing an OCR instance with mocked environment."""
-        with patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key"}):
-            return OpticalCharacterRecognition(
-                model=MistralModelsOcr.default(),
-                provider=ProviderNames.MISTRAL.value,
-                store=False,
-                display_last=False,
-                display=False,
-                filelist="",
-                output_dir="",
-                no_output_dir=True,
-                inputs=[],
-            )
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
 
     def test_returns_str_type(self, ocr_instance: OpticalCharacterRecognition) -> None:
         result = ocr_instance._encode_pdf_to_base64(SAMPLE_PDF_PATH)
@@ -67,18 +67,18 @@ class TestParseOcrResponse:
     @pytest.fixture
     def ocr_instance(self) -> OpticalCharacterRecognition:
         """Fixture providing an OCR instance with mocked environment."""
-        with patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key"}):
-            return OpticalCharacterRecognition(
-                model=MistralModelsOcr.default(),
-                provider=ProviderNames.MISTRAL.value,
-                store=False,
-                display_last=False,
-                display=False,
-                filelist="",
-                output_dir="",
-                no_output_dir=True,
-                inputs=[],
-            )
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
 
     @pytest.fixture
     def mock_single_page_response(self) -> MagicMock:
@@ -283,7 +283,6 @@ class TestParseOcrResponse:
 # =============================================================================
 class TestOpticalCharacterRecognitionInit:
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_mistral_provider_sets_correct_endpoint(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -295,11 +294,11 @@ class TestOpticalCharacterRecognitionInit:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
         assert ocr._ocr_endpoint == "https://api.mistral.ai/v1/ocr"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_mistral_provider_sets_correct_api_key(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -311,11 +310,11 @@ class TestOpticalCharacterRecognitionInit:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
-        assert ocr._api_key == MISTRAL_API_KEY
+        assert ocr._api_key == "fake-key"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_no_output_dir_true_sets_output_dir_to_none(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -327,11 +326,11 @@ class TestOpticalCharacterRecognitionInit:
             output_dir=".",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
         assert ocr._output_dir is None
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_no_output_dir_false_preserves_output_dir(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -343,11 +342,11 @@ class TestOpticalCharacterRecognitionInit:
             output_dir="/custom/path",
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
 
         assert ocr._output_dir == "/custom/path"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_no_output_dir_true_overrides_non_empty_output_dir(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -359,6 +358,7 @@ class TestOpticalCharacterRecognitionInit:
             output_dir="/custom/path",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
         assert ocr._output_dir is None
@@ -375,6 +375,7 @@ class TestOpticalCharacterRecognitionInit:
                 output_dir="",
                 no_output_dir=True,
                 inputs=[],
+                api_key="fake-key",
             )
 
 
@@ -386,30 +387,27 @@ class TestBuildHeaders:
     @pytest.fixture
     def ocr_instance(self) -> OpticalCharacterRecognition:
         """Fixture providing an OCR instance with mocked environment."""
-        with patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key-12345"}):
-            return OpticalCharacterRecognition(
-                model=MistralModelsOcr.default(),
-                provider=ProviderNames.MISTRAL.value,
-                store=False,
-                display_last=False,
-                display=False,
-                filelist="",
-                output_dir="",
-                no_output_dir=True,
-                inputs=[],
-            )
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="test-api-key-12345",
+        )
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key-12345"})
     def test_returns_dict_type(self, ocr_instance: OpticalCharacterRecognition) -> None:
         result = ocr_instance._build_headers()
         assert isinstance(result, dict)
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key-12345"})
     def test_contains_authorization_header(self, ocr_instance: OpticalCharacterRecognition) -> None:
         result = ocr_instance._build_headers()
         assert result["authorization"] == "Bearer test-api-key-12345"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "test-api-key-12345"})
     def test_contains_content_type_header(self, ocr_instance: OpticalCharacterRecognition) -> None:
         result = ocr_instance._build_headers()
         assert result["content-type"] == "application/json"
@@ -420,7 +418,6 @@ class TestBuildHeaders:
 # =============================================================================
 class TestPerformOcrFromFilepathUnit:
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_raises_file_not_found_error_on_missing_file(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -432,6 +429,7 @@ class TestPerformOcrFromFilepathUnit:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
         with pytest.raises(FileNotFoundError):
@@ -439,7 +437,6 @@ class TestPerformOcrFromFilepathUnit:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64encodedcontent")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_returns_tuple_with_markdown_image_data_and_page_count(
         self, _mock_encode: MagicMock, mock_post: MagicMock
     ) -> None:
@@ -458,6 +455,7 @@ class TestPerformOcrFromFilepathUnit:
                 output_dir="",
                 no_output_dir=True,
                 inputs=[],
+                api_key="fake-key",
             )
             markdown, image_data, page_count = ocr._perform_ocr_from_filepath("/fake/path.pdf")
 
@@ -472,7 +470,6 @@ class TestPerformOcrFromFilepathUnit:
 class TestPerformOcrFromUrlUnit:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_returns_tuple_with_markdown_image_data_and_page_count(self, mock_post: MagicMock) -> None:
         mock_post.return_value.ok = True
         mock_post.return_value.content = b"""{
@@ -489,6 +486,7 @@ class TestPerformOcrFromUrlUnit:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         markdown, image_data, page_count = ocr._perform_ocr_from_url("https://example.com/doc.pdf")
 
@@ -504,7 +502,6 @@ class TestStartUnit:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_returns_none_type(self, _mock_encode: MagicMock, mock_post: MagicMock) -> None:
         mock_post.return_value.content = b"""{
             "pages": [{"index": 0, "markdown": "Text", "images": []}]
@@ -521,6 +518,7 @@ class TestStartUnit:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/path.pdf"],
+                api_key="fake-key",
             )
             result = ocr.start()
 
@@ -528,7 +526,6 @@ class TestStartUnit:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_true_prints_output(
         self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -547,6 +544,7 @@ class TestStartUnit:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/path.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -555,7 +553,6 @@ class TestStartUnit:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_false_does_not_print(
         self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -574,6 +571,7 @@ class TestStartUnit:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/path.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -618,7 +616,6 @@ class TestStartWithStoreFlag:
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_store_true_calls_store_ocr_result(
         self,
         _mock_encode: MagicMock,
@@ -640,6 +637,7 @@ class TestStartWithStoreFlag:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/document.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -648,7 +646,6 @@ class TestStartWithStoreFlag:
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_store_true_passes_correct_source(
         self,
         _mock_encode: MagicMock,
@@ -670,6 +667,7 @@ class TestStartWithStoreFlag:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/document.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -679,7 +677,6 @@ class TestStartWithStoreFlag:
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_store_true_passes_correct_page_count(
         self,
         _mock_encode: MagicMock,
@@ -701,6 +698,7 @@ class TestStartWithStoreFlag:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/document.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -710,7 +708,6 @@ class TestStartWithStoreFlag:
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_store_true_passes_image_data(
         self,
         _mock_encode: MagicMock,
@@ -732,6 +729,7 @@ class TestStartWithStoreFlag:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/document.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -742,7 +740,6 @@ class TestStartWithStoreFlag:
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_store_false_does_not_call_store_ocr_result(
         self,
         _mock_encode: MagicMock,
@@ -764,6 +761,7 @@ class TestStartWithStoreFlag:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/document.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -790,7 +788,6 @@ class TestStartWithFilelist:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_processes_documents_from_filelist(
         self,
         _mock_encode: MagicMock,
@@ -811,6 +808,7 @@ class TestStartWithFilelist:
                 output_dir="",
                 no_output_dir=True,
                 inputs=[],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -818,7 +816,6 @@ class TestStartWithFilelist:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_empty_filelist_string_does_not_open_file(
         self,
         _mock_encode: MagicMock,
@@ -838,6 +835,7 @@ class TestStartWithFilelist:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/path.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
@@ -845,7 +843,6 @@ class TestStartWithFilelist:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_processes_both_inputs_and_filelist(
         self,
         _mock_encode: MagicMock,
@@ -866,12 +863,12 @@ class TestStartWithFilelist:
                 output_dir="",
                 no_output_dir=True,
                 inputs=["/fake/input.pdf"],
+                api_key="fake-key",
             )
             ocr.start()
 
         assert mock_post.call_count == 3
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_filelist_path_does_not_exist_raises_error(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -883,13 +880,13 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
 
         with pytest.raises(FileNotFoundError):
             ocr.start()
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_filelist_with_only_empty_lines(
         self,
         mock_post: MagicMock,
@@ -908,13 +905,13 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
 
         mock_post.assert_not_called()
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_filelist_with_only_whitespace_lines(
         self,
         mock_post: MagicMock,
@@ -933,13 +930,13 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
 
         mock_post.assert_not_called()
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_filelist_with_nonexistent_filepath_skips_file(
         self,
         mock_post: MagicMock,
@@ -958,6 +955,7 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
 
@@ -965,7 +963,6 @@ class TestStartWithFilelist:
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_filelist_with_mix_of_valid_and_invalid_processes_valid_only(
         self,
         _mock_encode: MagicMock,
@@ -991,13 +988,13 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
 
         assert mock_post.call_count == 1
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_empty_inputs_and_empty_filelist_does_nothing(
         self,
         mock_post: MagicMock,
@@ -1012,6 +1009,7 @@ class TestStartWithFilelist:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
 
@@ -1024,7 +1022,6 @@ class TestStartWithFilelist:
 class TestStartWithDisplayLast:
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_calls_extract_and_show(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1037,12 +1034,12 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_returns_none(self, mock_storage: MagicMock) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1054,13 +1051,13 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         result = ocr.start()
         assert result is None
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_does_not_process_inputs(self, mock_storage: MagicMock, mock_post: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1073,14 +1070,14 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=["/fake/document.pdf"],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_post.assert_not_called()
 
     @patch("gptcli.src.modes.optical_character_recognition.post")
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_does_not_process_filelist(
         self, mock_storage: MagicMock, mock_post: MagicMock, tmp_path: Path
     ) -> None:
@@ -1097,13 +1094,13 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_post.assert_not_called()
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_does_not_store(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1116,13 +1113,13 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=["/fake/document.pdf"],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_storage_instance.store_ocr_result.assert_not_called()
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_ignores_no_display_flag(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1135,9 +1132,10 @@ class TestStartWithDisplayLast:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()
 
 
 # =============================================================================
@@ -1157,6 +1155,7 @@ class TestOcrFromFilepathIntegration:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key=os.environ.get(MISTRAL_API_KEY, ""),
         )
         markdown, _, _ = ocr._perform_ocr_from_filepath(SAMPLE_PDF_PATH)
         return markdown
@@ -1209,6 +1208,7 @@ class TestOcrFromUrlIntegration:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key=os.environ.get(MISTRAL_API_KEY, ""),
         )
         markdown, _, _ = ocr._perform_ocr_from_url(TestOcrFromUrlIntegration.TEST_IMAGE_URL)
         return markdown
@@ -1308,7 +1308,6 @@ class TestResolveFolderCollision:
 # =============================================================================
 class TestValidateOutputDir:
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_none_is_noop(self) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1320,10 +1319,10 @@ class TestValidateOutputDir:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._validate_output_dir()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_existing_directory_succeeds(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1335,10 +1334,10 @@ class TestValidateOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._validate_output_dir()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_creates_missing_directories(self, tmp_path: Path) -> None:
         new_dir = str(tmp_path / "a" / "b" / "c")
         ocr = OpticalCharacterRecognition(
@@ -1351,11 +1350,11 @@ class TestValidateOutputDir:
             output_dir=new_dir,
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._validate_output_dir()
         assert os.path.isdir(new_dir)
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_file_not_dir_raises_value_error(self, tmp_path: Path) -> None:
         file_path = tmp_path / "not_a_dir"
         file_path.touch()
@@ -1369,11 +1368,11 @@ class TestValidateOutputDir:
             output_dir=str(file_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         with pytest.raises(ValueError):
             ocr._validate_output_dir()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_invalid_path_raises_value_error(self, tmp_path: Path) -> None:
         invalid_path = str(tmp_path / "not_a_dir")
         Path(invalid_path).touch()
@@ -1388,6 +1387,7 @@ class TestValidateOutputDir:
             output_dir=nested,
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         with pytest.raises(ValueError):
             ocr._validate_output_dir()
@@ -1398,7 +1398,6 @@ class TestValidateOutputDir:
 # =============================================================================
 class TestWriteToOutputDir:
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_none_is_noop(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1410,6 +1409,7 @@ class TestWriteToOutputDir:
             output_dir="",
             no_output_dir=True,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1417,7 +1417,6 @@ class TestWriteToOutputDir:
             image_data=[],
         )
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_creates_correct_folder_name(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1429,6 +1428,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1438,7 +1438,6 @@ class TestWriteToOutputDir:
         expected_folder = tmp_path / "gptcli__mistral__ocr__report"
         assert expected_folder.is_dir()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_writes_markdown_file(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1450,6 +1449,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1460,7 +1460,6 @@ class TestWriteToOutputDir:
         assert md_file.is_file()
         assert md_file.read_text(encoding="utf8") == "# Hello World"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_writes_images(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1472,6 +1471,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         image_bytes = b"\x89PNG\r\n\x1a\nfakedata"
         ocr._write_to_output_dir(
@@ -1483,7 +1483,6 @@ class TestWriteToOutputDir:
         assert img_file.is_file()
         assert img_file.read_bytes() == image_bytes
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_does_not_write_metadata_json(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1495,6 +1494,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1504,7 +1504,6 @@ class TestWriteToOutputDir:
         metadata = tmp_path / "gptcli__mistral__ocr__report" / "metadata.json"
         assert not metadata.exists()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_collision_handling(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1516,6 +1515,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1534,7 +1534,6 @@ class TestWriteToOutputDir:
         assert (first_folder / "report.md").read_text(encoding="utf8") == "# First"
         assert (second_folder / "report.md").read_text(encoding="utf8") == "# Second"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_path_traversal_protection_strips_directory(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1546,6 +1545,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1557,7 +1557,6 @@ class TestWriteToOutputDir:
         assert safe_file.is_file()
         assert safe_file.read_bytes() == b"safe content"
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_path_traversal_protection_skips_empty_basename(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1569,6 +1568,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1579,7 +1579,6 @@ class TestWriteToOutputDir:
         contents = [f.name for f in folder.iterdir()]
         assert contents == ["report.md"]
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_realpath_guard_rejects_escape(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1591,6 +1590,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         original_realpath = os.path.realpath
 
@@ -1610,7 +1610,6 @@ class TestWriteToOutputDir:
         contents = sorted(f.name for f in folder.iterdir())
         assert contents == ["report.md"]
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_url_source(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1622,6 +1621,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="https://example.com/docs/invoice.pdf",
@@ -1632,7 +1632,6 @@ class TestWriteToOutputDir:
         assert folder.is_dir()
         assert (folder / "invoice.md").is_file()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_fallback_filename(self, tmp_path: Path) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1644,6 +1643,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="https://example.com/",
@@ -1654,7 +1654,6 @@ class TestWriteToOutputDir:
         assert folder.is_dir()
         assert (folder / "document.md").is_file()
 
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_prints_confirmation_message(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1666,6 +1665,7 @@ class TestWriteToOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr._write_to_output_dir(
             document="/fake/report.pdf",
@@ -1688,7 +1688,6 @@ class TestStartWithOutputDir:
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_default_output_dir_writes_folder(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1703,6 +1702,7 @@ class TestStartWithOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=["/fake/report.pdf"],
+            api_key="fake-key",
         )
         ocr.start()
 
@@ -1712,7 +1712,6 @@ class TestStartWithOutputDir:
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_none_output_dir_skips_writing(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1727,6 +1726,7 @@ class TestStartWithOutputDir:
             output_dir="",
             no_output_dir=True,
             inputs=["/fake/report.pdf"],
+            api_key="fake-key",
         )
         ocr.start()
 
@@ -1734,7 +1734,6 @@ class TestStartWithOutputDir:
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_output_dir_independent_of_store(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1750,6 +1749,7 @@ class TestStartWithOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=["/fake/report.pdf"],
+            api_key="fake-key",
         )
         with patch.object(ocr._storage, "store_ocr_result") as mock_store:
             ocr.start()
@@ -1760,7 +1760,6 @@ class TestStartWithOutputDir:
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_multiple_inputs_create_multiple_folders(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1775,6 +1774,7 @@ class TestStartWithOutputDir:
             output_dir=str(tmp_path),
             no_output_dir=False,
             inputs=["/fake/report.pdf", "/fake/invoice.pdf"],
+            api_key="fake-key",
         )
         ocr.start()
 
@@ -1782,7 +1782,6 @@ class TestStartWithOutputDir:
         assert (tmp_path / "gptcli__mistral__ocr__invoice").is_dir()
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
-    @patch.dict(os.environ, {MISTRAL_API_KEY: "fake-key"})
     def test_display_last_skips_validation(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1795,6 +1794,7 @@ class TestStartWithOutputDir:
             output_dir="/nonexistent/invalid/path",
             no_output_dir=False,
             inputs=[],
+            api_key="fake-key",
         )
         ocr.start()
-        mock_storage_instance.extract_and_show_last_ocr_result_for_display.assert_called_once()
+        mock_storage_instance.display_last_ocr_result.assert_called_once()

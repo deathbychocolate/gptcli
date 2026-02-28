@@ -72,8 +72,8 @@ class TestSingleExchange:
         response._content = json.dumps(fake_response_payload).encode()
         yield response
 
-    class TestChooseExtractionType:
-        """Holds tests for _choose_output()."""
+    class TestFormatResponse:
+        """Holds tests for _format_response()."""
 
         @pytest.mark.parametrize(
             "extraction_type,expected_type",
@@ -92,7 +92,7 @@ class TestSingleExchange:
         ) -> None:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
-            python_object: str | list[dict[str, Any]] | dict[str, Any] = se._choose_output(
+            python_object: str | list[dict[str, Any]] | dict[str, Any] = se._format_response(
                 response=response,
                 output=extraction_type,
             )
@@ -105,7 +105,7 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: dict[str, Any] = dict()
             with pytest.raises(ValueError):
-                se._choose_output(
+                se._format_response(
                     response=response,  # type: ignore
                     output=OutputTypes.PLAIN.value,
                 )
@@ -118,7 +118,7 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
-                se._choose_output(
+                se._format_response(
                     response=response,
                     output="",
                 )
@@ -131,7 +131,7 @@ class TestSingleExchange:
             se: SingleExchange = single_exchange_fixture
             response: Response = response_fixture
             with pytest.raises(ValueError):
-                se._choose_output(
+                se._format_response(
                     response=response,
                     output="not a valid type",
                 )

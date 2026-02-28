@@ -22,6 +22,7 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
 )
 from gptcli.src.common.constants import GRN, MGA, MISTRAL, OPENAI, RED, RST
+from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.common.validators import InputType, is_url
 
@@ -46,17 +47,20 @@ class Storage:
     """
 
     _FALLBACK_MARKDOWN_FILENAME = "document.md"
+    _ENCRYPTED_DATA_WITHOUT_KEY = "Encrypted data found but no encryption key provided."
 
-    def __init__(self, provider: str) -> None:
+    def __init__(self, provider: str, encryption: Encryption | None = None) -> None:
         """Initialize storage with provider-specific directories.
 
         Args:
-            provider: The LLM provider name ('mistral' or 'openai').
+            provider (str): The LLM provider name ('mistral' or 'openai').
+            encryption (Encryption | None): Optional encryption instance for encrypting/decrypting stored data.
 
         Raises:
             NotImplementedError: If the provider is not supported.
         """
         self._provider: str = provider
+        self._encryption: Encryption | None = encryption
 
         self._json_dir: str = ""
         self._ocr_dir: str = ""
@@ -68,6 +72,52 @@ class Storage:
             self._ocr_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+
+    def _write_text(self, filepath: str, content: str) -> None:
+        """Write text content to a file, encrypting if encryption is enabled.
+
+        When encryption is enabled, writes to filepath + '.enc' in binary.
+        Otherwise, writes plaintext to the given filepath.
+
+        Args:
+            filepath (str): The base filepath (without .enc suffix).
+            content (str): The text content to write.
+        """
+        if self._encryption:
+            encrypted: bytes = self._encryption.encrypt(content.encode("utf-8"))
+            with open(filepath + ".enc", "wb") as fp:
+                fp.write(encrypted)
+        else:
+            with open(filepath, "w", encoding="utf8") as fp:
+                fp.write(content)
+
+    def _read_text(self, filepath_plaintext: str, filepath_encrypted: str | None = None) -> str | None:
+        """Read text content from a plaintext or encrypted file.
+
+        Prefers the encrypted file when encryption is available. Returns None
+        with a user-visible message when encrypted data is found without a key.
+
+        Args:
+            filepath_plaintext (str): Path to the plaintext file.
+            filepath_encrypted (str | None): Path to the encrypted file. If None, derived as filepath_plaintext + '.enc'.
+
+        Returns:
+            str | None: The text content, or None if decryption fails or key is missing.
+        """
+        enc_path: str = filepath_encrypted if filepath_encrypted is not None else filepath_plaintext + ".enc"
+        if os.path.exists(enc_path):
+            if self._encryption is None:
+                print_formatted_text(ANSI(f"{RED}>>>{RST} {self._ENCRYPTED_DATA_WITHOUT_KEY}"))
+                return None
+            decrypted: bytes | None = self._encryption.decrypt_file(enc_path)
+            if decrypted is None:
+                print_formatted_text(ANSI(f"{RED}>>>{RST} Failed to decrypt data."))
+                return None
+            return decrypted.decode("utf-8")
+        if os.path.exists(filepath_plaintext):
+            with open(filepath_plaintext, "r", encoding="utf8") as fp:
+                return fp.read()
+        return None
 
     def store_messages(self, messages: Messages) -> None:
         """Store a Messages collection to the local filesystem.
@@ -81,8 +131,7 @@ class Storage:
         logger.info("Storing Messages to local filesystem.")
         if len(messages) > 0:
             filepath = self._create_json_filepath()
-            with open(filepath, "w", encoding="utf8") as fp:
-                fp.write(messages.to_json())
+            self._write_text(filepath, messages.to_json())
 
     def _create_json_filepath(self) -> str:
         """Generate a unique filepath for storing chat messages.
@@ -235,8 +284,7 @@ class Storage:
 
         markdown_filename = self.derive_markdown_filename_from_source(source)
         markdown_filepath = path.join(session_dir, markdown_filename)
-        with open(markdown_filepath, "w", encoding="utf8") as fp:
-            fp.write(markdown_content)
+        self._write_text(markdown_filepath, markdown_content)
 
         # Get filename safely using os.path.basename() and realpath check.
         resolved_session_dir = os.path.realpath(session_dir)
@@ -253,6 +301,8 @@ class Storage:
                 continue
             with open(image_filepath, "wb") as fp:
                 fp.write(data)
+            if self._encryption:
+                self._encryption.encrypt_file(image_filepath)
             image_filenames.append(safe_filename)
 
         metadata = self._build_ocr_metadata(
@@ -265,10 +315,12 @@ class Storage:
         metadata_filepath = path.join(session_dir, "metadata.json")
         with open(metadata_filepath, "w", encoding="utf8") as fp:
             json.dump(metadata, fp, ensure_ascii=False)
+        if self._encryption:
+            self._encryption.encrypt_file(metadata_filepath)
 
         return session_dir
 
-    def extract_last_ocr_result(self) -> str:
+    def extract_last_ocr_result(self) -> str | None:
         """Extract the Markdown content from the most recent OCR session.
 
         Finds the newest session directory by epoch prefix in the directory
@@ -289,16 +341,23 @@ class Storage:
         last_session_dir: str = max(session_dirs, key=lambda p: path.basename(p))
 
         markdown_files: list[str] = sorted(glob(path.join(last_session_dir, "*.md")))
-        if not markdown_files:
+        markdown_enc_files: list[str] = sorted(glob(path.join(last_session_dir, "*.md.enc")))
+
+        if not markdown_files and not markdown_enc_files:
             raise StorageEmpty(f"No markdown file found in {last_session_dir}")
 
-        content: str = ""
-        with open(markdown_files[0], "r", encoding="utf8") as fp:
-            content = fp.read()
+        plaintext_path: str = markdown_files[0] if markdown_files else ""
+        encrypted_path: str | None = markdown_enc_files[0] if markdown_enc_files else None
 
+        if not plaintext_path and encrypted_path:
+            plaintext_path = encrypted_path[: -len(".enc")]
+
+        content: str | None = self._read_text(plaintext_path, encrypted_path)
+        if content is None and not markdown_files and not markdown_enc_files:
+            raise StorageEmpty(f"No readable markdown file found in {last_session_dir}")
         return content
 
-    def extract_and_show_last_ocr_result_for_display(self) -> None:
+    def display_last_ocr_result(self) -> None:
         """Extract and display the Markdown content from the most recent OCR session.
 
         Retrieves the last OCR result from storage and prints it to the
@@ -306,15 +365,18 @@ class Storage:
         """
         logger.info("Extracting last OCR result from storage.")
         try:
-            content: str = self.extract_last_ocr_result()
+            content: str | None = self.extract_last_ocr_result()
         except StorageEmpty:
             print_formatted_text(ANSI(f"{RED}>>>{RST} No OCR results found in storage; storage is likely empty."))
+            return None
+
+        if content is None:
             return None
 
         print(content)
         return None
 
-    def extract_messages(self) -> Messages:
+    def extract_messages(self) -> Messages | None:
         """Extract messages from the most recent chat session.
 
         Finds the newest JSON file by epoch prefix in the filename
@@ -328,15 +390,24 @@ class Storage:
         """
         logger.info("Extracting messages from storage.")
         filepaths: list[str] = glob(path.expanduser(path.join(self._json_dir, "*.json")))
+        filepaths += glob(path.expanduser(path.join(self._json_dir, "*.json.enc")))
 
         if not filepaths:
             raise StorageEmpty(f"No chat sessions found in {self._json_dir}")
 
         last_chat_session: str = max(filepaths, key=lambda p: path.basename(p))
 
-        file_contents_messages: list[dict[str, Any]] = []
-        with open(last_chat_session, "r", encoding="utf8") as fp:
-            file_contents_messages = json.load(fp)["messages"]
+        if last_chat_session.endswith(".enc"):
+            plaintext_path: str = last_chat_session[: -len(".enc")]
+            encrypted_path: str | None = last_chat_session
+        else:
+            plaintext_path = last_chat_session
+            encrypted_path = None
+
+        raw_content: str | None = self._read_text(plaintext_path, encrypted_path)
+        if raw_content is None:
+            return None
+        file_contents_messages: list[dict[str, Any]] = json.loads(raw_content)["messages"]
 
         messages: Messages = Messages()
         for message in file_contents_messages:
@@ -345,7 +416,7 @@ class Storage:
 
         return messages
 
-    def extract_and_show_messages_for_display(self) -> None:
+    def display_last_chat(self) -> None:
         """Extract, format, and display messages from the most recent chat session.
 
         Retrieves messages from storage, formats them with ANSI color codes,
@@ -355,9 +426,12 @@ class Storage:
         """
         logger.info("Extracting messages from storage.")
         try:
-            messages: Messages = self.extract_messages()
+            messages: Messages | None = self.extract_messages()
         except StorageEmpty:
             print_formatted_text(ANSI(f"{RED}>>>{RST} No chats found in storage; storage is likely empty."))
+            return None
+
+        if messages is None:
             return None
 
         for message in messages:

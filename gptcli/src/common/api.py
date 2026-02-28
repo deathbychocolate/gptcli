@@ -9,7 +9,6 @@ In order to make a call, it has to do 3 steps in order:
 import itertools
 import json
 import logging
-import os
 import sys
 import threading
 import time
@@ -82,6 +81,28 @@ class Spinner:
         return None  # let errors propagate
 
 
+class SpinnerProgress(Spinner):
+    """Spinner that displays file processing progress."""
+
+    def __init__(self, total: int, interval: float = 0.1, label: str = "Processing") -> None:
+        """Initialize with a total file count for progress display.
+
+        Args:
+            total (int): Total number of files to process.
+            interval (float): Animation speed interval. Defaults to 0.1s.
+            label (str): Label prefix for the progress display. Defaults to "Processing".
+        """
+        super().__init__(interval=interval, label=f"{label}: 0/{total} files")
+        self._total: int = total
+        self._count: int = 0
+        self._label_prefix: str = label
+
+    def advance(self) -> None:
+        """Increment the progress counter and update the label."""
+        self._count += 1
+        self.label = f"{self._label_prefix}: {self._count}/{self._total} files"
+
+
 class SpinnerRecognizing(Spinner):
     def __init__(self, interval: float = 0.1, label: str = "Recognizing") -> None:
         super().__init__(interval=interval, label=label)
@@ -99,42 +120,47 @@ thinking_spinner: SpinnerThinking = SpinnerThinking()
 class EndpointHelper:
     """Abstracts the constants used in Chat and SingleExchange depending on the provider name."""
 
-    def __init__(self, provider: str) -> None:
+    def __init__(self, provider: str, api_key: str = "") -> None:
         self._provider: str = provider
-        self._api_key: str = ""
+        self._resolved_api_key: str = api_key
+        self._api_key_env_var: str = ""
         self._api_key_file: str = ""
         self._url: str = ""
         self._message_factory: MessageFactory = MessageFactory(provider="dummy")
 
         if provider == MISTRAL:
-            self._api_key = MISTRAL_API_KEY
+            self._api_key_env_var = MISTRAL_API_KEY
             self._api_key_file = GPTCLI_PROVIDER_MISTRAL_KEY_FILE
             self._url = "https://api.mistral.ai/v1/chat/completions"
             self._message_factory = MessageFactory(provider=provider)
         elif provider == OPENAI:
-            self._api_key = OPENAI_API_KEY
+            self._api_key_env_var = OPENAI_API_KEY
             self._api_key_file = GPTCLI_PROVIDER_OPENAI_KEY_FILE
             self._url = "https://api.openai.com/v1/chat/completions"
             self._message_factory = MessageFactory(provider=provider)
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
 
-    def _export_api_key_to_environment_variable(self) -> None:
-        if self._api_key not in os.environ:
-            logger.info("Exporting API key to environment variable")
+    def _resolve_api_key(self) -> str:
+        """Resolve the API key, preferring the directly provided key over file-based fallback.
 
-            # get api key from file
-            with open(self._api_key_file, "r", encoding="utf8") as fp:
-                os.environ[self._api_key] = fp.read()
-        else:
-            logger.info("API key already in environment variable")
+        Returns:
+            str: The resolved API key.
+        """
+        if self._resolved_api_key:
+            return self._resolved_api_key
+
+        logger.info("API key not provided directly, reading from file.")
+        with open(self._api_key_file, "r", encoding="utf8") as fp:
+            self._resolved_api_key = fp.read()
+        return self._resolved_api_key
 
     def _check_for_http_errors(self, response: Response | None) -> bool:
-        """A function that checks for common HTTP errors when calling the OpenAI endpoint.
+        """Check for common HTTP errors when calling the provider endpoint.
 
         Detail:
             This function accepts a response object generated from the 'requests' package.
-            It then runs a pattern matching check against errors as documented by OpenAI and errors
+            It then runs a pattern matching check against errors as documented by the provider and errors
             that we ourselves have found.
 
         Args:
@@ -203,15 +229,16 @@ class Chat(EndpointHelper):
     To understand the type of processing being done in SingleExchange, please read its docstring.
     """
 
-    def __init__(self, provider: str, model: str, messages: Messages, stream: bool = False) -> None:
+    def __init__(self, provider: str, model: str, messages: Messages, stream: bool = False, api_key: str = "") -> None:
         """Used for multiple (>1) message-reply transactions.
 
         Args:
             model (str): The model we wish to use, for example `o1`, `o3`, or `mistral-large`.
             messages (Messages): The messages created during a chat session.
             stream (bool, optional): Enables stream mode for chat session. Defaults to False.
+            api_key (str, optional): The API key for authentication. Defaults to "".
         """
-        super().__init__(provider=provider)
+        super().__init__(provider=provider, api_key=api_key)
         self._model: str = model
         self._messages: Messages = messages
         self._stream: bool = stream
@@ -236,9 +263,8 @@ class Chat(EndpointHelper):
         """
         logger.info("Sending message to API endpoint.")
 
-        self._export_api_key_to_environment_variable()
-        key: str = os.environ[self._api_key]
-        message: Message | None = self._build_and_execute_post_request(key=key)
+        key: str = self._resolve_api_key()
+        message: Message | None = self._send_request(key=key)
 
         if message is None:
             logger.warning("Unable to retrieve message from post request. This is likely a server issue.")
@@ -247,8 +273,8 @@ class Chat(EndpointHelper):
 
         return message
 
-    def _build_and_execute_post_request(self, key: str) -> Message | None:
-        logger.info("POSTing request to OpenAI's API.")
+    def _send_request(self, key: str) -> Message | None:
+        logger.info("POSTing request to provider API.")
 
         headers = {
             "Accept": "text/event-stream",
@@ -282,7 +308,7 @@ class Chat(EndpointHelper):
         return message
 
     def _post_request(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message:
-        logger.info("Posting request to openai api")
+        logger.info("Posting request to provider API.")
 
         response: Response = requests.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30)
         self._check_for_http_errors(response=response)
@@ -294,7 +320,7 @@ class Chat(EndpointHelper):
 
     @allow_graceful_stream_exit
     def _post_request_stream(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message:
-        logger.info("Posting request to openai api - stream mode")
+        logger.info("Posting request to provider API - stream mode.")
 
         content: str = ""
         session: Session = requests.Session()
@@ -331,28 +357,27 @@ class SingleExchange(EndpointHelper):
     This is necessary if we want the 'output' flag of GPTCLI to work.
     """
 
-    def __init__(self, provider: str, model: str, messages: Messages, stream: bool = False) -> None:
-        super().__init__(provider=provider)
+    def __init__(self, provider: str, model: str, messages: Messages, stream: bool = False, api_key: str = "") -> None:
+        super().__init__(provider=provider, api_key=api_key)
         self._model: str = model
         self._messages: list[dict[str, str]] = [message.to_dict_reduced_context() for message in messages]
         self._stream: bool = stream
 
     def send(self) -> Response:
-        """Sends message(s) to openai.
+        """Sends message(s) to the provider API.
 
         Returns:
             Response: The response object sent from the server. None, if request was invalid.
         """
-        logger.info("Sending message to openai")
+        logger.info("Sending message to provider API.")
 
-        self._export_api_key_to_environment_variable()
-        key: str = os.environ[self._api_key]
-        response: Response = self._build_and_execute_post_request(key=key)
+        key: str = self._resolve_api_key()
+        response: Response = self._send_request(key=key)
 
         return response
 
     def is_valid_api_key(self, key: str) -> bool:
-        """Sends a POST request to the Openai API.
+        """Sends a POST request to the provider API.
         We expect a return of True if we have a valid key and false if not.
 
         Args:
@@ -364,14 +389,14 @@ class SingleExchange(EndpointHelper):
         logger.info("Checking if we have a valid API key")
 
         try:
-            response: Response = self._build_and_execute_post_request(key=key)
+            response: Response = self._send_request(key=key)
         except ValueError:
             return False
 
         return False if (not response or not response.ok) else True
 
-    def _build_and_execute_post_request(self, key: str) -> Response:
-        logger.info("POSTing request to openai API")
+    def _send_request(self, key: str) -> Response:
+        logger.info("POSTing request to provider API.")
 
         headers = {
             "Accept": "text/event-stream",
@@ -399,7 +424,7 @@ class SingleExchange(EndpointHelper):
         return response
 
     def _post_request(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Response:
-        logger.info("Posting request to openai api")
+        logger.info("Posting request to provider API.")
 
         response: Response = requests.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30)
         self._check_for_http_errors(response=response)

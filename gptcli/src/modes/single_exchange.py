@@ -9,8 +9,6 @@ from requests import Response
 
 from gptcli.src.common.api import SingleExchange as SingleExchangeHelper
 from gptcli.src.common.constants import (
-    MISTRAL,
-    OPENAI,
     ModelRoles,
     OutputTypes,
     UserRoles,
@@ -32,6 +30,7 @@ class SingleExchange:
         role_model: str = ModelRoles.default(),
         filepath: str = "",
         output: str = OutputTypes.default(),
+        api_key: str = "",
     ) -> None:
         self._input_string: str = input_string
         self._model: str = model
@@ -40,36 +39,33 @@ class SingleExchange:
         self._role_model: str = role_model
         self._filepath: str = filepath  # TODO: Implement
         self._output: str = output
+        self._api_key: str = api_key
 
     def start(self) -> None:
         """Start Single-Exchange communication."""
         logger.info("Starting Single-Exchange mode.")
-        response = self._build_message_and_generate_response()
+        response = self._generate_response()
         if response:
-            text: str | list[dict[str, Any]] | dict[str, Any] = self._choose_output(
+            text: str | list[dict[str, Any]] | dict[str, Any] = self._format_response(
                 response=response,
                 output=self._output,
             )
             print(text)
 
-    def _build_message_and_generate_response(self) -> Response:
+    def _generate_response(self) -> Response:
         message: Message = MessageFactory(provider=self._provider).user_message(
             role=self._role_user,
             content=self._input_string,
             model=self._model,
         )
         messages: Messages = Messages(messages=[message])
-        helper: SingleExchangeHelper | None = None
-        if self._provider == MISTRAL:
-            helper = SingleExchangeHelper(provider=MISTRAL, model=self._model, messages=messages)
-        elif self._provider == OPENAI:
-            helper = SingleExchangeHelper(provider=OPENAI, model=self._model, messages=messages)
-        else:
-            raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+        helper: SingleExchangeHelper = SingleExchangeHelper(
+            provider=self._provider, model=self._model, messages=messages, api_key=self._api_key
+        )
         response: Response = helper.send()
         return response
 
-    def _choose_output(self, response: Response, output: str) -> str | list[dict[str, Any]] | dict[str, Any]:
+    def _format_response(self, response: Response, output: str) -> str | list[dict[str, Any]] | dict[str, Any]:
         logger.info("Choosing extraction type.")
         if not isinstance(response, Response):
             raise ValueError(f"Parameter 'response' only accepts Response values and not '{type(response)}'.")

@@ -235,7 +235,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
         parser_ocr.add_argument(
             "--filelist",
             type=str,
-            help=f"Provide a list of files to convert to Markdown using local filepaths or URLs separated by newlines.",
+            help="Provide a list of files to convert to Markdown using local filepaths or URLs separated by newlines.",
             metavar="<string>",
         )
         output_dir_group = parser_ocr.add_mutually_exclusive_group()
@@ -301,6 +301,12 @@ class CommandParser:
             default=logging.CRITICAL,
             help=f"Defaults to {logging.CRITICAL}. Set the log level of the application.",
         )
+        self.parser.add_argument(
+            "--no-cache",
+            action="store_true",
+            default=False,
+            help="Disable encryption key caching. The passphrase will be prompted on every run.",
+        )
 
         # create the top-level parser
         subparsers = self.parser.add_subparsers(
@@ -312,14 +318,23 @@ class CommandParser:
         parser_mistral = subparsers.add_parser(
             "mistral",
             help="Provides access to French/EU based AI models by Mistral AI.",
+            formatter_class=custom_formatter,
         )
         parser_mistral.set_defaults(parser=parser_mistral)
 
         parser_openai = subparsers.add_parser(
             "openai",
             help="Provides access to American based AI models by OpenAI.",
+            formatter_class=custom_formatter,
         )
         parser_openai.set_defaults(parser=parser_openai)
+
+        parser_all = subparsers.add_parser(
+            "all",
+            help="Provides access to special actions that apply to all providers.",
+            formatter_class=custom_formatter,
+        )
+        parser_all.set_defaults(parser=parser_all)
 
         subparser_modes_mistral = parser_mistral.add_subparsers(
             help="The modes available to Mistral AI.",
@@ -329,6 +344,31 @@ class CommandParser:
             help="The modes available to OpenAI.",
             dest="mode_name",
         )
+        subparser_modes_all = parser_all.add_subparsers(
+            help="The operations available for all providers.",
+            dest="mode_name",
+        )
+
+        parser_all_encrypt = subparser_modes_all.add_parser(
+            "encrypt",
+            formatter_class=custom_formatter,
+            help="Encrypt all cleartext files for all providers.",
+        )
+        parser_all_encrypt.set_defaults(parser=parser_all_encrypt)
+
+        parser_all_decrypt = subparser_modes_all.add_parser(
+            "decrypt",
+            formatter_class=custom_formatter,
+            help="Decrypt all encrypted files for all providers.",
+        )
+        parser_all_decrypt.set_defaults(parser=parser_all_decrypt)
+
+        parser_all_rekey = subparser_modes_all.add_parser(
+            "rekey",
+            formatter_class=custom_formatter,
+            help="Re-encrypt all files with a new passphrase.",
+        )
+        parser_all_rekey.set_defaults(parser=parser_all_rekey)
         self.parser._subparsers.title = "commands"  # type: ignore[union-attr]
 
         add_common_mode_arguments(subparser_modes=subparser_modes_mistral, provider=ProviderNames.MISTRAL.value)
