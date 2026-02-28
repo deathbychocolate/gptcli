@@ -7,24 +7,41 @@
 ![PyPI Downloads](https://img.shields.io/pypi/dm/dbc-gptcli)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/dbc-gptcli?period=total&units=international_system&left_color=grey&right_color=green&left_text=downloads)](https://pepy.tech/projects/dbc-gptcli)
 
-GPTCLI is a CLI client written entirely in Python for accessing the LLM of your choice without the need for Web or Desktop apps.
+GPTCLI is a CLI client written entirely in Python for accessing the LLM of your choice without the need for Web or Desktop apps. All data is encrypted at rest using AES-256-GCM.
 
 ## How to run it
 
-- Pypi:
-  - Open your preferred terminal.
-  - Install the project via pypi: `pip install dbc-gptcli`.
-  - Run `gptcli [mistral|openai] [chat|se]`.
-  - For more info on usage, check the builtin help docs:
-    - `gptcli -h`
-    - `gptcli [mistral|openai] [-h|--help]`
-    - `gptcli [mistral|openai] [chat|se] [-h|--help]`.
-- Docker:
-  - Open your preferred terminal.
-  - Start docker via the desktop app or running `sudo systemctl start docker`.
-  - Pull the docker image with `docker pull deathbychocolate/gptcli:latest`.
-  - Start and enter a container with `docker run --rm -it --entrypoint /bin/bash deathbychocolate/gptcli:latest`.
-  - Run `gptcli [mistral|openai] [chat|se]` or `python3 gptcli/main.py [mistral|openai] [chat|se]`.
+Summary:
+
+- **PyPI**:
+  - Install with `pip install dbc-gptcli`.
+  - Run `gptcli [mistral|openai] [chat|se|ocr]`.
+- **Docker**:
+  - Pull with `docker pull deathbychocolate/gptcli:latest`.
+  - Start a container with `docker run --rm -it --entrypoint /bin/bash deathbychocolate/gptcli:latest`.
+  - Run `gptcli [mistral|openai] [chat|se|ocr]`.
+
+For more info on usage, check the builtin help docs with:
+
+- `gptcli -h`
+- `gptcli [mistral|openai] [chat|se|ocr] -h`.
+
+### Command tree
+
+```text
+gptcli [--no-cache] [--loglevel LEVEL]
+├── all
+│   ├── encrypt       # Encrypt all cleartext files
+│   ├── decrypt       # Decrypt all encrypted files
+│   └── rekey         # Re-encrypt with a new passphrase
+├── mistral
+│   ├── chat          # Multi-turn conversation
+│   ├── se            # Single exchange
+│   └── ocr           # Document to Markdown conversion
+└── openai
+    ├── chat          # Multi-turn conversation
+    └── se            # Single exchange
+```
 
 ## How to get an API key
 
@@ -42,9 +59,9 @@ For Mistral AI:
 
 ## How it works
 
-The project uses the API of LLM providers to perform chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests. For now, GPTCLI is for purely text based LLMs.
+The project uses the API of LLM providers to perform chat completions. It does so by sending message objects converted to JSON payloads and sent over HTTPS POST requests.
 
-GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provider offers 2 modes to communicate with the LLM of your choosing, `Chat` and `Single-Exchange`:
+GPTCLI facilitates access to 2 LLM providers, Mistral AI and OpenAI. Each provider offers modes to communicate with the LLM of your choosing: `Chat`, `Single-Exchange`, and `OCR` (Mistral only).
 
 ### Modes
 
@@ -70,7 +87,7 @@ Chat mode also automatically:
 
 - Stores chats locally as oneline `json` files via the `--store` and `--no-store` flags.
 - Uses previously sent messages as context via the `--context` and `--no-context` flags.
-- Loads the provider's API to environment variables; you may overwrite this behaviour by providing a different key with the `--key` flag.
+- Loads the provider's API key; you may overwrite this behaviour by providing a different key with the `--key` flag.
 
 #### Single-Exchange (SE)
 
@@ -79,6 +96,30 @@ Single-Exchange is functionally similar to chat mode, but it only allows one exc
 ![Single Exchange - Hi](./docs/README/gptcli_openai_se__hi.gif)
 
 This mode does not store chats locally. It is expected the user implements their own solution via piping or similar.
+
+#### OCR (Optical Character Recognition)
+
+OCR mode converts documents (PDFs, images) into Markdown text. Currently available for Mistral AI only. It accepts local filepaths and/or URLs as arguments, or a batch of documents via `--filelist`. By default, results are saved as Markdown files in the current directory.
+
+OCR mode also automatically:
+
+- Stores OCR results locally via the `--store` and `--no-store` flags.
+- Saves converted Markdown files to the current directory; you may change this with `--output-dir` or disable it with `--no-output-dir`.
+- Supports batch processing from a file of paths/URLs via the `--filelist` flag.
+- Displays the Markdown result to stdout via the `--display` flag.
+- Displays the most recent OCR session from storage via the `--display-last` flag.
+
+### Encryption
+
+GPTCLI encrypts all data at rest using AES-256-GCM with scrypt key derivation. On first run, you are prompted to create a passphrase (16 characters minimum). The derived encryption key is cached for 12 hours using a wrapping key in volatile storage, so you don't need to re-enter your passphrase on every invocation.
+
+You can manage encryption across all providers with:
+
+- `gptcli all encrypt` — Encrypt all cleartext files.
+- `gptcli all decrypt` — Decrypt all encrypted files.
+- `gptcli all rekey` — Re-encrypt all files with a new passphrase.
+
+Use the `--no-cache` flag to disable key caching and prompt for the passphrase every time.
 
 ## Features
 
@@ -97,6 +138,9 @@ This mode does not store chats locally. It is expected the user implements their
 - [x] Add OCR as a new mode.
 - [x] Send OCR queries for images and PDF documents to Mistral AI API.
 - [x] Allow storage of OCR results locally.
+- [x] Add encryption at rest for all locally stored data.
+- [x] Add key caching with automatic expiry.
+- [x] Add passphrase rekeying.
 
 ### In Development
 
@@ -113,6 +157,7 @@ This mode does not store chats locally. It is expected the user implements their
 | Abbreviation | Definition                      |
 |--------------|:--------------------------------|
 | **OCR**      | Optical Character Recognition   |
+| **SE**       | Single-Exchange                 |
 | **FTS**      | Full Text Search                |
 
 ## How GPTCLI is different from other clients

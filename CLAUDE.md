@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 GPTCLI is a Python CLI client for accessing LLM providers (OpenAI and Mistral AI) via their APIs. Published on PyPI as `dbc-gptcli`. Supports Python 3.11-3.14 on Linux and macOS.
 
 **Entry Point:** `gptcli/main.py:main()` → installed as `gptcli` command
-**Current Version:** 0.23.2
+**Current Version:** 0.25.0
 
 ## Development Commands
 
@@ -50,7 +50,7 @@ make clean_coverage  # Remove .coverage and htmlcov/
 ```bash
 gptcli openai chat                    # Interactive chat mode
 gptcli mistral se "Your message"      # Single exchange
-gptcli mistral ocr file.pdf           # OCR mode (in development)
+gptcli mistral ocr file.pdf           # OCR mode (Mistral only)
 gptcli [provider] [mode] --help       # Mode-specific help
 ```
 
@@ -76,7 +76,7 @@ HTTP POST to Provider API
 **1. Mode System** (`gptcli/src/modes/`)
 - **Chat** (`chat.py`): Multi-turn conversations with prompt-toolkit, streaming, local storage, history navigation
 - **SingleExchange** (`single_exchange.py`): One message → one reply → exit (automation-friendly)
-- **OCR** (`optical_character_recognition.py`): Document-to-markdown conversion (Mistral only, in development)
+- **OCR** (`optical_character_recognition.py`): Document-to-markdown conversion (Mistral only)
 
 **2. Provider Abstraction** (`gptcli/src/common/`)
 - **api.py**: `EndpointHelper`, `Chat`, `SingleExchange` classes handle provider-specific endpoints, keys, message factories
@@ -87,6 +87,8 @@ HTTP POST to Provider API
 **3. Storage System** (`gptcli/src/common/storage.py`)
 - JSON files in `~/.gptcli/[provider]/storage/json/`
 - Format: `[epoch]_[datetime]_chat.json`
+- "Last session" lookup uses epoch-prefix-based ordering (`max(..., key=basename)`) rather than filesystem timestamps
+- Supports optional transparent encryption (`.enc` extension when enabled)
 - Two representations:
   - **Reduced context** (API): role + content only (saves tokens)
   - **Full context** (storage): all metadata for reconstruction
@@ -98,6 +100,20 @@ HTTP POST to Provider API
 **5. Installation & Migration** (`gptcli/src/install.py`)
 - `Migrate`: Handles version upgrades (0.20.2 → latest)
 - Provider-specific installers create directory structure, prompt for API keys
+
+**6. Input Validation** (`gptcli/src/common/validators.py`)
+- Classifies inputs as `URL`, `FILEPATH`, or `UNSUPPORTED` via `classify_input()`
+- Uses `validators` library for URL detection
+
+**7. Encryption at Rest** (`gptcli/src/common/encryption.py`, `key_management.py`, `passphrase.py`)
+- **Encryption**: AES-256-GCM encryption/decryption with scrypt key derivation (N=2^17)
+- **KeyManager**: Key lifecycle with 12-hour session caching via wrapping key in volatile storage
+- **PassphrasePrompt**: User passphrase input with 16-character minimum and confirmation
+- Files: salt (`~/.gptcli/.salt`), verification token (`.verify.enc`), cached key (`.key`)
+
+**8. Encryption Commands** (`gptcli/src/modes/encryption_commands.py`)
+- `EncryptionCommands`: Orchestrates batch encrypt/decrypt/rekey operations across providers
+- Atomic 3-phase rekey: decrypt with old key → re-encrypt with new key → swap files → update key material
 
 ### Provider Configuration
 
@@ -124,17 +140,22 @@ Both providers support:
 
 Hierarchical argument parsing:
 ```
-gptcli
+gptcli [--no-cache]
+├── all
+│   ├── encrypt
+│   ├── decrypt
+│   └── rekey
 ├── mistral
 │   ├── chat [--context] [--stream] [--store] [--load-last]
 │   ├── se [--output plain|choices|all]
-│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir]
+│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir] [--no-output-dir]
 └── openai
     ├── chat
     └── se
 ```
 
 Common arguments added to all modes: `--model`, `--role-user`, `--role-model`, `--key`, `--filepath`
+Global arguments: `--no-cache` (disables encryption key caching, prompts for passphrase every time)
 
 ## Important Patterns
 
@@ -151,6 +172,7 @@ Common arguments added to all modes: `--model`, `--role-user`, `--role-model`, `
 - **Factory pattern**: MessageFactory for provider-specific object creation
 - **Imports**: Always at the top of the file with other imports, never inside functions or classes
 - **Classes over functions**: Prefer classes and methods over standalone functions where it makes sense. Use `@staticmethod` for methods that don't access instance state
+- **Readability**: Code must always be readable and express *what* it does, not the steps taken to achieve it. Name variables, methods, and classes to convey intent. If existing code needs refactoring to meet this standard, refactor it
 
 ### Docstrings
 Use Google-style docstrings with explicit types in Args and Returns sections:
@@ -229,6 +251,7 @@ class TestStorage:
 ### File Paths
 - Constants in `gptcli/constants.py` define all storage paths
 - Structure: `~/.gptcli/[provider]/[keys|storage]/...`
+- Encryption files: `~/.gptcli/.salt`, `~/.gptcli/.key`, `~/.gptcli/.verify.enc`, `~/.gptcli/.kdf_params`
 - Migration maintains backward compatibility
 
 ## Current Development State
@@ -240,9 +263,10 @@ class TestStorage:
 - Streaming responses
 - API key management
 - File ingestion (text, PDF)
+- OCR mode (Mistral only)
+- Encryption at rest (AES-256-GCM with scrypt key derivation)
 
 ### In Development (TODOs in README)
-- OCR mode: `output_dir` flag
 - Full Text Search for chat storage
 - Full Text Search for OCR results
 - Additional role types (developer, tool, function)
@@ -282,9 +306,18 @@ GitHub Actions (`.github/workflows/main.yml`) runs on push/PR to main:
    - Run full pytest suite
    - Requires secrets: `DBC_GPTCLI_MISTRAL_API_KEY`, `DBC_GPTCLI_OPENAI_API_KEY`
 
+**Release** (`.github/workflows/release.yml`) runs on push to main:
+
+1. **Test**: Run pytest on Python 3.11
+2. **Bump Version**: Auto-bump with commitizen (skips if commit is already a bump)
+3. **Docker**: Build and push to Docker Hub (tagged with version + latest)
+4. **PyPI**: Build and publish package via trusted publishing
+- Requires additional secrets: `PAT_TOKEN`, `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+
 ## Versioning
 
 - **Tool**: commitizen (semantic versioning)
 - **Version files**: `pyproject.toml`, `gptcli/_version.py`
 - **Format**: `$version` (no prefix)
 - **Changelog**: Auto-updated on version bump
+- **Post-bump hook**: Updates version in `uv.lock` via `scripts/update_uv_lock_version.py`
