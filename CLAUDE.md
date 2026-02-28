@@ -148,7 +148,7 @@ gptcli [--no-cache]
 ├── mistral
 │   ├── chat [--context] [--stream] [--store] [--load-last]
 │   ├── se [--output plain|choices|all]
-│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir] [--no-output-dir]
+│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir] [--no-output-dir] [--no-images]
 └── openai
     ├── chat
     └── se

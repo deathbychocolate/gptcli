@@ -108,6 +108,7 @@ OCR mode also automatically:
 - Supports batch processing from a file of paths/URLs via the `--filelist` flag.
 - Displays the Markdown result to stdout via the `--display` flag.
 - Displays the most recent OCR session from storage via the `--display-last` flag.
+- Excludes images from the OCR response via the `--no-images` flag, returning only Markdown text.
 
 ### Encryption
 
