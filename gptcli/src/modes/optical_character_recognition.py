@@ -39,6 +39,7 @@ class OpticalCharacterRecognition:
         output_dir: str,
         no_output_dir: bool,
         inputs: list[str],
+        include_images: bool = True,
         encryption: Encryption | None = None,
         api_key: str = "",
     ):
@@ -54,6 +55,7 @@ class OpticalCharacterRecognition:
             output_dir (str): Directory path for saving converted Markdown files.
             no_output_dir (bool): Whether to disable saving converted Markdown files to output_dir.
             inputs (list[str]): List of filepaths or URLs of documents to convert.
+            include_images (bool, optional): Whether to extract images from OCR responses. Defaults to True.
             encryption (Encryption | None, optional): Encryption instance for encrypting stored data. Defaults to None.
             api_key (str, optional): The API key for authentication. Defaults to "".
         """
@@ -65,6 +67,7 @@ class OpticalCharacterRecognition:
         self._filelist: str = filelist
         self._output_dir: str | None = None if no_output_dir else output_dir
         self._inputs: list[str] = inputs
+        self._include_images: bool = include_images
 
         self._storage: Storage = Storage(provider=provider, encryption=encryption)
 
@@ -326,9 +329,10 @@ class OpticalCharacterRecognition:
             page_index = page["index"] + 1
             page_markdown = page["markdown"]
             markdown_parts.append(f"### Page {page_index}\n{page_markdown}")
-            for image in page["images"]:
-                image_bytes = base64.b64decode(image["image_base64"].split(",", maxsplit=1)[1])
-                image_data_list.append((image["id"], image_bytes))
+            if self._include_images:
+                for image in page["images"]:
+                    image_bytes = base64.b64decode(image["image_base64"].split(",", maxsplit=1)[1])
+                    image_data_list.append((image["id"], image_bytes))
 
         document_as_markdown = "\n\n".join(markdown_parts)
         return document_as_markdown, image_data_list, len(pages)
@@ -354,7 +358,7 @@ class OpticalCharacterRecognition:
                 "type": "document_url",
                 "document_url": url,
             },
-            "include_image_base64": True,
+            "include_image_base64": self._include_images,
         }
 
         content_img: dict[str, str | bool | dict[str, str | None]] = {
@@ -401,7 +405,7 @@ class OpticalCharacterRecognition:
                 "type": "document_url",
                 "document_url": f"data:application/pdf;base64,{pdf_base64}",
             },
-            "include_image_base64": True,
+            "include_image_base64": self._include_images,
         }
 
         response = self._make_ocr_request(headers, content_pdf_local, label=filepath)

@@ -253,6 +253,12 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             help="Disable saving converted Markdown files to a local directory.",
         )
         parser_ocr.add_argument(
+            "--no-images",
+            action="store_true",
+            default=False,
+            help="Disable extracting images from the OCR response. Only Markdown text will be returned.",
+        )
+        parser_ocr.add_argument(
             "inputs",
             type=str,
             nargs="*",

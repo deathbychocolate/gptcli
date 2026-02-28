@@ -277,6 +277,40 @@ class TestParseOcrResponse:
         filenames = [filename for filename, _ in image_data_list]
         assert filenames == ["page1_img1.png", "page1_img2.png", "page2_img1.png"]
 
+    @pytest.fixture
+    def ocr_instance_no_images(self) -> OpticalCharacterRecognition:
+        """Fixture providing an OCR instance with image extraction disabled."""
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            include_images=False,
+            api_key="fake-key",
+        )
+
+    def test_include_images_false_returns_empty_image_list(
+        self,
+        ocr_instance_no_images: OpticalCharacterRecognition,
+        mock_response_with_single_image: MagicMock,
+    ) -> None:
+        _, image_data_list, _ = ocr_instance_no_images._parse_ocr_response(mock_response_with_single_image)
+        assert image_data_list == []
+
+    def test_include_images_false_still_returns_markdown(
+        self,
+        ocr_instance_no_images: OpticalCharacterRecognition,
+        mock_response_with_single_image: MagicMock,
+    ) -> None:
+        markdown, _, _ = ocr_instance_no_images._parse_ocr_response(mock_response_with_single_image)
+        assert "### Page 1" in markdown
+        assert "Text with image." in markdown
+
 
 # =============================================================================
 # Unit Tests: OpticalCharacterRecognition.__init__
@@ -378,6 +412,39 @@ class TestOpticalCharacterRecognitionInit:
                 api_key="fake-key",
             )
 
+    def test_include_images_defaults_to_true(self) -> None:
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
+
+        assert ocr._include_images is True
+
+    def test_include_images_false_is_stored(self) -> None:
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            include_images=False,
+            api_key="fake-key",
+        )
+
+        assert ocr._include_images is False
+
 
 # =============================================================================
 # Unit Tests: OpticalCharacterRecognition._build_headers
@@ -463,6 +530,33 @@ class TestPerformOcrFromFilepathUnit:
         assert isinstance(image_data, list)
         assert page_count == 1
 
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64encodedcontent")
+    def test_include_images_false_sets_payload_to_false(self, _mock_encode: MagicMock, mock_post: MagicMock) -> None:
+        mock_post.return_value.ok = True
+        mock_post.return_value.content = b"""{
+            "pages": [{"index": 0, "markdown": "Text content", "images": []}]
+        }"""
+
+        with patch("os.path.exists", return_value=True):
+            ocr = OpticalCharacterRecognition(
+                model=MistralModelsOcr.default(),
+                provider=ProviderNames.MISTRAL.value,
+                store=False,
+                display_last=False,
+                display=False,
+                filelist="",
+                output_dir="",
+                no_output_dir=True,
+                inputs=[],
+                include_images=False,
+                api_key="fake-key",
+            )
+            ocr._perform_ocr_from_filepath("/fake/path.pdf")
+
+        payload = mock_post.call_args.kwargs["json"]
+        assert payload["include_image_base64"] is False
+
 
 # =============================================================================
 # Unit Tests: OpticalCharacterRecognition._perform_ocr_from_url (mocked)
@@ -493,6 +587,31 @@ class TestPerformOcrFromUrlUnit:
         assert isinstance(markdown, str)
         assert isinstance(image_data, list)
         assert page_count == 1
+
+    @patch("gptcli.src.modes.optical_character_recognition.post")
+    def test_include_images_false_sets_payload_to_false(self, mock_post: MagicMock) -> None:
+        mock_post.return_value.ok = True
+        mock_post.return_value.content = b"""{
+            "pages": [{"index": 0, "markdown": "Text content", "images": []}]
+        }"""
+
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            include_images=False,
+            api_key="fake-key",
+        )
+        ocr._perform_ocr_from_url("https://example.com/doc.pdf")
+
+        payload = mock_post.call_args.kwargs["json"]
+        assert payload["include_image_base64"] is False
 
 
 # =============================================================================
@@ -1780,6 +1899,33 @@ class TestStartWithOutputDir:
 
         assert (tmp_path / "gptcli__mistral__ocr__report").is_dir()
         assert (tmp_path / "gptcli__mistral__ocr__invoice").is_dir()
+
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
+    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    def test_include_images_false_writes_no_image_files(
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+    ) -> None:
+        mock_ocr.return_value = ("Content", [], 1)
+        ocr = OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir=str(tmp_path),
+            no_output_dir=False,
+            inputs=["/fake/report.pdf"],
+            include_images=False,
+            api_key="fake-key",
+        )
+        ocr.start()
+
+        folder = tmp_path / "gptcli__mistral__ocr__report"
+        assert folder.is_dir()
+        files = list(folder.iterdir())
+        assert len(files) == 1
+        assert files[0].name == "report.md"
 
     @patch("gptcli.src.modes.optical_character_recognition.Storage")
     def test_display_last_skips_validation(self, mock_storage: MagicMock) -> None:

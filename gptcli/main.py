@@ -228,6 +228,7 @@ def enter_ocr_mode(parser: CommandParser, encryption: Encryption | None = None, 
         output_dir=parser.args.output_dir,
         no_output_dir=parser.args.no_output_dir,
         inputs=parser.args.inputs,
+        include_images=not parser.args.no_images,
         encryption=encryption,
         api_key=api_key,
     ).start()
