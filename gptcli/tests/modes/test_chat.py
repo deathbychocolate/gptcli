@@ -487,9 +487,11 @@ class TestChatUser:
         def test_confirmation_shows_incrementing_count(self, capsys: pytest.CaptureFixture[str]) -> None:
             chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
             chat._process_system_message("First.")
+            first_captured = capsys.readouterr()
+            assert "1 active" in first_captured.out
             chat._process_system_message("Second.")
-            captured = capsys.readouterr()
-            assert "2 active" in captured.out
+            second_captured = capsys.readouterr()
+            assert "2 active" in second_captured.out
 
         def test_no_confirmation_for_empty_input(self, capsys: pytest.CaptureFixture[str]) -> None:
             chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)

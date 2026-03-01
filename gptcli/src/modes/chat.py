@@ -34,6 +34,7 @@ from gptcli.src.common.message import MessageFactory, Messages
 from gptcli.src.common.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
+_PREVIEW_MAX_LENGTH: int = 80
 
 
 class CommandCompleter(Completer):  # type: ignore[misc]
@@ -149,6 +150,7 @@ class ChatInstall(Chat):
 
 
 class ChatUser(Chat):
+    """A chat session for when the user is chatting with the AI."""
 
     def __init__(
         self,
@@ -207,16 +209,19 @@ class ChatUser(Chat):
         self._session_multiline: PromptSession = PromptSession(history=InMemoryHistory(), multiline=True)
         self._session_system: PromptSession = PromptSession(history=InMemoryHistory(), multiline=True)
 
-        if provider == ProviderNames.OPENAI.value:
-            self._role_system: str = OpenaiUserRoles.system_role()
-            self._commands_system: list[str] = ChatCommands.developer()
-            self._commands_system_clear: list[str] = ChatCommands.developer_clear()
-            self._commands_system_show: list[str] = ChatCommands.developer_show()
-        else:
-            self._role_system = MistralUserRoles.system_role()
-            self._commands_system = ChatCommands.system()
-            self._commands_system_clear = ChatCommands.system_clear()
-            self._commands_system_show = ChatCommands.system_show()
+        match provider:
+            case ProviderNames.OPENAI.value:
+                self._role_system: str = OpenaiUserRoles.system_role()
+                self._commands_system: list[str] = ChatCommands.developer()
+                self._commands_system_clear: list[str] = ChatCommands.developer_clear()
+                self._commands_system_show: list[str] = ChatCommands.developer_show()
+            case ProviderNames.MISTRAL.value:
+                self._role_system = MistralUserRoles.system_role()
+                self._commands_system = ChatCommands.system()
+                self._commands_system_clear = ChatCommands.system_clear()
+                self._commands_system_show = ChatCommands.system_show()
+            case _:
+                raise NotImplementedError(f"No system-message configuration for provider '{provider}'.")
 
     @user_triggered_abort
     def start(self) -> None:
@@ -359,8 +364,8 @@ class ChatUser(Chat):
             return
         for idx, content in enumerate(system_contents, start=1):
             preview: str = content.replace("\n", " ")
-            if len(preview) > 80:
-                preview = preview[:77] + "..."
+            if len(preview) > _PREVIEW_MAX_LENGTH:
+                preview = preview[: _PREVIEW_MAX_LENGTH - 3] + "..."
             print(f"{GRY}  [{idx}] {preview}{RST}")
 
     def _process_system_clear(self, user_input: str) -> None:
