@@ -375,6 +375,13 @@ class CommandParser:
             help="Re-encrypt all files with a new passphrase.",
         )
         parser_all_rekey.set_defaults(parser=parser_all_rekey)
+
+        parser_all_nuke = subparser_modes_all.add_parser(
+            "nuke",
+            formatter_class=custom_formatter,
+            help="Permanently delete all gptcli data. This action is irreversible.",
+        )
+        parser_all_nuke.set_defaults(parser=parser_all_nuke)
         self.parser._subparsers.title = "commands"  # type: ignore[union-attr]
 
         add_common_mode_arguments(subparser_modes=subparser_modes_mistral, provider=ProviderNames.MISTRAL.value)

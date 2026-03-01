@@ -11,6 +11,7 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_MISTRAL_KEY_FILE,
     GPTCLI_PROVIDER_OPENAI,
     GPTCLI_PROVIDER_OPENAI_KEY_FILE,
+    GPTCLI_ROOT_FILEPATH,
 )
 from gptcli.src.cli import CommandParser
 from gptcli.src.common.constants import ProviderNames
@@ -20,6 +21,7 @@ from gptcli.src.common.passphrase import PassphrasePrompt
 from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.encryption_commands import EncryptionCommands
+from gptcli.src.modes.nuke import Nuke
 from gptcli.src.modes.optical_character_recognition import (
     OpticalCharacterRecognition,
 )
@@ -38,12 +40,16 @@ def create_command_parser() -> CommandParser:
 _PROVIDER_DIRS: list[str] = [GPTCLI_PROVIDER_MISTRAL, GPTCLI_PROVIDER_OPENAI]
 
 
-def _handle_encryption_command(args: Namespace) -> None:
-    """Handle encrypt, decrypt, and rekey commands.
+def _handle_all_provider_command(args: Namespace) -> None:
+    """Handle commands that apply to all providers: encrypt, decrypt, rekey, and nuke.
 
     Args:
         args (Namespace): The parsed CLI arguments.
     """
+    if args.mode_name == "nuke":
+        Nuke.nuke(root_dir=GPTCLI_ROOT_FILEPATH)
+        return None
+
     provider_dirs: list[str] = _PROVIDER_DIRS
     no_cache: bool = args.no_cache
 
@@ -251,8 +257,8 @@ def main() -> None:
         return None
 
     # Handle encryption commands before install/API key loading
-    if args.mode_name in ("encrypt", "decrypt", "rekey"):
-        _handle_encryption_command(args)
+    if args.mode_name in ("encrypt", "decrypt", "rekey", "nuke"):
+        _handle_all_provider_command(args)
         return None
 
     no_cache: bool = args.no_cache
