@@ -4,6 +4,7 @@ import os
 from unittest.mock import patch
 
 from gptcli.src.cli import CommandParser
+from gptcli.src.common.constants import ModeNames
 from gptcli.src.modes.nuke import Nuke
 
 
@@ -86,4 +87,4 @@ class TestNuke:
                 parser.configure_command_parser()
 
             assert parser.args.provider == "all"
-            assert parser.args.mode_name == "nuke"
+            assert parser.args.mode_name == ModeNames.NUKE.value

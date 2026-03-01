@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
+from gptcli.src.cli import CommandParser
+from gptcli.src.common.constants import ModeNames
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager
 from gptcli.src.common.passphrase import PassphrasePrompt
@@ -433,17 +435,13 @@ class TestEncryptionCommands:
     class TestCliRouting:
 
         def test_all_encrypt_routes_to_all_providers(self) -> None:
-            from gptcli.src.cli import CommandParser
-
             with patch("sys.argv", ["gptcli", "all", "encrypt"]):
                 parser = CommandParser()
                 assert parser.args.provider == "all"
-                assert parser.args.mode_name == "encrypt"
+                assert parser.args.mode_name == ModeNames.ENCRYPT.value
 
         def test_rekey_command_parsed_for_all(self) -> None:
-            from gptcli.src.cli import CommandParser
-
             with patch("sys.argv", ["gptcli", "all", "rekey"]):
                 parser = CommandParser()
                 assert parser.args.provider == "all"
-                assert parser.args.mode_name == "rekey"
+                assert parser.args.mode_name == ModeNames.REKEY.value

@@ -28,9 +28,8 @@ class TestChat:
 
         def test_history_collects_strings(self, setup_teardown: Chat) -> None:
             chat: Chat = setup_teardown
-            history: History | None | InMemoryHistory = chat.session.history
-            if isinstance(history, type(None)):
-                assert False
+            history: History | None = chat.session.history
+            assert isinstance(history, InMemoryHistory)
 
             first_line: str = "first line"
             second_line: str = "second line"
@@ -117,9 +116,8 @@ class TestChatInstall:
 
         def test_history_collects_strings(self, setup_teardown: ChatInstall) -> None:
             chat: ChatInstall = setup_teardown
-            history: History | None | InMemoryHistory = chat.session.history
-            if isinstance(history, type(None)):
-                assert False
+            history: History | None = chat.session.history
+            assert isinstance(history, InMemoryHistory)
 
             first_line: str = "first line"
             second_line: str = "second line"
@@ -206,7 +204,8 @@ class TestChatUser:
             assert isinstance(setup_teardown.session.history, InMemoryHistory)
 
         def test_history_collects_strings(self, setup_teardown: ChatUser) -> None:
-            history: InMemoryHistory = setup_teardown.session.history
+            history: History | None = setup_teardown.session.history
+            assert isinstance(history, InMemoryHistory)
 
             first_line: str = "first line"
             second_line: str = "second line"

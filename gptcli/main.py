@@ -14,7 +14,7 @@ from gptcli.constants import (
     GPTCLI_ROOT_FILEPATH,
 )
 from gptcli.src.cli import CommandParser
-from gptcli.src.common.constants import ProviderNames
+from gptcli.src.common.constants import ModeNames, ProviderNames
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager, make_key_manager
 from gptcli.src.common.passphrase import PassphrasePrompt
@@ -46,14 +46,14 @@ def _handle_all_provider_command(args: Namespace) -> None:
     Args:
         args (Namespace): The parsed CLI arguments.
     """
-    if args.mode_name == "nuke":
+    if args.mode_name == ModeNames.NUKE.value:
         Nuke.nuke(root_dir=GPTCLI_ROOT_FILEPATH)
         return None
 
     provider_dirs: list[str] = _PROVIDER_DIRS
     no_cache: bool = args.no_cache
 
-    if args.mode_name == "rekey":
+    if args.mode_name == ModeNames.REKEY.value:
         encryption: Encryption | None = _load_encryption(no_cache=no_cache)
         if encryption is None:
             print("Encryption is not initialized. Nothing to rekey.")
@@ -63,7 +63,7 @@ def _handle_all_provider_command(args: Namespace) -> None:
         return None
 
     km: KeyManager = make_key_manager(no_cache=no_cache)
-    if args.mode_name == "encrypt":
+    if args.mode_name == ModeNames.ENCRYPT.value:
         if not km.is_initialized():
             passphrase: str | None = PassphrasePrompt.create_with_confirmation()
             if passphrase is None:
@@ -78,7 +78,7 @@ def _handle_all_provider_command(args: Namespace) -> None:
         for provider_dir in provider_dirs:
             cmd = EncryptionCommands(provider_dir=provider_dir, encryption=enc)
             cmd.encrypt_provider()
-    elif args.mode_name == "decrypt":
+    elif args.mode_name == ModeNames.DECRYPT.value:
         enc_instance: Encryption | None = _load_encryption()
         if enc_instance is None:
             print("Encryption is not initialized. Nothing to decrypt.")
@@ -252,12 +252,12 @@ def main() -> None:
     elif not args.mode_name:  # mode is missing
         args.parser.print_help()
         return None
-    elif args.mode_name == "ocr" and not (args.inputs or args.filelist or args.display_last):
+    elif args.mode_name == ModeNames.OCR.value and not (args.inputs or args.filelist or args.display_last):
         parser.args.parser.print_help()
         return None
 
     # Handle encryption commands before install/API key loading
-    if args.mode_name in ("encrypt", "decrypt", "rekey", "nuke"):
+    if args.mode_name in ModeNames.all_provider_modes():
         _handle_all_provider_command(args)
         return None
 
@@ -280,11 +280,11 @@ def main() -> None:
     api_key: str = load_api_key(parser=parser, encryption=encryption)
 
     match parser.args.mode_name:
-        case "se":
+        case ModeNames.SE.value:
             enter_single_exchange_mode(parser=parser, api_key=api_key)
-        case "chat":
+        case ModeNames.CHAT.value:
             enter_chat_mode(parser=parser, encryption=encryption, api_key=api_key)
-        case "ocr":
+        case ModeNames.OCR.value:
             enter_ocr_mode(parser=parser, encryption=encryption, api_key=api_key)
 
     return None

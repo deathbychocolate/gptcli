@@ -119,6 +119,23 @@ class ChatCommands(BaseEnum):
 MULT: str = ChatCommands.MULT.value
 
 
+class ModeNames(BaseEnum):
+    """The mode names used across all providers."""
+
+    SE = "se"
+    CHAT = "chat"
+    OCR = "ocr"
+    ENCRYPT = "encrypt"
+    DECRYPT = "decrypt"
+    REKEY = "rekey"
+    NUKE = "nuke"
+
+    @classmethod
+    def all_provider_modes(cls) -> tuple[str, ...]:
+        """Return mode names that apply to all providers (under 'gptcli all')."""
+        return (cls.ENCRYPT.value, cls.DECRYPT.value, cls.REKEY.value, cls.NUKE.value)
+
+
 class ProviderNames(BaseEnum):
     """The provider names currently supported. No default value needed."""
 

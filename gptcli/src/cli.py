@@ -16,6 +16,7 @@ from gptcli.src.common.constants import (
     MistralModelsChat,
     MistralModelsOcr,
     MistralUserRoles,
+    ModeNames,
     OpenaiModelRoles,
     OpenaiModelsChat,
     OpenaiUserRoles,
@@ -74,7 +75,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
 
     # parser options for 'single-exchange' mode
     parser_se = subparser_modes.add_parser(
-        "se",
+        ModeNames.SE.value,
         formatter_class=custom_formatter,
         help="'Single-Exchange' mode is optimized for 1 message-reply transaction.",
     )
@@ -128,7 +129,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
 
     # parser options for 'chat' mode
     parser_chat = subparser_modes.add_parser(
-        "chat",
+        ModeNames.CHAT.value,
         formatter_class=custom_formatter,
         help="'Chat' mode is optimized for multiple (>1) message-reply transactions.",
     )
@@ -197,7 +198,7 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
     # parser options for 'ocr' mode
     if provider == ProviderNames.MISTRAL.value:  # for now, only Mistral will have OCR mode
         parser_ocr = subparser_modes.add_parser(
-            "ocr",
+            ModeNames.OCR.value,
             formatter_class=custom_formatter,
             help="'OCR' mode is optimized for generating Markdown text given local filepaths or URLs of files.",
         )
@@ -356,28 +357,28 @@ class CommandParser:
         )
 
         parser_all_encrypt = subparser_modes_all.add_parser(
-            "encrypt",
+            ModeNames.ENCRYPT.value,
             formatter_class=custom_formatter,
             help="Encrypt all cleartext files for all providers.",
         )
         parser_all_encrypt.set_defaults(parser=parser_all_encrypt)
 
         parser_all_decrypt = subparser_modes_all.add_parser(
-            "decrypt",
+            ModeNames.DECRYPT.value,
             formatter_class=custom_formatter,
             help="Decrypt all encrypted files for all providers.",
         )
         parser_all_decrypt.set_defaults(parser=parser_all_decrypt)
 
         parser_all_rekey = subparser_modes_all.add_parser(
-            "rekey",
+            ModeNames.REKEY.value,
             formatter_class=custom_formatter,
             help="Re-encrypt all files with a new passphrase.",
         )
         parser_all_rekey.set_defaults(parser=parser_all_rekey)
 
         parser_all_nuke = subparser_modes_all.add_parser(
-            "nuke",
+            ModeNames.NUKE.value,
             formatter_class=custom_formatter,
             help="Permanently delete all gptcli data. This action is irreversible.",
         )
