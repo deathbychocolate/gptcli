@@ -159,25 +159,32 @@ class ChatCommands(BaseEnum):
         Returns:
             str: A formatted help document string.
         """
-        lines: list[str] = [
-            "/?, /h, /help           Show help.",
-            "/cfg, /config           Show current config.",
-            "/c, /cls, /clear        Clear screen.",
-            "/m, /mult               Enter multiline mode.",
-        ]
+        lines: list[str] = []
+
+        lines.append("  Messages")
+        lines.append("    /m, /mult               Enter multiline mode.")
+        lines.append("    ↑/↓                     Navigate history.")
+        lines.append("    Enter                   Send message.")
 
         if provider == ProviderNames.OPENAI.value:
-            lines.append("/dev, /developer        Set developer message.")
-            lines.append("/dev-clear [n]          Clear developer messages (or one by index).")
-            lines.append("/dev-show               Show active developer messages.")
+            lines.append("")
+            lines.append("  Developer Messages")
+            lines.append("    /dev, /developer        Set developer message.")
+            lines.append("    /dev-clear [n]          Clear all (or one by index).")
+            lines.append("    /dev-show               Show active messages.")
         elif provider == ProviderNames.MISTRAL.value:
-            lines.append("/sys, /system           Set system message.")
-            lines.append("/sys-clear [n]          Clear system messages (or one by index).")
-            lines.append("/sys-show               Show active system messages.")
+            lines.append("")
+            lines.append("  System Messages")
+            lines.append("    /sys, /system           Set system message.")
+            lines.append("    /sys-clear [n]          Clear all (or one by index).")
+            lines.append("    /sys-show               Show active messages.")
 
-        lines.append("/e, /exit, /q, /quit    End program.")
-        lines.append("↑/↓                     Navigate history.")
-        lines.append("Enter                   Send message.")
+        lines.append("")
+        lines.append("  Session")
+        lines.append("    /cfg, /config           Show current config.")
+        lines.append("    /c, /cls, /clear        Clear screen.")
+        lines.append("    /?, /h, /help           Show this help.")
+        lines.append("    /e, /exit, /q, /quit    End program.")
 
         return "\n" + "\n".join(lines) + "\n"
 
