@@ -2,11 +2,14 @@
 
 import logging
 import os
+from collections.abc import Iterable
 from logging import Logger
 from textwrap import dedent
 from typing import Any
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import ANSI
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -31,6 +34,65 @@ from gptcli.src.common.message import MessageFactory, Messages
 from gptcli.src.common.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
+
+
+class CommandCompleter(Completer):  # type: ignore[misc]
+    """Autocompletes chat commands when input starts with '/'."""
+
+    def __init__(self, commands: dict[str, str]) -> None:
+        """Initialize the completer with available commands.
+
+        Args:
+            commands (dict[str, str]): Mapping of command strings to their descriptions.
+        """
+        self._commands: dict[str, str] = commands
+
+    @staticmethod
+    def commands_for_provider(provider: str) -> dict[str, str]:
+        """Return command-to-description mapping based on the provider.
+
+        Args:
+            provider (str): The provider name (e.g. 'openai' or 'mistral').
+
+        Returns:
+            dict[str, str]: A mapping of command strings to descriptions.
+        """
+        groups: list[tuple[list[str], str]] = [
+            (ChatCommands.multiline(), "Enter multiline mode"),
+            (ChatCommands.config(), "Show current config"),
+            (ChatCommands.clear(), "Clear screen"),
+            (ChatCommands.help(), "Show help"),
+            (ChatCommands.exit(), "End program"),
+        ]
+
+        if provider == ProviderNames.OPENAI.value:
+            groups.append((ChatCommands.developer(), "Set developer message"))
+            groups.append((ChatCommands.developer_clear(), "Clear developer messages"))
+            groups.append((ChatCommands.developer_show(), "Show developer messages"))
+        elif provider == ProviderNames.MISTRAL.value:
+            groups.append((ChatCommands.system(), "Set system message"))
+            groups.append((ChatCommands.system_clear(), "Clear system messages"))
+            groups.append((ChatCommands.system_show(), "Show system messages"))
+
+        return {cmd: description for cmds, description in groups for cmd in cmds}
+
+    def get_completions(self, document: Document, complete_event: CompleteEvent) -> Iterable[Completion]:
+        """Yield completions for commands matching the current input.
+
+        Args:
+            document (Document): The current document/input state.
+            complete_event (CompleteEvent): The completion event.
+
+        Yields:
+            Completion: Matching command completions.
+        """
+        text: str = document.text_before_cursor
+        if not text.startswith("/"):
+            return
+
+        for command, description in self._commands.items():
+            if command.startswith(text) and command != text:
+                yield Completion(command, start_position=-len(text), display_meta=description)
 
 
 class Chat:
@@ -118,6 +180,7 @@ class ChatUser(Chat):
             api_key (str, optional): The API key for authentication. Defaults to "".
         """
         Chat.__init__(self)
+        self.session.completer = CommandCompleter(CommandCompleter.commands_for_provider(provider))
 
         self._model: str = model
         self._provider: str = provider

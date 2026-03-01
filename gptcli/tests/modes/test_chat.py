@@ -4,6 +4,8 @@ from typing import Any, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
+from prompt_toolkit.completion import CompleteEvent
+from prompt_toolkit.document import Document
 from prompt_toolkit.history import History, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 
@@ -16,7 +18,7 @@ from gptcli.src.common.constants import (
     ProviderNames,
     UserRoles,
 )
-from gptcli.src.modes.chat import Chat, ChatInstall, ChatUser
+from gptcli.src.modes.chat import Chat, ChatInstall, ChatUser, CommandCompleter
 
 
 class TestChat:
@@ -185,6 +187,110 @@ class TestChatInstall:
 
             fake_buffer.history_forward.assert_called_once()
             fake_buffer.history_backward.assert_not_called()
+
+
+class TestCommandCompleter:
+    """Tests for the CommandCompleter class."""
+
+    @pytest.fixture()
+    def openai_completer(self) -> CommandCompleter:
+        return CommandCompleter(CommandCompleter.commands_for_provider(ProviderNames.OPENAI.value))
+
+    @pytest.fixture()
+    def mistral_completer(self) -> CommandCompleter:
+        return CommandCompleter(CommandCompleter.commands_for_provider(ProviderNames.MISTRAL.value))
+
+    @staticmethod
+    def _complete(completer: CommandCompleter, text: str) -> list[str]:
+        """Helper to get completion text values for a given input."""
+        doc = Document(text, len(text))
+        return [c.text for c in completer.get_completions(doc, CompleteEvent())]
+
+    class TestNoCompletionsForRegularInput:
+        """Tests that completions only trigger when input starts with '/'."""
+
+        def test_empty_input(self, openai_completer: CommandCompleter) -> None:
+            assert TestCommandCompleter._complete(openai_completer, "") == []
+
+        def test_regular_text(self, openai_completer: CommandCompleter) -> None:
+            assert TestCommandCompleter._complete(openai_completer, "hello") == []
+
+        def test_slash_in_middle(self, openai_completer: CommandCompleter) -> None:
+            assert TestCommandCompleter._complete(openai_completer, "hello /h") == []
+
+    class TestDynamicFiltering:
+        """Tests that completions narrow down as the user types."""
+
+        def test_slash_shows_all_commands(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/")
+            assert len(results) > 0
+
+        def test_slash_d_narrows_to_dev_commands(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/d")
+            assert all(r.startswith("/d") for r in results)
+            assert "/dev" in results
+            assert "/developer" in results
+            assert "/dev-clear" in results
+            assert "/dev-show" in results
+
+        def test_slash_dev_dash_narrows_further(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/dev-")
+            assert "/dev-clear" in results
+            assert "/dev-show" in results
+            assert "/dev" not in results
+
+        def test_exact_match_returns_nothing(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/help")
+            assert results == []
+
+    class TestProviderSpecificCommands:
+        """Tests that provider-specific commands are included or excluded."""
+
+        def test_openai_has_dev_commands(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/d")
+            assert "/dev" in results
+
+        def test_openai_has_no_sys_commands(self, openai_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(openai_completer, "/s")
+            assert not any(r.startswith("/sys") for r in results)
+
+        def test_mistral_has_sys_commands(self, mistral_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(mistral_completer, "/s")
+            assert "/sys" in results
+            assert "/system" in results
+
+        def test_mistral_has_no_dev_commands(self, mistral_completer: CommandCompleter) -> None:
+            results = TestCommandCompleter._complete(mistral_completer, "/d")
+            assert not any(r.startswith("/dev") for r in results)
+
+    class TestCompletionMetadata:
+        """Tests that completions include descriptive metadata."""
+
+        def test_completions_have_display_meta(self, openai_completer: CommandCompleter) -> None:
+            doc = Document("/h", 2)
+            completions = list(openai_completer.get_completions(doc, CompleteEvent()))
+            assert len(completions) > 0
+            assert all(c.display_meta is not None for c in completions)
+
+    class TestCommandsForProvider:
+        """Tests for the commands_for_provider static method."""
+
+        def test_common_commands_present_for_openai(self) -> None:
+            commands = CommandCompleter.commands_for_provider(ProviderNames.OPENAI.value)
+            assert "/help" in commands
+            assert "/quit" in commands
+            assert "/m" in commands
+
+        def test_common_commands_present_for_mistral(self) -> None:
+            commands = CommandCompleter.commands_for_provider(ProviderNames.MISTRAL.value)
+            assert "/help" in commands
+            assert "/quit" in commands
+            assert "/m" in commands
+
+        def test_unknown_provider_has_no_system_commands(self) -> None:
+            commands = CommandCompleter.commands_for_provider("unknown")
+            assert "/dev" not in commands
+            assert "/sys" not in commands
 
 
 class TestChatUser:
