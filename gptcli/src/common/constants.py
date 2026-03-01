@@ -76,6 +76,10 @@ class ChatCommands(BaseEnum):
     CLEAR_UNIX = "/clear"
     CLEAR_WINDOWS = "/cls"
 
+    # Config.
+    CFG = "/cfg"
+    CONFIG = "/config"
+
     # Help.
     QUESTION_MARK = "/?"
     H = "/h"
@@ -97,6 +101,11 @@ class ChatCommands(BaseEnum):
         return [cls.CLEAR.value, cls.CLEAR_WINDOWS.value, cls.CLEAR_UNIX.value]
 
     @classmethod
+    def config(cls) -> list[str]:
+        """Returns a list of config commands."""
+        return [cls.CFG.value, cls.CONFIG.value]
+
+    @classmethod
     def help(cls) -> list[str]:
         """Returns as list of help commands."""
         return [cls.QUESTION_MARK.value, cls.H.value, cls.HELP.value]
@@ -107,6 +116,7 @@ class ChatCommands(BaseEnum):
         return dedent(
             """
             /?, /h, /help           Show help.
+            /cfg, /config           Show current config.
             /c, /cls, /clear        Clear screen.
             /m, /mult               Enter multiline mode.
             /e, /exit, /q, /quit    End program.

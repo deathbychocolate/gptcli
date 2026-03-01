@@ -7,7 +7,12 @@ import pytest
 from prompt_toolkit.history import History, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 
-from gptcli.src.common.constants import OpenaiModelsChat, ProviderNames
+from gptcli.src.common.constants import (
+    ModelRoles,
+    OpenaiModelsChat,
+    ProviderNames,
+    UserRoles,
+)
 from gptcli.src.modes.chat import Chat, ChatInstall, ChatUser
 
 
@@ -265,3 +270,58 @@ class TestChatUser:
 
             fake_buffer.history_forward.assert_called_once()
             fake_buffer.history_backward.assert_not_called()
+
+    class TestConfigDoc:
+        """Holds tests for ChatUser._config_doc()."""
+
+        def test_contains_provider(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert ProviderNames.OPENAI.value in config
+
+        def test_contains_model(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert OpenaiModelsChat.default() in config
+
+        def test_contains_role_user(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert UserRoles.default() in config
+
+        def test_contains_role_model(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert ModelRoles.default() in config
+
+        def test_contains_context_setting(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert "Context" in config
+
+        def test_contains_stream_setting(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert "Stream" in config
+
+        def test_contains_store_setting(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert "Store" in config
+
+        def test_contains_encryption_setting(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert "Encryption" in config
+
+        def test_default_values(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            config: str = chat._config_doc()
+            assert "True" in config  # context, stream, store are all True by default
+
+        def test_custom_values(self) -> None:
+            chat = ChatUser(
+                model="gpt-4o",
+                provider=ProviderNames.OPENAI.value,
+                role_user="developer",
+                role_model="assistant",
+                context=False,
+                stream=False,
+                store=False,
+            )
+            config: str = chat._config_doc()
+            assert "gpt-4o" in config
+            assert "developer" in config
+            assert "False" in config

@@ -3,6 +3,7 @@
 import logging
 import os
 from logging import Logger
+from textwrap import dedent
 from typing import Any
 
 from prompt_toolkit import PromptSession
@@ -123,6 +124,7 @@ class ChatUser(Chat):
         self._filepath: str = filepath
         self._store: bool = store
         self._load_last: bool = load_last
+        self._encryption_enabled: bool = encryption is not None
         self._storage: Storage = Storage(provider=provider, encryption=encryption)
         loaded: Messages | None = self._storage.extract_messages() if self._load_last else Messages()
         self._encryption_required: bool = self._load_last and loaded is None
@@ -162,6 +164,8 @@ class ChatUser(Chat):
 
         commands_multiline = ChatCommands.multiline()
         commands_clear = ChatCommands.clear()
+        commands_config = ChatCommands.config()
+        commands_config_doc = self._config_doc()
         commands_exit = ChatCommands.exit()
         commands_help = ChatCommands.help()
         commands_help_doc = ChatCommands.help_doc()
@@ -175,6 +179,9 @@ class ChatUser(Chat):
                 continue
             elif user_input in commands_clear:
                 os.system(commands_exec)
+                continue
+            elif user_input in commands_config:
+                print(commands_config_doc)
                 continue
             elif user_input in commands_help:
                 print(commands_help_doc)
@@ -246,6 +253,21 @@ class ChatUser(Chat):
             self._messages.flush()
 
         return None
+
+    def _config_doc(self) -> str:
+        """Return a formatted string showing the current chat configuration."""
+        return dedent(
+            f"""
+            Provider:       {self._provider}
+            Model:          {self._model}
+            Role (user):    {self._role_user}
+            Role (model):   {self._role_model}
+            Context:        {self._context}
+            Stream:         {self._stream}
+            Store:          {self._store}
+            Encryption:     {self._encryption_enabled}
+            """
+        )
 
     def _should_store_messages(self, number_of_messages_from_storage: int) -> bool:
         """Accepts the number of messages loaded from storage and returns true if we added new messages."""
