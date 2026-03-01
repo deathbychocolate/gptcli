@@ -27,6 +27,7 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
 )
+from gptcli.src.commands.encryption_commands import EncryptionCommands
 from gptcli.src.common.api import SingleExchange
 from gptcli.src.common.constants import (
     MISTRAL,
@@ -42,7 +43,6 @@ from gptcli.src.common.key_management import KeyManager, make_key_manager
 from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.common.passphrase import PassphrasePrompt
 from gptcli.src.modes.chat import ChatInstall
-from gptcli.src.modes.encryption_commands import EncryptionCommands
 
 logger: Logger = logging.getLogger(__name__)
 

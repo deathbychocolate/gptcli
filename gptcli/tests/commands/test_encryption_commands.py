@@ -9,11 +9,11 @@ from unittest.mock import patch
 import pytest
 
 from gptcli.src.cli import CommandParser
+from gptcli.src.commands.encryption_commands import EncryptionCommands
 from gptcli.src.common.constants import ModeNames
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager
 from gptcli.src.common.passphrase import PassphrasePrompt
-from gptcli.src.modes.encryption_commands import EncryptionCommands
 
 
 class TestEncryptionCommands:
@@ -247,12 +247,12 @@ class TestEncryptionCommands:
                 verify_path=env["verify_path"],
                 params_path=env["kdf_params_path"],
             )
-            stack.enter_context(patch("gptcli.src.modes.encryption_commands.make_key_manager", return_value=km))
+            stack.enter_context(patch("gptcli.src.commands.encryption_commands.make_key_manager", return_value=km))
             stack.enter_context(patch.object(PassphrasePrompt, "prompt", return_value=old_passphrase))
             stack.enter_context(patch.object(KeyManager, "verify_passphrase", return_value=verify_return))
             stack.enter_context(
                 patch(
-                    "gptcli.src.modes.encryption_commands.PassphrasePrompt.create_with_confirmation",
+                    "gptcli.src.commands.encryption_commands.PassphrasePrompt.create_with_confirmation",
                     return_value=new_passphrase,
                 )
             )
@@ -331,7 +331,7 @@ class TestEncryptionCommands:
                 patch.object(PassphrasePrompt, "prompt", return_value="old-pass"),
                 patch.object(KeyManager, "verify_passphrase"),
                 patch(
-                    "gptcli.src.modes.encryption_commands.PassphrasePrompt.create_with_confirmation",
+                    "gptcli.src.commands.encryption_commands.PassphrasePrompt.create_with_confirmation",
                     return_value=None,
                 ),
             ):

@@ -4,8 +4,8 @@ import os
 from unittest.mock import patch
 
 from gptcli.src.cli import CommandParser
+from gptcli.src.commands.nuke import Nuke
 from gptcli.src.common.constants import ModeNames
-from gptcli.src.modes.nuke import Nuke
 
 
 class TestNuke:

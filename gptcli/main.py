@@ -14,14 +14,14 @@ from gptcli.constants import (
     GPTCLI_ROOT_FILEPATH,
 )
 from gptcli.src.cli import CommandParser
+from gptcli.src.commands.encryption_commands import EncryptionCommands
+from gptcli.src.commands.nuke import Nuke
 from gptcli.src.common.constants import ModeNames, ProviderNames
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager, make_key_manager
 from gptcli.src.common.passphrase import PassphrasePrompt
 from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
-from gptcli.src.modes.encryption_commands import EncryptionCommands
-from gptcli.src.modes.nuke import Nuke
 from gptcli.src.modes.optical_character_recognition import (
     OpticalCharacterRecognition,
 )
