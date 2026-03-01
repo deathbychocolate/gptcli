@@ -13,7 +13,10 @@ from typing import Any, ClassVar, Optional, Self
 from uuid import uuid4
 
 import tiktoken
-from mistral_common.protocol.instruct.messages import UserMessage
+from mistral_common.protocol.instruct.messages import (
+    SystemMessage,
+    UserMessage,
+)
 from mistral_common.protocol.instruct.request import ChatCompletionRequest
 from mistral_common.tokens.tokenizers.mistral import (
     MistralTokenizer,
@@ -22,8 +25,10 @@ from mistral_common.tokens.tokenizers.mistral import (
 from tiktoken import Encoding
 
 from gptcli.src.common.constants import (
+    MistralUserRoles,
     OpenaiModelRoles,
     OpenaiModelsChat,
+    OpenaiUserRoles,
     ProviderNames,
 )
 
@@ -74,6 +79,16 @@ class Message:
     def content(self) -> str:
         """The 'content' value (read)."""
         return self._content
+
+    @property
+    def role(self) -> str:
+        """The 'role' value (read)."""
+        return self._role
+
+    @property
+    def is_system(self) -> bool:
+        """True if this message has a system/developer role."""
+        return self._role in (MistralUserRoles.system_role(), OpenaiUserRoles.system_role())
 
     @property
     def is_reply(self) -> bool:
@@ -134,12 +149,18 @@ class Message:
         except TokenizerException:
             tokenizer = MistralTokenizer.v3(is_tekken=True)  # default if model not found
 
-        # Tokenize a list of messages
+        # Mistral tokenizer requires a typed message object.
+        # System prompts use SystemMessage; all other roles (user, assistant, etc.)
+        # fall back to UserMessage as the tokenizer approximation.
+        msg: UserMessage | SystemMessage
+        if self._role == MistralUserRoles.SYSTEM.value:
+            msg = SystemMessage(content=self._content)
+        else:
+            msg = UserMessage(content=self._content)
+
         tokenized = tokenizer.encode_chat_completion(
             ChatCompletionRequest(
-                messages=[
-                    UserMessage(content=self._content),
-                ],
+                messages=[msg],
                 model=self._model,
             )
         )
@@ -323,6 +344,49 @@ class Messages:
     def flush(self) -> None:
         """Deletes all messages in the object."""
         self._messages.clear()
+        self._tokens = 0
+        self._count = 0
+
+    def flush_except(self, roles: set[str]) -> None:
+        """Delete all messages except those matching the given roles.
+
+        Args:
+            roles (set[str]): The set of roles to keep.
+        """
+        kept: list[Message] = [m for m in self._messages if m.role in roles]
+        self._messages = kept
+        self._tokens = sum(m.tokens for m in kept)
+        self._count = len(kept)
+
+    def remove_by_role_and_index(self, role: str, index: int) -> bool:
+        """Remove a single message by role and 0-based index among messages of that role.
+
+        Args:
+            role (str): The role to filter by.
+            index (int): The 0-based index among messages with the given role.
+
+        Returns:
+            bool: True if a message was removed, False if index was out of range.
+        """
+        matches: list[int] = [i for i, m in enumerate(self._messages) if m.role == role]
+        if index < 0 or index >= len(matches):
+            return False
+        pos: int = matches[index]
+        removed: Message = self._messages.pop(pos)
+        self._tokens -= removed.tokens
+        self._count -= 1
+        return True
+
+    def flush_by_role(self, roles: set[str]) -> None:
+        """Remove all messages matching the given roles.
+
+        Args:
+            roles (set[str]): The set of roles to remove from messages.
+        """
+        removed_tokens: int = sum(m.tokens for m in self._messages if m.role in roles)
+        self._messages = [m for m in self._messages if m.role not in roles]
+        self._tokens -= removed_tokens
+        self._count = len(self._messages)
 
     def to_json(self, indent: int | str | None = None) -> str:
         """Convert all Message objects in Messages to JSON serialized object.

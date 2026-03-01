@@ -281,7 +281,7 @@ class Chat(EndpointHelper):
         body = {
             "model": self._model,
             "stream": self._stream,
-            "messages": [message.to_dict_reduced_context() for message in self._messages],
+            "messages": [m.to_dict_reduced_context() for m in sorted(self._messages, key=lambda m: not m.is_system)],
         }
 
         message: Message | None = None

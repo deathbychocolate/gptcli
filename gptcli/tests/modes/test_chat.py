@@ -8,8 +8,11 @@ from prompt_toolkit.history import History, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 
 from gptcli.src.common.constants import (
+    MistralModelsChat,
+    MistralUserRoles,
     ModelRoles,
     OpenaiModelsChat,
+    OpenaiUserRoles,
     ProviderNames,
     UserRoles,
 )
@@ -325,3 +328,210 @@ class TestChatUser:
             assert "gpt-4o" in config
             assert "developer" in config
             assert "False" in config
+
+        def test_contains_role_system(self, setup_teardown: ChatUser) -> None:
+            config: str = setup_teardown._config_doc()
+            assert "Role (system)" in config
+
+    class TestProcessSystemMessage:
+        """Tests for ChatUser._process_system_message()."""
+
+        def test_adds_system_message_with_developer_role_for_openai(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("You are a pirate.")
+            assert len(chat._messages) == 1
+            msg = next(iter(chat._messages))
+            assert msg.role == OpenaiUserRoles.system_role()
+            assert msg.content == "You are a pirate."
+
+        def test_adds_system_message_with_system_role_for_mistral(self) -> None:
+            chat = ChatUser(model=MistralModelsChat.default(), provider=ProviderNames.MISTRAL.value)
+            chat._process_system_message("You are a pirate.")
+            assert len(chat._messages) == 1
+            msg = next(iter(chat._messages))
+            assert msg.role == MistralUserRoles.system_role()
+            assert msg.content == "You are a pirate."
+
+        def test_ignores_empty_input(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("")
+            assert len(chat._messages) == 0
+
+        def test_ignores_whitespace_only_input(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("   \n  ")
+            assert len(chat._messages) == 0
+
+        def test_multiple_system_messages_stack(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("You are a pirate.")
+            chat._process_system_message("You speak only in rhymes.")
+            assert len(chat._messages) == 2
+
+    class TestProcessSystemMessageConfirmation:
+        """Tests for the confirmation output after adding a system message."""
+
+        def test_prints_confirmation_after_adding_system_message(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("You are a pirate.")
+            captured = capsys.readouterr()
+            assert "System message added" in captured.out
+            assert "1 active" in captured.out
+
+        def test_confirmation_shows_incrementing_count(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("First.")
+            chat._process_system_message("Second.")
+            captured = capsys.readouterr()
+            assert "2 active" in captured.out
+
+        def test_no_confirmation_for_empty_input(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("")
+            captured = capsys.readouterr()
+            assert captured.out == ""
+
+    class TestDisplaySystemMessages:
+        """Tests for ChatUser._display_system_messages()."""
+
+        def test_displays_no_messages_text(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._display_system_messages()
+            captured = capsys.readouterr()
+            assert "No active system messages" in captured.out
+
+        def test_displays_system_messages_with_indices(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("You are a pirate.")
+            chat._process_system_message("Speak in rhymes.")
+            _ = capsys.readouterr()  # discard confirmation output
+            chat._display_system_messages()
+            captured = capsys.readouterr()
+            assert "[1]" in captured.out
+            assert "[2]" in captured.out
+            assert "pirate" in captured.out
+            assert "rhymes" in captured.out
+
+    class TestProcessSystemClear:
+        """Tests for ChatUser._process_system_clear()."""
+
+        def test_clears_all_system_messages_without_index(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("First.")
+            chat._process_system_message("Second.")
+            chat._process_system_clear("/dev-clear")
+            assert len(chat._messages) == 0
+
+        def test_clears_single_system_message_by_index(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("First.")
+            chat._process_system_message("Second.")
+            chat._process_system_clear("/dev-clear 1")
+            assert len(chat._messages) == 1
+            remaining = next(iter(chat._messages))
+            assert remaining.content == "Second."
+
+        def test_prints_error_for_invalid_index(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("First.")
+            _ = capsys.readouterr()
+            chat._process_system_clear("/dev-clear abc")
+            captured = capsys.readouterr()
+            assert "Invalid index" in captured.out
+
+        def test_prints_error_for_out_of_range_index(self, capsys: pytest.CaptureFixture[str]) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("First.")
+            _ = capsys.readouterr()
+            chat._process_system_clear("/dev-clear 99")
+            captured = capsys.readouterr()
+            assert "No system message at index 99" in captured.out
+
+    class TestProcessSystemClearMistral:
+        """Tests for _process_system_clear with Mistral provider."""
+
+        def test_clears_all_system_messages_with_sys_clear(self) -> None:
+            chat = ChatUser(model=MistralModelsChat.default(), provider=ProviderNames.MISTRAL.value)
+            chat._process_system_message("First.")
+            chat._process_system_message("Second.")
+            chat._process_system_clear("/sys-clear")
+            assert len(chat._messages) == 0
+
+        def test_clears_single_system_message_by_index(self) -> None:
+            chat = ChatUser(model=MistralModelsChat.default(), provider=ProviderNames.MISTRAL.value)
+            chat._process_system_message("First.")
+            chat._process_system_message("Second.")
+            chat._process_system_clear("/sys-clear 1")
+            assert len(chat._messages) == 1
+            remaining = next(iter(chat._messages))
+            assert remaining.content == "Second."
+
+    class TestNoContextProtectsSystemMessages:
+        """Tests that --no-context preserves system messages."""
+
+        def test_flush_except_preserves_system_messages(self) -> None:
+            chat = ChatUser(
+                model=OpenaiModelsChat.default(),
+                provider=ProviderNames.OPENAI.value,
+                context=False,
+            )
+            chat._process_system_message("You are a pirate.")
+            user_msg = chat._message_factory.user_message(
+                role=UserRoles.default(),
+                content="Hello.",
+                model=OpenaiModelsChat.default(),
+            )
+            chat._messages.add(user_msg)
+            # Simulate what _process_user_and_reply_messages does on --no-context
+            chat._messages.flush_except({chat._role_system})
+            assert len(chat._messages) == 1
+            remaining = next(iter(chat._messages))
+            assert remaining.role == OpenaiUserRoles.system_role()
+
+    class TestFlushSystemMessages:
+        """Tests for system message flush commands."""
+
+        def test_flush_removes_only_system_messages_openai(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            chat._process_system_message("You are a pirate.")
+            user_msg = chat._message_factory.user_message(
+                role=UserRoles.default(),
+                content="Hello.",
+                model=OpenaiModelsChat.default(),
+            )
+            chat._messages.add(user_msg)
+            assert len(chat._messages) == 2
+            chat._messages.flush_by_role({chat._role_system})
+            assert len(chat._messages) == 1
+            remaining = next(iter(chat._messages))
+            assert remaining.role == "user"
+
+        def test_flush_removes_only_system_messages_mistral(self) -> None:
+            chat = ChatUser(model=MistralModelsChat.default(), provider=ProviderNames.MISTRAL.value)
+            chat._process_system_message("You are a pirate.")
+            user_msg = chat._message_factory.user_message(
+                role=UserRoles.default(),
+                content="Hello.",
+                model=MistralModelsChat.default(),
+            )
+            chat._messages.add(user_msg)
+            assert len(chat._messages) == 2
+            chat._messages.flush_by_role({chat._role_system})
+            assert len(chat._messages) == 1
+            remaining = next(iter(chat._messages))
+            assert remaining.role == "user"
+
+    class TestSessionSystem:
+        """Tests for ChatUser._session_system."""
+
+        def test_session_system_is_separate_from_session_multiline(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            assert chat._session_system is not chat._session_multiline
+
+        def test_session_system_uses_in_memory_history(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            assert isinstance(chat._session_system.history, InMemoryHistory)
+
+        def test_session_system_is_multiline(self) -> None:
+            chat = ChatUser(model=OpenaiModelsChat.default(), provider=ProviderNames.OPENAI.value)
+            assert chat._session_system.multiline is True

@@ -1,7 +1,6 @@
 """Contains commonly used strings for interacting with an AI Provider."""
 
 from enum import Enum
-from textwrap import dedent
 
 
 class BaseEnum(Enum):
@@ -80,6 +79,16 @@ class ChatCommands(BaseEnum):
     CFG = "/cfg"
     CONFIG = "/config"
 
+    # System/Developer.
+    SYS = "/sys"
+    SYSTEM = "/system"
+    SYS_CLEAR = "/sys-clear"
+    SYS_SHOW = "/sys-show"
+    DEV = "/dev"
+    DEVELOPER = "/developer"
+    DEV_CLEAR = "/dev-clear"
+    DEV_SHOW = "/dev-show"
+
     # Help.
     QUESTION_MARK = "/?"
     H = "/h"
@@ -110,20 +119,67 @@ class ChatCommands(BaseEnum):
         """Returns as list of help commands."""
         return [cls.QUESTION_MARK.value, cls.H.value, cls.HELP.value]
 
+    @classmethod
+    def system(cls) -> list[str]:
+        """Returns commands for setting system-level messages."""
+        return [cls.SYS.value, cls.SYSTEM.value]
+
+    @classmethod
+    def system_clear(cls) -> list[str]:
+        """Returns commands to clear system-level messages."""
+        return [cls.SYS_CLEAR.value]
+
+    @classmethod
+    def developer(cls) -> list[str]:
+        """Returns commands for setting developer-level messages."""
+        return [cls.DEV.value, cls.DEVELOPER.value]
+
+    @classmethod
+    def developer_clear(cls) -> list[str]:
+        """Returns commands to clear developer-level messages."""
+        return [cls.DEV_CLEAR.value]
+
+    @classmethod
+    def system_show(cls) -> list[str]:
+        """Returns commands to show active system-level messages."""
+        return [cls.SYS_SHOW.value]
+
+    @classmethod
+    def developer_show(cls) -> list[str]:
+        """Returns commands to show active developer-level messages."""
+        return [cls.DEV_SHOW.value]
+
     @staticmethod
-    def help_doc() -> str:
-        """Return a dedented help doc."""
-        return dedent(
-            """
-            /?, /h, /help           Show help.
-            /cfg, /config           Show current config.
-            /c, /cls, /clear        Clear screen.
-            /m, /mult               Enter multiline mode.
-            /e, /exit, /q, /quit    End program.
-            ↑/↓                     Navigate history.
-            Enter                   Send message.
-            """
-        )
+    def help_doc(provider: str = "") -> str:
+        """Return a formatted help document.
+
+        Args:
+            provider (str): The provider name to show provider-specific commands.
+
+        Returns:
+            str: A formatted help document string.
+        """
+        lines: list[str] = [
+            "/?, /h, /help           Show help.",
+            "/cfg, /config           Show current config.",
+            "/c, /cls, /clear        Clear screen.",
+            "/m, /mult               Enter multiline mode.",
+        ]
+
+        if provider == ProviderNames.OPENAI.value:
+            lines.append("/dev, /developer        Set developer message.")
+            lines.append("/dev-clear [n]          Clear developer messages (or one by index).")
+            lines.append("/dev-show               Show active developer messages.")
+        elif provider == ProviderNames.MISTRAL.value:
+            lines.append("/sys, /system           Set system message.")
+            lines.append("/sys-clear [n]          Clear system messages (or one by index).")
+            lines.append("/sys-show               Show active system messages.")
+
+        lines.append("/e, /exit, /q, /quit    End program.")
+        lines.append("↑/↓                     Navigate history.")
+        lines.append("Enter                   Send message.")
+
+        return "\n" + "\n".join(lines) + "\n"
 
 
 MULT: str = ChatCommands.MULT.value
@@ -212,6 +268,11 @@ class OpenaiUserRoles(BaseEnum):
         """Returns the default value."""
         return cls.USER.value
 
+    @classmethod
+    def system_role(cls) -> str:
+        """Returns the role used for system-level messages."""
+        return cls.DEVELOPER.value
+
 
 class OpenaiModelRoles(BaseEnum):
     """Passed to Message objects to instruct the AI model how to behave."""
@@ -262,11 +323,17 @@ class MistralUserRoles(BaseEnum):
     """Passed to Message objects to instruct the AI model how to behave."""
 
     USER = "user"
+    SYSTEM = "system"
 
     @classmethod
     def default(cls) -> str:
         """Returns the default value."""
         return cls.USER.value
+
+    @classmethod
+    def system_role(cls) -> str:
+        """Returns the role used for system-level messages."""
+        return cls.SYSTEM.value
 
 
 class MistralModelRoles(BaseEnum):

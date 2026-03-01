@@ -15,9 +15,13 @@ from gptcli.src.common.api import Chat as ChatAPIHelper
 from gptcli.src.common.constants import (
     GRN,
     GRY,
+    RED,
     RST,
     ChatCommands,
+    MistralUserRoles,
     ModelRoles,
+    OpenaiUserRoles,
+    ProviderNames,
     UserRoles,
 )
 from gptcli.src.common.decorators import user_triggered_abort
@@ -138,6 +142,18 @@ class ChatUser(Chat):
             api_key=api_key,
         )
         self._session_multiline: PromptSession = PromptSession(history=InMemoryHistory(), multiline=True)
+        self._session_system: PromptSession = PromptSession(history=InMemoryHistory(), multiline=True)
+
+        if provider == ProviderNames.OPENAI.value:
+            self._role_system: str = OpenaiUserRoles.system_role()
+            self._commands_system: list[str] = ChatCommands.developer()
+            self._commands_system_clear: list[str] = ChatCommands.developer_clear()
+            self._commands_system_show: list[str] = ChatCommands.developer_show()
+        else:
+            self._role_system = MistralUserRoles.system_role()
+            self._commands_system = ChatCommands.system()
+            self._commands_system_clear = ChatCommands.system_clear()
+            self._commands_system_show = ChatCommands.system_show()
 
     @user_triggered_abort
     def start(self) -> None:
@@ -168,13 +184,23 @@ class ChatUser(Chat):
         commands_config_doc = self._config_doc()
         commands_exit = ChatCommands.exit()
         commands_help = ChatCommands.help()
-        commands_help_doc = ChatCommands.help_doc()
+        commands_help_doc = ChatCommands.help_doc(provider=self._provider)
         commands_exec = "cls" if os.name.lower() == "nt" else "clear"
 
         while True:
             user_input = self.prompt(">>> ")
             if user_input in commands_multiline:
                 user_input = self.prompt_multiline("... ")
+            elif user_input in self._commands_system:
+                system_input = self._prompt_system("... ")
+                self._process_system_message(system_input)
+                continue
+            elif any(user_input == cmd or user_input.startswith(cmd + " ") for cmd in self._commands_system_clear):
+                self._process_system_clear(user_input)
+                continue
+            elif user_input in self._commands_system_show:
+                self._display_system_messages()
+                continue
             elif user_input.isspace():
                 continue
             elif user_input in commands_clear:
@@ -216,6 +242,17 @@ class ChatUser(Chat):
             )
         )
 
+    @user_triggered_abort
+    def _prompt_system(self, prompt_text: str) -> str:
+        """Prompt the user for a system/developer message."""
+        return str(
+            self._session_system.prompt(
+                message=ANSI(f"{GRY}{prompt_text}{RST}"),
+                placeholder=ANSI(f"{GRY} Sets model behavior | Esc then Enter to send{RST}"),
+                prompt_continuation=ANSI(f"{GRY}{prompt_text}{RST}"),
+            )
+        )
+
     def _ingest_file_as_context(self) -> None:
         logger.info("Extracting file content from '%s' to add to m.", self._filepath)
 
@@ -233,6 +270,54 @@ class ChatUser(Chat):
         if len(content) > 0 and not content.isspace():
             message_user = self._message_factory.user_message(role=self._role_user, content=content, model=self._model)
             self._messages.add(message_user)
+
+    def _process_system_message(self, content: str) -> None:
+        """Add a system message to the messages stack without sending to the API.
+
+        Args:
+            content (str): The system/developer message content.
+        """
+        if not content or content.isspace():
+            return
+        message = self._message_factory.user_message(
+            role=self._role_system,
+            content=content,
+            model=self._model,
+        )
+        self._messages.add(message)
+        count: int = sum(1 for m in self._messages if m.is_system)
+        print(f"{GRY}  System message added ({count} active, {message.tokens} tokens).{RST}")
+
+    def _display_system_messages(self) -> None:
+        """Display all active system/developer messages with 1-based indices."""
+        system_contents: list[str] = [m.content for m in self._messages if m.is_system]
+        if not system_contents:
+            print(f"{GRY}  No active system messages.{RST}")
+            return
+        for idx, content in enumerate(system_contents, start=1):
+            preview: str = content.replace("\n", " ")
+            if len(preview) > 80:
+                preview = preview[:77] + "..."
+            print(f"{GRY}  [{idx}] {preview}{RST}")
+
+    def _process_system_clear(self, user_input: str) -> None:
+        """Clear all system messages or a single one by index.
+
+        Args:
+            user_input (str): The raw command, e.g. "/dev-clear" or "/dev-clear 2".
+        """
+        parts: list[str] = user_input.strip().split(maxsplit=1)
+        if len(parts) == 1:
+            self._messages.flush_by_role({self._role_system})
+            return
+        try:
+            index: int = int(parts[1])
+        except ValueError:
+            print(f"{RED}  Invalid index: '{parts[1]}'. Use a number, e.g. {self._commands_system_clear[0]} 2{RST}")
+            return
+        removed: bool = self._messages.remove_by_role_and_index(role=self._role_system, index=index - 1)
+        if not removed:
+            print(f"{RED}  No system message at index {index}.{RST}")
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         logger.info("Processing user and reply messages.")
@@ -252,7 +337,7 @@ class ChatUser(Chat):
             self._messages.add(message_reply)
 
         if not self._context:  # flush if --no-context flag is set
-            self._messages.flush()
+            self._messages.flush_except({self._role_system})
 
         return None
 
@@ -264,6 +349,7 @@ class ChatUser(Chat):
             Model:          {self._model}
             Role (user):    {self._role_user}
             Role (model):   {self._role_model}
+            Role (system):  {self._role_system}
             Context:        {self._context}
             Stream:         {self._stream}
             Store:          {self._store}

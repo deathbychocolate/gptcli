@@ -21,7 +21,16 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
 )
-from gptcli.src.common.constants import GRN, MGA, MISTRAL, OPENAI, RED, RST
+from gptcli.src.common.constants import (
+    GRN,
+    GRY,
+    MGA,
+    MISTRAL,
+    OPENAI,
+    RED,
+    RST,
+    OpenaiUserRoles,
+)
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.message import Message, MessageFactory, Messages
 from gptcli.src.common.validators import InputType, is_url
@@ -436,8 +445,11 @@ class Storage:
 
         for message in messages:
             if message.is_reply:
-                print_formatted_text(ANSI(f"{MGA}>>>{RST} " + message.content))
+                print_formatted_text(ANSI(f"{MGA}>>>{RST} " + message.content.strip()))
+            elif message.is_system:
+                label: str = "dev" if message.role == OpenaiUserRoles.system_role() else "sys"
+                print_formatted_text(ANSI(f"{GRY}[{label}]{RST} " + message.content.strip()))
             else:
-                print_formatted_text(ANSI(f"{GRN}>>>{RST} " + message.content))
+                print_formatted_text(ANSI(f"{GRN}>>>{RST} " + message.content.strip()))
 
         return None

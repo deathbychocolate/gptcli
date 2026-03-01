@@ -6,6 +6,7 @@ import pytest
 from tiktoken import Encoding
 
 from gptcli.src.common.constants import (
+    MistralModelsChat,
     OpenaiModelsChat,
     OpenaiUserRoles,
     ProviderNames,
@@ -97,6 +98,35 @@ class TestMessage:
             message = setup_teardown
             encoding: Encoding = message._encoding_openai()
             assert isinstance(encoding, Encoding)
+
+    class TestRoleProperty:
+        """Holds tests for the role property."""
+
+        def test_should_return_role_value(self, setup_teardown: Message) -> None:
+            assert setup_teardown.role == "user"
+
+        def test_should_return_str(self, setup_teardown: Message) -> None:
+            assert isinstance(setup_teardown.role, str)
+
+        def test_should_return_developer_role(self) -> None:
+            message = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            assert message.role == "developer"
+
+        def test_should_return_system_role(self) -> None:
+            message = Message(
+                role="system",
+                content="You are a pirate.",
+                model=MistralModelsChat.default(),
+                provider=ProviderNames.MISTRAL.value,
+                is_reply=False,
+            )
+            assert message.role == "system"
 
     class TestToDictionaryReducedContext:
         """Holds tests for to_dict_reduced_context()."""
@@ -244,6 +274,229 @@ class TestMessages:
             messages_token_count_after: int = messages.tokens
             assert messages_token_count_before < messages_token_count_after
 
+    class TestFlushExcept:
+        """Holds tests for flush_except()."""
+
+        def test_keeps_only_matching_roles(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev_msg = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            assistant_msg = Message(
+                role="assistant",
+                content="Ahoy!",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=True,
+            )
+            messages = Messages(messages=[user_msg, dev_msg, assistant_msg])
+            messages.flush_except({"developer"})
+            assert len(messages) == 1
+            remaining = next(iter(messages))
+            assert remaining.role == "developer"
+
+        def test_updates_token_count(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev_msg = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[user_msg, dev_msg])
+            messages.flush_except({"developer"})
+            assert messages.tokens == dev_msg.tokens
+
+        def test_flushes_all_when_no_roles_match(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[user_msg])
+            messages.flush_except({"developer"})
+            assert len(messages) == 0
+            assert messages.tokens == 0
+
+    class TestRemoveByRoleAndIndex:
+        """Holds tests for remove_by_role_and_index()."""
+
+        def test_removes_correct_message(self) -> None:
+            dev1 = Message(
+                role="developer",
+                content="First.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev2 = Message(
+                role="developer",
+                content="Second.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[dev1, user_msg, dev2])
+            result = messages.remove_by_role_and_index("developer", 1)
+            assert result is True
+            assert len(messages) == 2
+            roles = [m.role for m in messages]
+            assert roles == ["developer", "user"]
+
+        def test_returns_false_for_out_of_range_index(self) -> None:
+            dev_msg = Message(
+                role="developer",
+                content="Only one.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[dev_msg])
+            result = messages.remove_by_role_and_index("developer", 5)
+            assert result is False
+            assert len(messages) == 1
+
+        def test_returns_false_for_negative_index(self) -> None:
+            dev_msg = Message(
+                role="developer",
+                content="Only one.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[dev_msg])
+            result = messages.remove_by_role_and_index("developer", -1)
+            assert result is False
+
+        def test_updates_token_count(self) -> None:
+            dev_msg = Message(
+                role="developer",
+                content="Remove me.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[dev_msg, user_msg])
+            tokens_before = messages.tokens
+            dev_tokens = dev_msg.tokens
+            messages.remove_by_role_and_index("developer", 0)
+            assert messages.tokens == tokens_before - dev_tokens
+
+    class TestFlushByRole:
+        """Holds tests for flush_by_role()."""
+
+        def test_removes_matching_messages(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev_msg = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            assistant_msg = Message(
+                role="assistant",
+                content="Ahoy!",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=True,
+            )
+            messages = Messages(messages=[user_msg, dev_msg, assistant_msg])
+            messages.flush_by_role({"developer"})
+            assert len(messages) == 2
+
+        def test_leaves_non_matching_messages(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev_msg = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[user_msg, dev_msg])
+            messages.flush_by_role({"developer"})
+            remaining_roles = [m.role for m in messages]
+            assert remaining_roles == ["user"]
+
+        def test_updates_token_count(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            dev_msg = Message(
+                role="developer",
+                content="You are a pirate.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[user_msg, dev_msg])
+            tokens_before = messages.tokens
+            dev_tokens = dev_msg.tokens
+            messages.flush_by_role({"developer"})
+            assert messages.tokens == tokens_before - dev_tokens
+
+        def test_no_op_when_no_matching_roles(self) -> None:
+            user_msg = Message(
+                role="user",
+                content="Hello.",
+                model="gpt-4-turbo",
+                provider=ProviderNames.OPENAI.value,
+                is_reply=False,
+            )
+            messages = Messages(messages=[user_msg])
+            messages.flush_by_role({"developer"})
+            assert len(messages) == 1
+
     class TestCountTokens:
         """Holds tests for _count_tokens()."""
 
@@ -256,3 +509,27 @@ class TestMessages:
             messages: Messages = setup_teardown
             count: int = messages._count_tokens()
             assert count >= 0
+
+
+class TestMistralSystemTokenizer:
+    """Tests for Mistral tokenizer handling of system role messages."""
+
+    def test_system_role_message_tokenizes_successfully(self) -> None:
+        message = Message(
+            role="system",
+            content="You are a helpful assistant.",
+            model=MistralModelsChat.default(),
+            provider=ProviderNames.MISTRAL.value,
+            is_reply=False,
+        )
+        assert message.tokens > 0
+
+    def test_system_role_returns_integer_token_count(self) -> None:
+        message = Message(
+            role="system",
+            content="You are a pirate.",
+            model=MistralModelsChat.default(),
+            provider=ProviderNames.MISTRAL.value,
+            is_reply=False,
+        )
+        assert isinstance(message.tokens, int)
