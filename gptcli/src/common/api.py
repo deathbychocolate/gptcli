@@ -255,11 +255,11 @@ class Chat(EndpointHelper):
             raise ValueError(f"Parameter 'messages' only accepts Messages values and not '{type(messages)}'.")
         self._messages = messages
 
-    def send(self) -> Message:
+    def send(self) -> Message | None:
         """Sends message(s) to API endpoint.
 
         Returns:
-            Message: A Message object derived from the object sent by the server.
+            Message | None: A Message object derived from the object sent by the server, or None on failure.
         """
         logger.info("Sending message to API endpoint.")
 
@@ -268,8 +268,6 @@ class Chat(EndpointHelper):
 
         if message is None:
             logger.warning("Unable to retrieve message from post request. This is likely a server issue.")
-            logger.warning("Creating empty dummy message instead.")
-            message = self._message_factory.reply_message(content="", model=self._model)
 
         return message
 
@@ -307,11 +305,14 @@ class Chat(EndpointHelper):
 
         return message
 
-    def _post_request(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message:
+    def _post_request(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message | None:
         logger.info("Posting request to provider API.")
 
         response: Response = requests.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30)
-        self._check_for_http_errors(response=response)
+        found_errors: bool = self._check_for_http_errors(response=response)
+        if found_errors:
+            return None
+
         content: str = json.loads(response.content.decode(encoding="utf8"))["choices"][0]["message"]["content"]
         print(f"{MGA}>>>{RST} {content}")
         message = self._message_factory.reply_message(content=content, model=self._model)
@@ -319,7 +320,7 @@ class Chat(EndpointHelper):
         return message
 
     @allow_graceful_stream_exit
-    def _post_request_stream(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message:
+    def _post_request_stream(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message | None:
         logger.info("Posting request to provider API - stream mode.")
 
         content: str = ""
@@ -329,16 +330,18 @@ class Chat(EndpointHelper):
             response = session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=60)
 
         found_errors: bool = self._check_for_http_errors(response=response)
-        if not found_errors:  # don't bother printing
-            print_formatted_text(ANSI(f"{MGA}>>>{RST} "), end="")
-            for line in response.iter_lines(decode_unicode=True):
-                if len(line) == 0:  # iter_lines has an extra chunk that is empty; skip it
-                    continue
-                elif "content" in line:  # not all chunks have content we want to print
-                    chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
-                    print(chunk, end="", flush=True)
-                    content = "".join([content, chunk])
-            print("")
+        if found_errors:
+            return None
+
+        print_formatted_text(ANSI(f"{MGA}>>>{RST} "), end="")
+        for line in response.iter_lines(decode_unicode=True):
+            if len(line) == 0:  # iter_lines has an extra chunk that is empty; skip it
+                continue
+            elif "content" in line:  # not all chunks have content we want to print
+                chunk: str = json.loads(line.removeprefix("data: "))["choices"][0]["delta"]["content"]
+                print(chunk, end="", flush=True)
+                content = "".join([content, chunk])
+        print("")
 
         message: Message = self._message_factory.reply_message(content=content, model=self._model)
 

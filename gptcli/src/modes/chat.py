@@ -247,7 +247,9 @@ class ChatUser(Chat):
 
         # send messages and capture reply
         message_reply = self._chat.send()
-        self._messages.add(message_reply)
+
+        if message_reply is not None:
+            self._messages.add(message_reply)
 
         if not self._context:  # flush if --no-context flag is set
             self._messages.flush()

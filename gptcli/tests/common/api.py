@@ -4,7 +4,6 @@ import time
 from typing import Generator
 
 import pytest
-import requests
 from pytest import CaptureFixture
 
 from gptcli.src.common.api import (
@@ -181,7 +180,7 @@ class TestOpenAiHelper:
         class TestSend:
             """Holds tests for send()."""
 
-            def test_should_return_a_message_object(self, setup_teardown: Chat) -> None:
+            def test_should_return_none_on_failure(self, setup_teardown: Chat) -> None:
                 helper: Chat = setup_teardown
-                response: Message = helper.send()
-                assert isinstance(response, requests.Response)
+                response: Message | None = helper.send()
+                assert response is None
