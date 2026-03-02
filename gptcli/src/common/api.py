@@ -29,7 +29,7 @@ from gptcli.constants import (
     MISTRAL_API_KEY,
     OPENAI_API_KEY,
 )
-from gptcli.src.common.constants import MGA, MISTRAL, OPENAI, RST
+from gptcli.src.common.constants import BLU, GRN, MGA, MISTRAL, OPENAI, RST
 from gptcli.src.common.decorators import allow_graceful_stream_exit
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
@@ -50,18 +50,23 @@ class Spinner:
         self._interval = interval
         self.label: str = label
 
+    _FRAMES: tuple[str, ...] = ("⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓")
+
     def _animate(self) -> None:
         printed: bool = False
-        for c in itertools.cycle(["⣷", "⣯", "⣟", "⡿", "⢿", "⣻", "⣽", "⣾"]):
+        for c in itertools.cycle(self._FRAMES):
             if self._stop.is_set():
                 break
-            sys.stdout.write(f"\r{c} {self.label}")
+            sys.stdout.write(f"\r{BLU}{c}{RST} {self.label}")
             sys.stdout.flush()
             printed = True
             time.sleep(self._interval)
 
         if printed:
-            sys.stdout.write("\r")
+            self._on_complete()
+
+    def _on_complete(self) -> None:
+        sys.stdout.write("\r")
 
     def __enter__(self) -> Self:
         self._stop.clear()
@@ -102,10 +107,16 @@ class SpinnerProgress(Spinner):
         self._count += 1
         self.label = f"{self._label_prefix}: {self._count}/{self._total} files"
 
+    def _on_complete(self) -> None:
+        sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
+
 
 class SpinnerRecognizing(Spinner):
     def __init__(self, interval: float = 0.1, label: str = "Recognizing") -> None:
         super().__init__(interval=interval, label=label)
+
+    def _on_complete(self) -> None:
+        sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
 
 
 class SpinnerThinking(Spinner):

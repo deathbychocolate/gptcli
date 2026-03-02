@@ -10,6 +10,7 @@ from gptcli.src.common.api import (
     Chat,
     SingleExchange,
     Spinner,
+    SpinnerProgress,
     SpinnerRecognizing,
     SpinnerThinking,
 )
@@ -36,6 +37,21 @@ class TestSpinner:
         # Then the output to stdout should contain the spinner label.
         out, err = capfd.readouterr()
         assert "Custom Message" in out
+
+    def test_spinner_does_not_show_checkmark_on_completion(
+        self, setup_teardown: Spinner, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a Spinner.
+        spinner: Spinner = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the output should not contain a checkmark.
+        out, err = capfd.readouterr()
+        assert "✔" not in out
 
     def test_spinner_stops_printing_frames(self, setup_teardown: Spinner, capfd: CaptureFixture[str]) -> None:
 
@@ -72,6 +88,43 @@ class TestSpinner:
         assert "Custom Message" in out
 
 
+class TestSpinnerProgress:
+
+    @pytest.fixture(scope="function")
+    def setup_teardown(self) -> Generator[SpinnerProgress, None, None]:
+        spinner: SpinnerProgress = SpinnerProgress(total=3, interval=0.01)
+        yield spinner
+
+    def test_spinner_starts_printing_frames(self, setup_teardown: SpinnerProgress, capfd: CaptureFixture[str]) -> None:
+
+        # Given we have instantiated a SpinnerProgress.
+        spinner: SpinnerProgress = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the output to stdout should contain the progress label.
+        out, err = capfd.readouterr()
+        assert "Processing" in out
+
+    def test_spinner_shows_checkmark_on_completion(
+        self, setup_teardown: SpinnerProgress, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a SpinnerProgress.
+        spinner: SpinnerProgress = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the output should contain a green checkmark and the label.
+        out, err = capfd.readouterr()
+        assert "✔" in out
+        assert "Processing" in out
+
+
 class TestSpinnerRecognizing:
 
     @pytest.fixture(scope="function")
@@ -92,6 +145,22 @@ class TestSpinnerRecognizing:
 
         # Then the output to stdout should contain the word 'Recognizing'.
         out, err = capfd.readouterr()
+        assert "Recognizing" in out
+
+    def test_spinner_shows_checkmark_on_completion(
+        self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a SpinnerRecognizing.
+        recognizing_spinner: SpinnerRecognizing = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with recognizing_spinner:
+            time.sleep(0.05)
+
+        # Then the output should contain a green checkmark and the label.
+        out, err = capfd.readouterr()
+        assert "✔" in out
         assert "Recognizing" in out
 
     def test_spinner_stops_printing_frames(
@@ -133,6 +202,21 @@ class TestSpinnerThinking:
         # Then the output to stdout should contain the word 'Thinking'.
         out, err = capfd.readouterr()
         assert "Thinking" in out
+
+    def test_spinner_does_not_show_checkmark_on_completion(
+        self, setup_teardown: SpinnerThinking, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a SpinnerThinking.
+        thinking_spinner: SpinnerThinking = setup_teardown
+
+        # When we run the Spinner for 0.05 seconds.
+        with thinking_spinner:
+            time.sleep(0.05)
+
+        # Then the output should not contain a checkmark.
+        out, err = capfd.readouterr()
+        assert "✔" not in out
 
     def test_spinner_stops_printing_frames(self, setup_teardown: SpinnerThinking, capfd: CaptureFixture[str]) -> None:
 

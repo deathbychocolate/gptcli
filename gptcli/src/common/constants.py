@@ -17,11 +17,17 @@ class BaseEnum(Enum):
 class ChatColours(BaseEnum):
     """The colours to use for CLI output."""
 
+    BLU = "\033[38;5;4m"  # blue - for spinner
     GRY = "\033[38;5;245m"  # darker ANSI grey - for placeholder
     GRN = "\033[1;38;5;2m"  # bold green - for user
     MGA = "\033[1;38;5;13m"  # bold magenta - for AI
     RED = "\033[1;38;5;9m"  # bold bright red - for errors, warnings, or important messages
     RST = "\033[0m"  # reset the colour to default
+
+    @classmethod
+    def blue(cls) -> str:
+        """Return the colour code for blue."""
+        return cls.BLU.value
 
     @classmethod
     def grey(cls) -> str:
@@ -50,6 +56,7 @@ class ChatColours(BaseEnum):
 
 
 # Useful shorthand:
+BLU: str = ChatColours.BLU.value
 GRY: str = ChatColours.GRY.value
 GRN: str = ChatColours.GRN.value
 MGA: str = ChatColours.MGA.value
