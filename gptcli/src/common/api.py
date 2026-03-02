@@ -38,6 +38,8 @@ logger: Logger = logging.getLogger(__name__)
 
 class Spinner:
 
+    _FRAMES: tuple[str, ...] = ("⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓")
+
     def __init__(self, interval: float = 0.1, label: str = "") -> None:
         """Simulates a thinking animation when we send requests to an AI provider's AI model.
 
@@ -49,8 +51,6 @@ class Spinner:
         self._thread: threading.Thread | None = None
         self._interval = interval
         self.label: str = label
-
-    _FRAMES: tuple[str, ...] = ("⠋", "⠙", "⠚", "⠞", "⠖", "⠦", "⠴", "⠲", "⠳", "⠓")
 
     def _animate(self) -> None:
         printed: bool = False
@@ -66,6 +66,7 @@ class Spinner:
             self._on_complete()
 
     def _on_complete(self) -> None:
+        """Clears the spinner line with a carriage return."""
         sys.stdout.write("\r")
 
     def __enter__(self) -> Self:
@@ -112,6 +113,8 @@ class SpinnerProgress(Spinner):
 
 
 class SpinnerRecognizing(Spinner):
+    """Spinner displayed during OCR recognition; shows a checkmark on completion."""
+
     def __init__(self, interval: float = 0.1, label: str = "Recognizing") -> None:
         super().__init__(interval=interval, label=label)
 
@@ -120,6 +123,8 @@ class SpinnerRecognizing(Spinner):
 
 
 class SpinnerThinking(Spinner):
+    """Spinner displayed while waiting for an AI response; clears silently on completion."""
+
     def __init__(self, interval: float = 0.1, label: str = "Thinking") -> None:
         super().__init__(interval=interval, label=label)
 
