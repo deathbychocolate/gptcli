@@ -244,7 +244,8 @@ class OpticalCharacterRecognition:
             with open(image_filepath, "wb") as fp:
                 fp.write(data)
 
-        print(f"OCR result saved to '{folder_path}'.")
+        abs_path: str = str(os.path.abspath(folder_path))
+        print(f"OCR result saved to '{abs_path}'.")
 
         return None
 
