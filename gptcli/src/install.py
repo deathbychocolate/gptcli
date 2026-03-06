@@ -227,10 +227,13 @@ class Migrate:
             if not os.path.isdir(storage_dir):
                 continue
 
-            # Step 1: Rename json/ → chat/
-            if os.path.isdir(legacy_json_dir) and not os.path.isdir(chat_dir):
-                logger.info(f"Renaming {legacy_json_dir} to {chat_dir}")
-                os.rename(legacy_json_dir, chat_dir)
+            # Step 1: Merge json/ into chat/
+            if os.path.isdir(legacy_json_dir):
+                if not os.path.isdir(chat_dir):
+                    logger.info(f"Renaming {legacy_json_dir} to {chat_dir}")
+                    os.rename(legacy_json_dir, chat_dir)
+                else:
+                    Migrate._merge_legacy_json_into_chat(legacy_json_dir, chat_dir)
 
             # Step 2: Migrate chat files
             if os.path.isdir(chat_dir):
@@ -240,6 +243,27 @@ class Migrate:
             ocr_dir = os.path.join(storage_dir, "ocr")
             if os.path.isdir(ocr_dir):
                 Migrate._migrate_ocr_dirs(ocr_dir, encryption)
+
+    @staticmethod
+    def _merge_legacy_json_into_chat(legacy_json_dir: str, chat_dir: str) -> None:
+        """Move remaining files from json/ into chat/, then remove json/ if empty.
+
+        Handles the case where both json/ and chat/ exist because the installer
+        created chat/ before the migration could rename json/.
+
+        Args:
+            legacy_json_dir (str): Path to the legacy json/ directory.
+            chat_dir (str): Path to the chat/ directory.
+        """
+        for filename in os.listdir(legacy_json_dir):
+            src = os.path.join(legacy_json_dir, filename)
+            dst = os.path.join(chat_dir, filename)
+            if os.path.isfile(src) and not os.path.exists(dst):
+                os.rename(src, dst)
+                logger.info(f"Moved '{filename}' from json/ to chat/")
+        if not os.listdir(legacy_json_dir):
+            os.rmdir(legacy_json_dir)
+            logger.info(f"Removed empty legacy directory {legacy_json_dir}")
 
     @staticmethod
     def _write_json(filepath: str, data: Any, encryption: Encryption | None) -> None:
