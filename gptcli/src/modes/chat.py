@@ -58,24 +58,24 @@ class CommandCompleter(Completer):  # type: ignore[misc]
         Returns:
             dict[str, str]: A mapping of command strings to descriptions.
         """
-        groups: list[tuple[list[str], str]] = [
-            (ChatCommands.multiline(), "Enter multiline mode"),
-            (ChatCommands.config(), "Show current config"),
-            (ChatCommands.clear(), "Clear screen"),
-            (ChatCommands.help(), "Show help"),
-            (ChatCommands.exit(), "End program"),
-        ]
+        commands: dict[str, str] = {
+            ChatCommands.MULT.value: "Enter multiline mode",
+            ChatCommands.CONFIG.value: "Show current config",
+            ChatCommands.CLEAR_UNIX.value: "Clear screen",
+            ChatCommands.HELP.value: "Show help",
+            ChatCommands.QUIT.value: "End program",
+        }
 
         if provider == ProviderNames.OPENAI.value:
-            groups.append((ChatCommands.developer(), "Set developer message"))
-            groups.append((ChatCommands.developer_clear(), "Clear developer messages"))
-            groups.append((ChatCommands.developer_show(), "Show developer messages"))
+            commands[ChatCommands.DEVELOPER.value] = "Set developer message"
+            commands[ChatCommands.DEV_CLEAR.value] = "Clear developer messages"
+            commands[ChatCommands.DEV_SHOW.value] = "Show developer messages"
         elif provider == ProviderNames.MISTRAL.value:
-            groups.append((ChatCommands.system(), "Set system message"))
-            groups.append((ChatCommands.system_clear(), "Clear system messages"))
-            groups.append((ChatCommands.system_show(), "Show system messages"))
+            commands[ChatCommands.SYSTEM.value] = "Set system message"
+            commands[ChatCommands.SYS_CLEAR.value] = "Clear system messages"
+            commands[ChatCommands.SYS_SHOW.value] = "Show system messages"
 
-        return {cmd: description for cmds, description in groups for cmd in cmds}
+        return commands
 
     def get_completions(self, document: Document, complete_event: CompleteEvent) -> Iterable[Completion]:
         """Yield completions for commands matching the current input.
