@@ -228,7 +228,6 @@ class TestCommandCompleter:
         def test_slash_d_narrows_to_dev_commands(self, openai_completer: CommandCompleter) -> None:
             results = TestCommandCompleter._complete(openai_completer, "/d")
             assert all(r.startswith("/d") for r in results)
-            assert "/dev" in results
             assert "/developer" in results
             assert "/dev-clear" in results
             assert "/dev-show" in results
@@ -248,7 +247,7 @@ class TestCommandCompleter:
 
         def test_openai_has_dev_commands(self, openai_completer: CommandCompleter) -> None:
             results = TestCommandCompleter._complete(openai_completer, "/d")
-            assert "/dev" in results
+            assert "/developer" in results
 
         def test_openai_has_no_sys_commands(self, openai_completer: CommandCompleter) -> None:
             results = TestCommandCompleter._complete(openai_completer, "/s")
@@ -256,7 +255,6 @@ class TestCommandCompleter:
 
         def test_mistral_has_sys_commands(self, mistral_completer: CommandCompleter) -> None:
             results = TestCommandCompleter._complete(mistral_completer, "/s")
-            assert "/sys" in results
             assert "/system" in results
 
         def test_mistral_has_no_dev_commands(self, mistral_completer: CommandCompleter) -> None:
@@ -279,18 +277,18 @@ class TestCommandCompleter:
             commands = CommandCompleter.commands_for_provider(ProviderNames.OPENAI.value)
             assert "/help" in commands
             assert "/quit" in commands
-            assert "/m" in commands
+            assert "/mult" in commands
 
         def test_common_commands_present_for_mistral(self) -> None:
             commands = CommandCompleter.commands_for_provider(ProviderNames.MISTRAL.value)
             assert "/help" in commands
             assert "/quit" in commands
-            assert "/m" in commands
+            assert "/mult" in commands
 
         def test_unknown_provider_has_no_system_commands(self) -> None:
             commands = CommandCompleter.commands_for_provider("unknown")
-            assert "/dev" not in commands
-            assert "/sys" not in commands
+            assert "/developer" not in commands
+            assert "/system" not in commands
 
 
 class TestChatUser:

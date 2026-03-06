@@ -231,7 +231,7 @@ class TestMigrateToOpaqueStorage:
         assert os.path.isdir(storage_env["openai_chat"])
         assert not os.path.isdir(storage_env["openai_json"])
 
-    def test_skips_rename_when_chat_already_exists(self, storage_env: dict[str, str]) -> None:
+    def test_merges_json_into_chat_when_both_exist(self, storage_env: dict[str, str]) -> None:
         os.makedirs(storage_env["openai_json"])
         os.makedirs(storage_env["openai_chat"])
         with open(os.path.join(storage_env["openai_json"], "old.txt"), "w") as f:
@@ -242,9 +242,11 @@ class TestMigrateToOpaqueStorage:
         with self._apply_opaque_patches(storage_env):
             Migrate.migrate_to_opaque_storage()
 
-        # json/ should still exist since chat/ was already present
-        assert os.path.isdir(storage_env["openai_json"])
+        # json/ merged into chat/ and removed since it became empty
+        assert not os.path.isdir(storage_env["openai_json"])
         assert os.path.isdir(storage_env["openai_chat"])
+        assert os.path.isfile(os.path.join(storage_env["openai_chat"], "old.txt"))
+        assert os.path.isfile(os.path.join(storage_env["openai_chat"], "new.txt"))
 
     def test_migrates_chat_files_to_uuid_dirs(self, storage_env: dict[str, str]) -> None:
         os.makedirs(storage_env["openai_chat"])
