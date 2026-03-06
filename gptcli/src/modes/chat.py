@@ -2,6 +2,7 @@
 
 import logging
 import os
+import subprocess
 from collections.abc import Iterable
 from logging import Logger
 from textwrap import dedent
@@ -272,7 +273,7 @@ class ChatUser(Chat):
             elif user_input.isspace():
                 continue
             elif user_input in commands_clear:
-                os.system(commands_exec)
+                subprocess.run(commands_exec, shell=True, check=True)
                 continue
             elif user_input in commands_config:
                 print(commands_config_doc)
