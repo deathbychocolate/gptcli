@@ -142,18 +142,15 @@ class EndpointHelper:
         self._api_key_env_var: str = ""
         self._api_key_file: str = ""
         self._url: str = ""
-        self._message_factory: MessageFactory = MessageFactory(provider="dummy")
 
         if provider == MISTRAL:
             self._api_key_env_var = MISTRAL_API_KEY
             self._api_key_file = GPTCLI_PROVIDER_MISTRAL_KEY_FILE
             self._url = "https://api.mistral.ai/v1/chat/completions"
-            self._message_factory = MessageFactory(provider=provider)
         elif provider == OPENAI:
             self._api_key_env_var = OPENAI_API_KEY
             self._api_key_file = GPTCLI_PROVIDER_OPENAI_KEY_FILE
             self._url = "https://api.openai.com/v1/chat/completions"
-            self._message_factory = MessageFactory(provider=provider)
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
 
@@ -258,6 +255,8 @@ class Chat(EndpointHelper):
         self._model: str = model
         self._messages: Messages = messages
         self._stream: bool = stream
+        self._session: Session = requests.Session()
+        self._message_factory: MessageFactory = MessageFactory(provider=provider)
 
     @property
     def messages(self) -> Messages:
@@ -324,7 +323,7 @@ class Chat(EndpointHelper):
     def _post_request(self, url: str, headers: dict[str, str], body: dict[str, object]) -> Message | None:
         logger.info("Posting request to provider API.")
 
-        response: Response = requests.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30)
+        response: Response = self._session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=30)
         found_errors: bool = self._check_for_http_errors(response=response)
         if found_errors:
             return None
@@ -340,10 +339,9 @@ class Chat(EndpointHelper):
         logger.info("Posting request to provider API - stream mode.")
 
         content: str = ""
-        session: Session = requests.Session()
 
         with thinking_spinner:
-            response = session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=60)
+            response = self._session.post(url=url, headers=headers, stream=self._stream, json=body, timeout=60)
 
         found_errors: bool = self._check_for_http_errors(response=response)
         if found_errors:

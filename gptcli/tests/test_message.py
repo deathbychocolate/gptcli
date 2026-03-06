@@ -58,7 +58,7 @@ class TestMessage:
                 provider=ProviderNames.OPENAI.value,
                 is_reply=False,
             )
-            encoding: Encoding = message._encoding_openai()
+            encoding: Encoding = Message._encoding_openai(message._model)
             assert encoding.name == "o200k_base"
 
         def test_should_return_cl100k_base_for_supported_model_gpt_4_turbo(self) -> None:
@@ -69,7 +69,7 @@ class TestMessage:
                 provider=ProviderNames.OPENAI.value,
                 is_reply=False,
             )
-            encoding: Encoding = message._encoding_openai()
+            encoding: Encoding = Message._encoding_openai(message._model)
             assert encoding.name == "cl100k_base"
 
         def test_should_return_cl100k_base_for_supported_model_gpt_4(self) -> None:
@@ -80,7 +80,7 @@ class TestMessage:
                 provider=ProviderNames.OPENAI.value,
                 is_reply=False,
             )
-            encoding: Encoding = message._encoding_openai()
+            encoding: Encoding = Message._encoding_openai(message._model)
             assert encoding.name == "cl100k_base"
 
         def test_should_return_cl100k_base_for_supported_model_gpt_3_5_turbo(self) -> None:
@@ -91,12 +91,12 @@ class TestMessage:
                 provider=ProviderNames.OPENAI.value,
                 is_reply=False,
             )
-            encoding: Encoding = message._encoding_openai()
+            encoding: Encoding = Message._encoding_openai(message._model)
             assert encoding.name == "cl100k_base"
 
         def test_should_return_an__encoding(self, setup_teardown: Message) -> None:
             message = setup_teardown
-            encoding: Encoding = message._encoding_openai()
+            encoding: Encoding = Message._encoding_openai(message._model)
             assert isinstance(encoding, Encoding)
 
     class TestRoleProperty:

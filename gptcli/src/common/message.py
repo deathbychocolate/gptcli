@@ -38,6 +38,8 @@ logger: Logger = logging.getLogger(__name__)
 class Message:
 
     index: ClassVar[int] = 0
+    _mistral_tokenizers: ClassVar[dict[str, MistralTokenizer]] = {}
+    _openai_encodings: ClassVar[dict[str, Encoding]] = {}
 
     def __init__(
         self,
@@ -143,11 +145,7 @@ class Message:
         Returns:
             int: The number of tokens in this message.
         """
-        # Load Mistral tokenizer
-        try:
-            tokenizer = MistralTokenizer.from_model(self._model, strict=True)
-        except TokenizerException:
-            tokenizer = MistralTokenizer.v3(is_tekken=True)  # default if model not found
+        tokenizer = self._get_mistral_tokenizer(self._model)
 
         # Mistral tokenizer requires a typed message object.
         # System prompts use SystemMessage; all other roles (user, assistant, etc.)
@@ -189,7 +187,7 @@ class Message:
         if self._model not in OpenaiModelsChat.to_list():
             raise NotImplementedError(f"_count_tokens() is not presently implemented for {self._model}.")
         else:
-            encoding: Encoding = self._encoding_openai()
+            encoding: Encoding = self._encoding_openai(self._model)
             num_tokens: int = 0
             num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
             num_tokens += len(encoding.encode(self._content))
@@ -200,18 +198,48 @@ class Message:
 
             return num_tokens
 
-    def _encoding_openai(self) -> Encoding:
-        """Determine the encoding to use for the Message.
-        The encoding is derived from the LLM model used, via tiktoken.
+    @classmethod
+    def _encoding_openai(cls, model: str) -> Encoding:
+        """Return a cached tiktoken Encoding for the given model, creating one if needed.
+
+        Args:
+            model (str): The OpenAI model name.
 
         Returns:
             Encoding: The encoding of the message, which is the encoding used for the model.
         """
+        if model in cls._openai_encodings:
+            return cls._openai_encodings[model]
+
         try:
-            return tiktoken.encoding_for_model(model_name=self._model)
+            encoding = tiktoken.encoding_for_model(model_name=model)
         except KeyError:
-            return tiktoken.get_encoding(encoding_name="cl100k_base")  # keep this here
+            encoding = tiktoken.get_encoding(encoding_name="cl100k_base")  # keep this here
             # sometimes updates to tiktoken are late for new models, therefore default to 'cl100k_base'
+
+        cls._openai_encodings[model] = encoding
+        return encoding
+
+    @classmethod
+    def _get_mistral_tokenizer(cls, model: str) -> MistralTokenizer:
+        """Return a cached MistralTokenizer for the given model, creating one if needed.
+
+        Args:
+            model (str): The Mistral model name.
+
+        Returns:
+            MistralTokenizer: The cached tokenizer instance.
+        """
+        if model in cls._mistral_tokenizers:
+            return cls._mistral_tokenizers[model]
+
+        try:
+            tokenizer = MistralTokenizer.from_model(model, strict=True)
+        except TokenizerException:
+            tokenizer = MistralTokenizer.v3(is_tekken=True)
+
+        cls._mistral_tokenizers[model] = tokenizer
+        return tokenizer
 
     @property
     def tokens(self) -> int:
