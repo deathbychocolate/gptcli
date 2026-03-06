@@ -83,6 +83,24 @@ class Storage:
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
 
+    def _write_image(self, filepath: str, data: bytes) -> None:
+        """Write image data to a file, encrypting if encryption is enabled.
+
+        When encryption is enabled, writes to filepath + '.enc' in binary.
+        Otherwise, writes raw bytes to the given filepath.
+
+        Args:
+            filepath (str): The base filepath (without .enc suffix).
+            data (bytes): The image data to write.
+        """
+        if self._encryption:
+            encrypted: bytes = self._encryption.encrypt(data)
+            with open(filepath + ".enc", "wb") as fp:
+                fp.write(encrypted)
+        else:
+            with open(filepath, "wb") as fp:
+                fp.write(data)
+
     def _write_text(self, filepath: str, content: str) -> None:
         """Write text content to a file, encrypting if encryption is enabled.
 
@@ -413,10 +431,7 @@ class Storage:
             if not os.path.realpath(image_filepath).startswith(resolved_session_dir):
                 logger.warning(f"Image path escapes session folder; skipping '{filename}'.")
                 continue
-            with open(image_filepath, "wb") as fp:
-                fp.write(data)
-            if self._encryption:
-                self._encryption.encrypt_file(image_filepath)
+            self._write_image(image_filepath, data)
             image_filenames.append(safe_filename)
 
         metadata = self._build_ocr_metadata(

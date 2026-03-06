@@ -1060,6 +1060,36 @@ class TestStorage:
             assert decrypted is not None
             assert decrypted.decode("utf-8") == "hello world"
 
+    class TestWriteImage:
+
+        def test_writes_plaintext_when_no_encryption(self, tmp_path: str) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
+            filepath = os.path.join(str(tmp_path), "image.png")
+            image_data = b"\x89PNG\r\n\x1a\nfake image data"
+            storage._write_image(filepath, image_data)
+            assert os.path.exists(filepath)
+            assert not os.path.exists(filepath + ".enc")
+            with open(filepath, "rb") as f:
+                assert f.read() == image_data
+
+        def test_writes_encrypted_when_encryption_enabled(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "image.png")
+            storage._write_image(filepath, b"fake image data")
+            assert os.path.exists(filepath + ".enc")
+            assert not os.path.exists(filepath)
+
+        def test_encrypted_content_is_decryptable(self, tmp_path: str) -> None:
+            enc = Encryption(key=os.urandom(32))
+            storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=enc)
+            filepath = os.path.join(str(tmp_path), "image.png")
+            image_data = b"\x89PNG\r\n\x1a\nfake image data"
+            storage._write_image(filepath, image_data)
+            decrypted = enc.decrypt_file(filepath + ".enc")
+            assert decrypted is not None
+            assert decrypted == image_data
+
     class TestReadText:
 
         def test_reads_plaintext_file(self, tmp_path: str) -> None:
