@@ -3,12 +3,13 @@
 import json
 import os
 import re
-from typing import Any, Generator
+import uuid
+from typing import Any
 from unittest.mock import patch
 
 import pytest
-from _pytest.fixtures import SubRequest
 
+from gptcli.constants import GPTCLI_MANIFEST_FILENAME as _MANIFEST_FILENAME
 from gptcli.src.common.constants import MistralModelsOcr, ProviderNames
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.message import MessageFactory, Messages
@@ -25,63 +26,65 @@ class TestStorage:
         return storage
 
     @staticmethod
-    def _create_ocr_session(tmp_path: str, folder_name: str, md_filename: str, md_content: str) -> str:
-        """Create a test OCR session directory with a markdown file."""
-        session_dir = os.path.join(tmp_path, folder_name)
+    def _append_manifest_entry(tmp_path: str, session_uuid: str, created: float) -> None:
+        """Append a session entry to the plaintext manifest in tmp_path."""
+        manifest_path = os.path.join(tmp_path, _MANIFEST_FILENAME)
+        entries: list[dict[str, Any]] = []
+        if os.path.exists(manifest_path):
+            with open(manifest_path, "r", encoding="utf8") as f:
+                entries = json.load(f)
+        entries.append({"uuid": session_uuid, "created": created})
+        with open(manifest_path, "w", encoding="utf8") as f:
+            json.dump(entries, f)
+
+    @staticmethod
+    def _create_ocr_session_with_manifest(tmp_path: str, md_filename: str, md_content: str, created: float) -> str:
+        """Create a test OCR session directory with a markdown file and manifest entry."""
+        session_uuid = str(uuid.uuid4())
+        session_dir = os.path.join(tmp_path, session_uuid)
         os.makedirs(session_dir)
-        md_path = os.path.join(session_dir, md_filename)
-        with open(md_path, "w", encoding="utf8") as f:
+        with open(os.path.join(session_dir, md_filename), "w", encoding="utf8") as f:
             f.write(md_content)
+        TestStorage._append_manifest_entry(tmp_path, session_uuid, created)
         return session_dir
 
-    class TestCreateJsonFilepath:
+    class TestCreateSessionDir:
 
-        @pytest.fixture(scope="session", params=ProviderNames.to_list())
-        def setup_teardown(self, request: SubRequest) -> Generator[str, None, None]:
-            """Create a filepath to test for the provider OpenAI."""
-            storage: Storage = Storage(provider=request.param)
-            filepath: str = storage._create_json_filepath()
-            yield filepath
+        @pytest.fixture
+        def storage_instance(self, tmp_path: str) -> Storage:
+            """Create a Storage instance with dirs pointing to tmp_path."""
+            storage = Storage(provider=ProviderNames.MISTRAL.value)
+            storage._chat_dir = os.path.join(str(tmp_path), "chat")
+            storage._ocr_dir = os.path.join(str(tmp_path), "ocr")
+            os.makedirs(storage._chat_dir)
+            os.makedirs(storage._ocr_dir)
+            return storage
 
-        def test_should_return_a_string(self, setup_teardown: str) -> None:
-            filepath: str = setup_teardown
-            assert isinstance(filepath, str)
+        def test_should_return_a_tuple_of_three(self, storage_instance: Storage) -> None:
+            result = storage_instance._create_session_dir(storage_instance._chat_dir)
+            assert isinstance(result, tuple)
+            assert len(result) == 3
 
-        def test_should_return_a_string_with_a_json_file_extension(self, setup_teardown: str) -> None:
-            filepath: str = setup_teardown
-            assert filepath.endswith(".json")
+        def test_session_dir_contains_uuid(self, storage_instance: Storage) -> None:
+            session_dir, session_uuid, _ = storage_instance._create_session_dir(storage_instance._chat_dir)
+            assert session_uuid in session_dir
+            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            assert re.match(uuid_pattern, session_uuid)
 
-    class TestCreateOcrSessionDir:
+        def test_session_dir_is_inside_base_directory(self, storage_instance: Storage) -> None:
+            session_dir, _, _ = storage_instance._create_session_dir(storage_instance._chat_dir)
+            assert session_dir.startswith(storage_instance._chat_dir)
 
-        @pytest.fixture(scope="session", params=ProviderNames.to_list())
-        def storage_instance(self, request: SubRequest) -> Generator[Storage, None, None]:
-            storage: Storage = Storage(provider=request.param)
-            yield storage
+        def test_created_is_a_float(self, storage_instance: Storage) -> None:
+            _, _, created = storage_instance._create_session_dir(storage_instance._chat_dir)
+            assert isinstance(created, float)
 
-        def test_should_return_a_string(self, storage_instance: Storage) -> None:
-            session_dir: str = storage_instance._create_ocr_session_dir()
-            assert isinstance(session_dir, str)
-
-        def test_should_end_with_double_underscore_ocr_suffix(self, storage_instance: Storage) -> None:
-            session_dir: str = storage_instance._create_ocr_session_dir()
-            assert session_dir.endswith("__ocr")
-
-        def test_should_match_epoch_date_time_ocr_naming_pattern(self, storage_instance: Storage) -> None:
-            session_dir: str = storage_instance._create_ocr_session_dir()
-            folder_name: str = session_dir.split("/")[-1]
-            pattern = r"^\d+__\d{4}_\d{2}_\d{2}__\d{2}_\d{2}_\d{2}__ocr$"
-            assert re.match(pattern, folder_name), f"'{folder_name}' does not match pattern"
-
-        def test_should_be_inside_provider_ocr_storage_directory(self, storage_instance: Storage) -> None:
-            session_dir: str = storage_instance._create_ocr_session_dir()
-            assert "/storage/ocr/" in session_dir
-
-        def test_consecutive_calls_should_all_produce_valid_ocr_paths(self, storage_instance: Storage) -> None:
-            paths: set[str] = set()
+        def test_consecutive_calls_produce_unique_uuids(self, storage_instance: Storage) -> None:
+            uuids: set[str] = set()
             for _ in range(5):
-                paths.add(storage_instance._create_ocr_session_dir())
-            for p in paths:
-                assert p.endswith("__ocr")
+                _, session_uuid, _ = storage_instance._create_session_dir(storage_instance._chat_dir)
+                uuids.add(session_uuid)
+            assert len(uuids) == 5
 
     class TestExtractFilenameFromSource:
 
@@ -223,6 +226,8 @@ class TestStorage:
                 page_count=1,
                 markdown_file="document.md",
                 images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
             )
             assert result["source"]["input"] == "/path/to/document.pdf"
             assert result["source"]["input_type"] == "filepath"
@@ -234,21 +239,25 @@ class TestStorage:
                 page_count=1,
                 markdown_file="report.md",
                 images=[],
+                session_uuid="test-uuid-2",
+                created=1704067200.0,
             )
             assert url_result["source"]["input_type"] == "url"
             assert url_result["source"]["filename"] == "report.pdf"
 
         def test_metadata_captures_processing_details(self, storage: Storage) -> None:
+            test_uuid = str(uuid.uuid4())
             result = storage._build_ocr_metadata(
                 source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=5,
                 markdown_file="doc.md",
                 images=[],
+                session_uuid=test_uuid,
+                created=1704067200.0,
             )
-            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
             assert isinstance(result["ocr"]["created"], float)
-            assert re.match(uuid_pattern, result["ocr"]["uuid"])
+            assert result["ocr"]["uuid"] == test_uuid
             assert result["ocr"]["model"] == MistralModelsOcr.MISTRAL_OCR.value
             assert result["ocr"]["provider"] == ProviderNames.MISTRAL.value
             assert result["ocr"]["page_count"] == 5
@@ -261,6 +270,8 @@ class TestStorage:
                 page_count=2,
                 markdown_file="doc.md",
                 images=images,
+                session_uuid="test-uuid",
+                created=1704067200.0,
             )
             assert result["output"]["markdown_file"] == "doc.md"
             assert result["output"]["images"] == images
@@ -271,21 +282,10 @@ class TestStorage:
                 page_count=1,
                 markdown_file="doc.md",
                 images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
             )
             assert empty_result["output"]["images"] == []
-
-        def test_consecutive_calls_produce_unique_identifiers(self, storage: Storage) -> None:
-            uuids: set[str] = set()
-            for _ in range(5):
-                result = storage._build_ocr_metadata(
-                    source="/path/to/doc.pdf",
-                    model=MistralModelsOcr.MISTRAL_OCR.value,
-                    page_count=1,
-                    markdown_file="doc.md",
-                    images=[],
-                )
-                uuids.add(result["ocr"]["uuid"])
-            assert len(uuids) == 5
 
         def test_handles_unicode_filenames_and_url_query_params(self, storage: Storage) -> None:
             unicode_result = storage._build_ocr_metadata(
@@ -294,6 +294,8 @@ class TestStorage:
                 page_count=1,
                 markdown_file="文档.md",
                 images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
             )
             assert unicode_result["source"]["filename"] == "文档.pdf"
 
@@ -303,6 +305,8 @@ class TestStorage:
                 page_count=1,
                 markdown_file="doc.md",
                 images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
             )
             assert url_result["source"]["filename"] == "doc.pdf"
 
@@ -318,7 +322,7 @@ class TestStorage:
 
         # Directory creation
 
-        def test_creates_session_directory(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+        def test_creates_uuid_session_directory(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
             storage_with_tmp_dir.store_ocr_result(
                 source="/path/to/doc.pdf",
                 markdown_content="# Test",
@@ -328,7 +332,8 @@ class TestStorage:
             )
             subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
             assert len(subdirs) == 1
-            assert subdirs[0].endswith("__ocr")
+            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            assert re.match(uuid_pattern, subdirs[0])
 
         def test_returns_session_directory_path(self, storage_with_tmp_dir: Storage) -> None:
             result = storage_with_tmp_dir.store_ocr_result(
@@ -338,8 +343,23 @@ class TestStorage:
                 page_count=1,
                 image_data=[],
             )
-            assert result.endswith("__ocr")
             assert os.path.isdir(result)
+
+        def test_creates_manifest(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            storage_with_tmp_dir.store_ocr_result(
+                source="/path/to/doc.pdf",
+                markdown_content="# Test",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[],
+            )
+            manifest_path = os.path.join(str(tmp_path), _MANIFEST_FILENAME)
+            assert os.path.exists(manifest_path)
+            with open(manifest_path, "r", encoding="utf8") as f:
+                entries = json.load(f)
+            assert len(entries) == 1
+            assert "uuid" in entries[0]
+            assert "created" in entries[0]
 
         # Markdown file
 
@@ -499,17 +519,86 @@ class TestStorage:
             )
             assert os.path.exists(os.path.join(session_dir, "document.md"))
 
+    class TestStoreMessages:
+
+        @pytest.fixture
+        def storage_with_tmp_dir(self, tmp_path: str) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value)
+            storage._chat_dir = str(tmp_path)
+            return storage
+
+        @staticmethod
+        def _create_messages() -> Messages:
+            factory = MessageFactory(provider=ProviderNames.MISTRAL.value)
+            messages = Messages()
+            msg = factory.user_message(role="user", content="Hello!", model="mistral-large-latest")
+            messages.add(msg)
+            return messages
+
+        def test_creates_uuid_session_directory(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_tmp_dir.store_messages(messages)
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            assert len(subdirs) == 1
+            uuid_pattern = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            assert re.match(uuid_pattern, subdirs[0])
+
+        def test_creates_session_json(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_tmp_dir.store_messages(messages)
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            assert os.path.exists(os.path.join(session_dir, "session.json"))
+
+        def test_creates_metadata_json(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_tmp_dir.store_messages(messages)
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            assert os.path.exists(os.path.join(session_dir, "metadata.json"))
+
+        def test_creates_manifest(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_tmp_dir.store_messages(messages)
+            manifest_path = os.path.join(str(tmp_path), _MANIFEST_FILENAME)
+            assert os.path.exists(manifest_path)
+            with open(manifest_path, "r", encoding="utf8") as f:
+                entries = json.load(f)
+            assert len(entries) == 1
+
+        def test_metadata_contains_chat_section(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = self._create_messages()
+            storage_with_tmp_dir.store_messages(messages, model="mistral-large-latest")
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
+                metadata = json.load(f)
+            assert "chat" in metadata
+            assert metadata["chat"]["model"] == "mistral-large-latest"
+            assert metadata["chat"]["provider"] == ProviderNames.MISTRAL.value
+            assert "uuid" in metadata["chat"]
+            assert "created" in metadata["chat"]
+
+        def test_does_not_store_empty_messages(self, storage_with_tmp_dir: Storage, tmp_path: str) -> None:
+            messages = Messages()
+            storage_with_tmp_dir.store_messages(messages)
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            assert len(subdirs) == 0
+
     class TestExtractMessages:
 
         @pytest.fixture
         def storage_with_empty_tmp_dir(self, tmp_path: str) -> Storage:
             storage = Storage(provider=ProviderNames.MISTRAL.value)
-            storage._json_dir = str(tmp_path)
+            storage._chat_dir = str(tmp_path)
             return storage
 
         @staticmethod
-        def _create_chat_file(tmp_path: str, filename: str, content: str) -> None:
-            """Create a test chat JSON file with a single message."""
+        def _create_chat_session(tmp_path: str, content: str, created: float) -> str:
+            """Create a test chat session with UUID directory, session.json, and manifest entry."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
+            os.makedirs(session_dir)
             chat_data: dict[str, list[dict[str, Any]]] = {
                 "messages": [
                     {
@@ -524,20 +613,20 @@ class TestStorage:
                     }
                 ]
             }
-            filepath = os.path.join(tmp_path, filename)
+            filepath = os.path.join(session_dir, "session.json")
             with open(filepath, "w", encoding="utf8") as f:
                 json.dump(chat_data, f)
+            TestStorage._append_manifest_entry(tmp_path, session_uuid, created)
+            return session_dir
 
         def test_raises_storage_empty_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
             with pytest.raises(StorageEmpty) as exc_info:
                 storage_with_empty_tmp_dir.extract_messages()
             assert "No chat sessions found" in str(exc_info.value)
 
-        def test_selects_newest_by_epoch(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
-            # Create the newer epoch first so its filesystem ctime is older,
-            # ensuring the test fails if selection relies on ctime instead of the filename.
-            self._create_chat_file(str(tmp_path), "200__2024_01_02__12_00_00__chat.json", "New message")
-            self._create_chat_file(str(tmp_path), "100__2024_01_01__12_00_00__chat.json", "Old message")
+        def test_selects_newest_by_created_timestamp(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
+            self._create_chat_session(str(tmp_path), "Old message", created=100.0)
+            self._create_chat_session(str(tmp_path), "New message", created=200.0)
             messages = storage_with_empty_tmp_dir.extract_messages()
             assert messages is not None
             first_message = next(iter(messages))
@@ -548,7 +637,7 @@ class TestStorage:
         @pytest.fixture
         def storage_with_empty_tmp_dir(self, tmp_path: str) -> Storage:
             storage = Storage(provider=ProviderNames.MISTRAL.value)
-            storage._json_dir = str(tmp_path)
+            storage._chat_dir = str(tmp_path)
             return storage
 
         def test_returns_none_when_no_files_exist(self, storage_with_empty_tmp_dir: Storage) -> None:
@@ -562,43 +651,35 @@ class TestStorage:
                 call_args = str(mock_print.call_args)
                 assert "No chats found in storage" in call_args
 
-        def test_returns_none(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
+        def test_returns_none_for_empty_session(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
             chat_data: dict[str, list[Any]] = {"messages": []}
-            chat_file = os.path.join(tmp_path, "123__2024_01_01__12_00_00__chat.json")
-            with open(chat_file, "w", encoding="utf8") as f:
+            with open(os.path.join(session_dir, "session.json"), "w", encoding="utf8") as f:
                 json.dump(chat_data, f)
+            TestStorage._append_manifest_entry(str(tmp_path), session_uuid, 123.0)
 
             result = storage_with_empty_tmp_dir.display_last_chat()  # type: ignore[func-returns-value]
             assert result is None
 
-        def test_does_not_raise_for_empty_messages(self, storage_with_empty_tmp_dir: Storage, tmp_path: str) -> None:
-            chat_data: dict[str, list[Any]] = {"messages": []}
-            chat_file = os.path.join(tmp_path, "123__2024_01_01__12_00_00__chat.json")
-            with open(chat_file, "w", encoding="utf8") as f:
-                json.dump(chat_data, f)
-
-            # Should not raise any exception
-            storage_with_empty_tmp_dir.display_last_chat()
-
     class TestExtractLastOcrResult:
 
         def test_returns_str_type(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
-            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Hello")
+            TestStorage._create_ocr_session_with_manifest(str(tmp_path), "doc.md", "# Hello", created=100.0)
             result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
             assert isinstance(result, str)
 
         def test_returns_markdown_content(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
-            TestStorage._create_ocr_session(
-                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Title\n\nBody text."
+            TestStorage._create_ocr_session_with_manifest(
+                str(tmp_path), "doc.md", "# Title\n\nBody text.", created=100.0
             )
             result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
             assert result == "# Title\n\nBody text."
 
-        def test_selects_newest_by_epoch(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
-            # Create the newer epoch first so its filesystem ctime is older,
-            # ensuring the test fails if selection relies on ctime instead of the directory name.
-            TestStorage._create_ocr_session(str(tmp_path), "200__2024_01_02__12_00_00__ocr", "new.md", "New content")
-            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "old.md", "Old content")
+        def test_selects_newest_by_created_timestamp(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            TestStorage._create_ocr_session_with_manifest(str(tmp_path), "old.md", "Old content", created=100.0)
+            TestStorage._create_ocr_session_with_manifest(str(tmp_path), "new.md", "New content", created=200.0)
             result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
             assert result == "New content"
 
@@ -613,22 +694,22 @@ class TestStorage:
                 storage.extract_last_ocr_result()
 
         def test_handles_empty_markdown_file(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
-            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "")
+            TestStorage._create_ocr_session_with_manifest(str(tmp_path), "doc.md", "", created=100.0)
             result = storage_with_ocr_tmp_dir.extract_last_ocr_result()
             assert result == ""
 
     class TestDisplayLastOcrResult:
 
         def test_returns_none(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
-            TestStorage._create_ocr_session(str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Hello")
+            TestStorage._create_ocr_session_with_manifest(str(tmp_path), "doc.md", "# Hello", created=100.0)
             result = storage_with_ocr_tmp_dir.display_last_ocr_result()  # type: ignore[func-returns-value]
             assert result is None
 
         def test_prints_markdown_content(
             self, storage_with_ocr_tmp_dir: Storage, tmp_path: str, capsys: pytest.CaptureFixture[str]
         ) -> None:
-            TestStorage._create_ocr_session(
-                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Title\n\nBody text."
+            TestStorage._create_ocr_session_with_manifest(
+                str(tmp_path), "doc.md", "# Title\n\nBody text.", created=100.0
             )
             storage_with_ocr_tmp_dir.display_last_ocr_result()
             captured = capsys.readouterr()
@@ -656,7 +737,7 @@ class TestStorage:
         @pytest.fixture
         def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
             storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
-            storage._json_dir = str(tmp_path)
+            storage._chat_dir = str(tmp_path)
             return storage
 
         @staticmethod
@@ -672,24 +753,29 @@ class TestStorage:
         ) -> None:
             messages = self._create_messages()
             storage_with_encryption.store_messages(messages)
-            enc_files = [f for f in os.listdir(tmp_path) if f.endswith(".json.enc")]
-            assert len(enc_files) == 1
+            # Check inside the UUID directory for session.json.enc
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            assert len(subdirs) == 1
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            assert os.path.exists(os.path.join(session_dir, "session.json.enc"))
 
         def test_enc_file_content_is_not_readable_json(self, storage_with_encryption: Storage, tmp_path: str) -> None:
             messages = self._create_messages()
             storage_with_encryption.store_messages(messages)
-            enc_files = [f for f in os.listdir(tmp_path) if f.endswith(".json.enc")]
-            filepath = os.path.join(str(tmp_path), enc_files[0])
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            filepath = os.path.join(session_dir, "session.json.enc")
             with open(filepath, "rb") as f:
                 content = f.read()
             with pytest.raises(Exception):
                 json.loads(content)
 
-        def test_does_not_create_cleartext_json_file(self, storage_with_encryption: Storage, tmp_path: str) -> None:
+        def test_does_not_create_cleartext_session_json(self, storage_with_encryption: Storage, tmp_path: str) -> None:
             messages = self._create_messages()
             storage_with_encryption.store_messages(messages)
-            json_files = [f for f in os.listdir(tmp_path) if f.endswith(".json") and not f.endswith(".json.enc")]
-            assert len(json_files) == 0
+            subdirs = [d for d in os.listdir(tmp_path) if os.path.isdir(os.path.join(tmp_path, d))]
+            session_dir = os.path.join(str(tmp_path), subdirs[0])
+            assert not os.path.exists(os.path.join(session_dir, "session.json"))
 
     class TestExtractMessagesEncrypted:
 
@@ -704,12 +790,17 @@ class TestStorage:
         @pytest.fixture
         def storage_with_encryption(self, tmp_path: str, encryption: Encryption) -> Storage:
             storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=encryption)
-            storage._json_dir = str(tmp_path)
+            storage._chat_dir = str(tmp_path)
             return storage
 
         @staticmethod
-        def _create_encrypted_chat_file(tmp_path: str, filename: str, content: str, encryption: Encryption) -> None:
-            """Create an encrypted test chat JSON file."""
+        def _create_encrypted_chat_session(
+            tmp_path: str, content: str, created: float, encryption: Encryption
+        ) -> None:
+            """Create an encrypted test chat session with UUID directory."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
+            os.makedirs(session_dir)
             chat_data: dict[str, list[dict[str, Any]]] = {
                 "messages": [
                     {
@@ -726,16 +817,26 @@ class TestStorage:
             }
             json_bytes = json.dumps(chat_data).encode("utf-8")
             encrypted = encryption.encrypt(json_bytes)
-            filepath = os.path.join(tmp_path, filename)
+            filepath = os.path.join(session_dir, "session.json.enc")
             with open(filepath, "wb") as f:
                 f.write(encrypted)
+
+            # Update manifest (encrypted too)
+            manifest_path = os.path.join(tmp_path, _MANIFEST_FILENAME)
+            entries: list[dict[str, Any]] = []
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r", encoding="utf8") as f:
+                    entries = json.load(f)
+            entries.append({"uuid": session_uuid, "created": created})
+            manifest_bytes = json.dumps(entries).encode("utf-8")
+            encrypted_manifest = encryption.encrypt(manifest_bytes)
+            with open(manifest_path + ".enc", "wb") as f:
+                f.write(encrypted_manifest)
 
         def test_extracts_from_enc_file(
             self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
         ) -> None:
-            self._create_encrypted_chat_file(
-                str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc", "Hello encrypted", encryption
-            )
+            self._create_encrypted_chat_session(str(tmp_path), "Hello encrypted", created=100.0, encryption=encryption)
             messages = storage_with_encryption.extract_messages()
             assert messages is not None
             first_message = next(iter(messages))
@@ -752,15 +853,11 @@ class TestStorage:
             first_message = next(iter(extracted))
             assert first_message.content == "Roundtrip test"
 
-        def test_selects_newest_enc_file_by_epoch(
+        def test_selects_newest_enc_session_by_created(
             self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
         ) -> None:
-            self._create_encrypted_chat_file(
-                str(tmp_path), "200__2024_01_02__12_00_00__chat.json.enc", "New message", encryption
-            )
-            self._create_encrypted_chat_file(
-                str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc", "Old message", encryption
-            )
+            self._create_encrypted_chat_session(str(tmp_path), "Old message", created=100.0, encryption=encryption)
+            self._create_encrypted_chat_session(str(tmp_path), "New message", created=200.0, encryption=encryption)
             messages = storage_with_encryption.extract_messages()
             assert messages is not None
             first_message = next(iter(messages))
@@ -837,22 +934,34 @@ class TestStorage:
 
         @staticmethod
         def _create_encrypted_ocr_session(
-            tmp_path: str, folder_name: str, md_filename: str, md_content: str, encryption: Encryption
+            tmp_path: str, md_filename: str, md_content: str, created: float, encryption: Encryption
         ) -> str:
-            """Create an encrypted test OCR session."""
-            session_dir = os.path.join(tmp_path, folder_name)
+            """Create an encrypted test OCR session with UUID directory and manifest."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
             os.makedirs(session_dir)
             encrypted = encryption.encrypt(md_content.encode("utf-8"))
             enc_path = os.path.join(session_dir, md_filename + ".enc")
             with open(enc_path, "wb") as f:
                 f.write(encrypted)
+
+            # Update manifest
+            manifest_path = os.path.join(tmp_path, _MANIFEST_FILENAME)
+            entries: list[dict[str, Any]] = []
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r", encoding="utf8") as f:
+                    entries = json.load(f)
+            entries.append({"uuid": session_uuid, "created": created})
+            with open(manifest_path, "w", encoding="utf8") as f:
+                json.dump(entries, f)
+
             return session_dir
 
         def test_extracts_and_decrypts_markdown(
             self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
         ) -> None:
             self._create_encrypted_ocr_session(
-                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "doc.md", "# Encrypted content", encryption
+                str(tmp_path), "doc.md", "# Encrypted content", created=100.0, encryption=encryption
             )
             result = storage_with_encryption.extract_last_ocr_result()
             assert result == "# Encrypted content"
@@ -868,14 +977,14 @@ class TestStorage:
             result = storage_with_encryption.extract_last_ocr_result()
             assert result == "# OCR roundtrip"
 
-        def test_selects_newest_enc_session_by_epoch(
+        def test_selects_newest_enc_session_by_created(
             self, storage_with_encryption: Storage, tmp_path: str, encryption: Encryption
         ) -> None:
             self._create_encrypted_ocr_session(
-                str(tmp_path), "200__2024_01_02__12_00_00__ocr", "new.md", "New content", encryption
+                str(tmp_path), "old.md", "Old content", created=100.0, encryption=encryption
             )
             self._create_encrypted_ocr_session(
-                str(tmp_path), "100__2024_01_01__12_00_00__ocr", "old.md", "Old content", encryption
+                str(tmp_path), "new.md", "New content", created=200.0, encryption=encryption
             )
             result = storage_with_encryption.extract_last_ocr_result()
             assert result == "New content"
@@ -884,10 +993,19 @@ class TestStorage:
 
         def test_extract_messages_returns_none_when_enc_file_without_key(self, tmp_path: str) -> None:
             storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
-            storage._json_dir = str(tmp_path)
-            filepath = os.path.join(str(tmp_path), "100__2024_01_01__12_00_00__chat.json.enc")
+            storage._chat_dir = str(tmp_path)
+
+            # Create a session with encrypted data and manifest
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
+            filepath = os.path.join(session_dir, "session.json.enc")
             with open(filepath, "wb") as f:
                 f.write(b"encrypted data")
+            manifest_path = os.path.join(str(tmp_path), _MANIFEST_FILENAME)
+            with open(manifest_path, "w", encoding="utf8") as f:
+                json.dump([{"uuid": session_uuid, "created": 100.0}], f)
+
             with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
                 result = storage.extract_messages()
                 assert result is None
@@ -897,11 +1015,17 @@ class TestStorage:
         def test_extract_last_ocr_result_returns_none_when_enc_file_without_key(self, tmp_path: str) -> None:
             storage = Storage(provider=ProviderNames.MISTRAL.value, encryption=None)
             storage._ocr_dir = str(tmp_path)
-            session_dir = os.path.join(str(tmp_path), "100__2024_01_01__12_00_00__ocr")
+
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
             os.makedirs(session_dir)
             enc_path = os.path.join(session_dir, "doc.md.enc")
             with open(enc_path, "wb") as f:
                 f.write(b"encrypted data")
+            manifest_path = os.path.join(str(tmp_path), _MANIFEST_FILENAME)
+            with open(manifest_path, "w", encoding="utf8") as f:
+                json.dump([{"uuid": session_uuid, "created": 100.0}], f)
+
             with patch("gptcli.src.common.storage.print_formatted_text") as mock_print:
                 result = storage.extract_last_ocr_result()
                 assert result is None
@@ -980,3 +1104,45 @@ class TestStorage:
             with open(enc_path, "wb") as f:
                 f.write(encrypted)
             assert storage._read_text(filepath) == "new encrypted content"
+
+    class TestManifestOperations:
+
+        @pytest.fixture
+        def storage(self, tmp_path: str) -> Storage:
+            storage = Storage(provider=ProviderNames.MISTRAL.value)
+            storage._chat_dir = str(tmp_path)
+            return storage
+
+        def test_read_manifest_returns_empty_list_when_no_manifest(self, storage: Storage, tmp_path: str) -> None:
+            entries = storage._read_manifest(str(tmp_path))
+            assert entries == []
+
+        def test_write_and_read_manifest(self, storage: Storage, tmp_path: str) -> None:
+            entries = [{"uuid": "test-uuid", "created": 123.0}]
+            storage._write_manifest(str(tmp_path), entries)
+            result = storage._read_manifest(str(tmp_path))
+            assert result == entries
+
+        def test_append_to_manifest(self, storage: Storage, tmp_path: str) -> None:
+            storage._append_to_manifest(str(tmp_path), "uuid-1", 100.0)
+            storage._append_to_manifest(str(tmp_path), "uuid-2", 200.0)
+            entries = storage._read_manifest(str(tmp_path))
+            assert len(entries) == 2
+            assert entries[0]["uuid"] == "uuid-1"
+            assert entries[1]["uuid"] == "uuid-2"
+
+        def test_find_latest_uuid(self, storage: Storage, tmp_path: str) -> None:
+            os.makedirs(os.path.join(str(tmp_path), "uuid-old"))
+            os.makedirs(os.path.join(str(tmp_path), "uuid-new"))
+            storage._append_to_manifest(str(tmp_path), "uuid-old", 100.0)
+            storage._append_to_manifest(str(tmp_path), "uuid-new", 200.0)
+            assert storage._find_latest_uuid(str(tmp_path)) == "uuid-new"
+
+        def test_find_latest_uuid_returns_none_when_empty(self, storage: Storage, tmp_path: str) -> None:
+            assert storage._find_latest_uuid(str(tmp_path)) is None
+
+        def test_find_latest_uuid_skips_deleted_directories(self, storage: Storage, tmp_path: str) -> None:
+            os.makedirs(os.path.join(str(tmp_path), "uuid-exists"))
+            storage._append_to_manifest(str(tmp_path), "uuid-deleted", 200.0)
+            storage._append_to_manifest(str(tmp_path), "uuid-exists", 100.0)
+            assert storage._find_latest_uuid(str(tmp_path)) == "uuid-exists"

@@ -1,7 +1,9 @@
-"""Holds tests for encryption migration in install.py."""
+"""Holds tests for encryption migration and opaque storage migration in install.py."""
 
 import contextlib
+import json
 import os
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -181,3 +183,172 @@ class TestProviderInstaller:
                 message_factory=None,  # type: ignore[arg-type]
             )
             assert installer._is_already_installed() is False
+
+
+class TestMigrateToOpaqueStorage:
+
+    @pytest.fixture
+    def storage_env(self, tmp_path: str) -> dict[str, str]:
+        """Create isolated provider storage directories."""
+        openai_storage = os.path.join(str(tmp_path), "openai", "storage")
+        mistral_storage = os.path.join(str(tmp_path), "mistral", "storage")
+        return {
+            "tmp_path": str(tmp_path),
+            "openai_storage": openai_storage,
+            "openai_json": os.path.join(openai_storage, "json"),
+            "openai_chat": os.path.join(openai_storage, "chat"),
+            "openai_ocr": os.path.join(openai_storage, "ocr"),
+            "mistral_storage": mistral_storage,
+            "mistral_json": os.path.join(mistral_storage, "json"),
+            "mistral_chat": os.path.join(mistral_storage, "chat"),
+            "mistral_ocr": os.path.join(mistral_storage, "ocr"),
+        }
+
+    @staticmethod
+    def _apply_opaque_patches(env: dict[str, str]) -> contextlib.ExitStack:
+        """Patch provider constants for opaque storage migration tests."""
+        stack = contextlib.ExitStack()
+        stack.enter_context(patch("gptcli.src.install.GPTCLI_PROVIDER_OPENAI_STORAGE_DIR", env["openai_storage"]))
+        stack.enter_context(
+            patch("gptcli.src.install.GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_JSON_DIR", env["openai_json"])
+        )
+        stack.enter_context(patch("gptcli.src.install.GPTCLI_PROVIDER_OPENAI_STORAGE_CHAT_DIR", env["openai_chat"]))
+        stack.enter_context(patch("gptcli.src.install.GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR", env["mistral_storage"]))
+        stack.enter_context(
+            patch("gptcli.src.install.GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_JSON_DIR", env["mistral_json"])
+        )
+        stack.enter_context(patch("gptcli.src.install.GPTCLI_PROVIDER_MISTRAL_STORAGE_CHAT_DIR", env["mistral_chat"]))
+        return stack
+
+    def test_renames_json_to_chat(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_json"])
+        with open(os.path.join(storage_env["openai_json"], "test.txt"), "w") as f:
+            f.write("test")
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        assert os.path.isdir(storage_env["openai_chat"])
+        assert not os.path.isdir(storage_env["openai_json"])
+
+    def test_skips_rename_when_chat_already_exists(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_json"])
+        os.makedirs(storage_env["openai_chat"])
+        with open(os.path.join(storage_env["openai_json"], "old.txt"), "w") as f:
+            f.write("old")
+        with open(os.path.join(storage_env["openai_chat"], "new.txt"), "w") as f:
+            f.write("new")
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        # json/ should still exist since chat/ was already present
+        assert os.path.isdir(storage_env["openai_json"])
+        assert os.path.isdir(storage_env["openai_chat"])
+
+    def test_migrates_chat_files_to_uuid_dirs(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_chat"])
+        chat_data: dict[str, list[dict[str, Any]]] = {"messages": [{"role": "user", "content": "Hello"}]}
+        chat_file = os.path.join(storage_env["openai_chat"], "1733422696__2024_12_05__18_18_16__chat.json")
+        with open(chat_file, "w", encoding="utf8") as f:
+            json.dump(chat_data, f)
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        # Original file should be gone
+        assert not os.path.exists(chat_file)
+
+        # UUID directory should exist with session.json
+        subdirs = [
+            d
+            for d in os.listdir(storage_env["openai_chat"])
+            if os.path.isdir(os.path.join(storage_env["openai_chat"], d))
+        ]
+        assert len(subdirs) == 1
+        session_dir = os.path.join(storage_env["openai_chat"], subdirs[0])
+        assert os.path.exists(os.path.join(session_dir, "session.json"))
+        assert os.path.exists(os.path.join(session_dir, "metadata.json"))
+
+    def test_creates_chat_manifest(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_chat"])
+        chat_file = os.path.join(storage_env["openai_chat"], "1733422696__2024_12_05__18_18_16__chat.json")
+        with open(chat_file, "w", encoding="utf8") as f:
+            json.dump({"messages": []}, f)
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        manifest_path = os.path.join(storage_env["openai_chat"], ".manifest.json")
+        assert os.path.exists(manifest_path)
+        with open(manifest_path, "r", encoding="utf8") as f:
+            entries = json.load(f)
+        assert len(entries) == 1
+        assert entries[0]["created"] == 1733422696.0
+
+    def test_migrates_ocr_dirs_to_uuid_dirs(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_ocr"])
+        ocr_dir = os.path.join(storage_env["openai_ocr"], "1733422696__2024_12_05__18_18_16__ocr")
+        os.makedirs(ocr_dir)
+        with open(os.path.join(ocr_dir, "doc.md"), "w") as f:
+            f.write("# Test")
+        metadata = {"ocr": {"created": 1733422696.0, "uuid": "old-uuid"}}
+        with open(os.path.join(ocr_dir, "metadata.json"), "w") as f:
+            json.dump(metadata, f)
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        # Old dir should be gone
+        assert not os.path.exists(ocr_dir)
+
+        # UUID dir should exist
+        subdirs = [
+            d
+            for d in os.listdir(storage_env["openai_ocr"])
+            if os.path.isdir(os.path.join(storage_env["openai_ocr"], d))
+        ]
+        assert len(subdirs) == 1
+
+        # Manifest should exist
+        manifest_path = os.path.join(storage_env["openai_ocr"], ".manifest.json")
+        assert os.path.exists(manifest_path)
+
+    def test_idempotent_no_changes_on_second_run(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_chat"])
+        chat_file = os.path.join(storage_env["openai_chat"], "100__2024_01_01__12_00_00__chat.json")
+        with open(chat_file, "w", encoding="utf8") as f:
+            json.dump({"messages": []}, f)
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+            # Count items after first run
+            items_after_first = os.listdir(storage_env["openai_chat"])
+            Migrate.migrate_to_opaque_storage()
+            items_after_second = os.listdir(storage_env["openai_chat"])
+
+        assert sorted(items_after_first) == sorted(items_after_second)
+
+    def test_skips_when_no_storage_dir(self, storage_env: dict[str, str]) -> None:
+        # Don't create any dirs
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()  # Should not raise
+
+    def test_migrates_encrypted_chat_files(self, storage_env: dict[str, str]) -> None:
+        os.makedirs(storage_env["openai_chat"])
+        chat_file = os.path.join(storage_env["openai_chat"], "100__2024_01_01__12_00_00__chat.json.enc")
+        with open(chat_file, "wb") as f:
+            f.write(b"encrypted data")
+
+        with self._apply_opaque_patches(storage_env):
+            Migrate.migrate_to_opaque_storage()
+
+        assert not os.path.exists(chat_file)
+        subdirs = [
+            d
+            for d in os.listdir(storage_env["openai_chat"])
+            if os.path.isdir(os.path.join(storage_env["openai_chat"], d))
+        ]
+        assert len(subdirs) == 1
+        session_dir = os.path.join(storage_env["openai_chat"], subdirs[0])
+        assert os.path.exists(os.path.join(session_dir, "session.json.enc"))

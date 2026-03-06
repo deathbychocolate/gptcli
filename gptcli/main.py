@@ -263,8 +263,13 @@ def main() -> None:
 
     no_cache: bool = args.no_cache
 
+    # Migrations run in order: legacy tree → encryption → opaque storage.
+    # to_encrypted must complete before migrate_to_opaque_storage so that
+    # the encrypted/unencrypted state of files is resolved before migration.
     Migrate.migrate_legacy_tree()
     Migrate.to_encrypted(no_cache=no_cache)
+    encryption: Encryption | None = _load_encryption(no_cache=no_cache)
+    Migrate.migrate_to_opaque_storage(encryption=encryption)
 
     # install
     match parser.args.provider:
@@ -274,8 +279,6 @@ def main() -> None:
             Openai(no_cache=no_cache).install()
         case _:
             raise NotImplementedError(f"Provider '{parser.args.provider}' not yet supported.")
-
-    encryption: Encryption | None = _load_encryption(no_cache=no_cache)
 
     api_key: str = load_api_key(parser=parser, encryption=encryption)
 

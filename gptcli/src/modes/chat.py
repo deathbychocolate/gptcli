@@ -286,7 +286,7 @@ class ChatUser(Chat):
             self._process_user_and_reply_messages(user_input)
 
         if self._should_store_messages(number_of_messages_from_storage=count_when_loaded):
-            self._storage.store_messages(messages=self._messages)
+            self._storage.store_messages(messages=self._messages, model=self._model)
 
     @user_triggered_abort
     def prompt(self, prompt_text: str) -> str:

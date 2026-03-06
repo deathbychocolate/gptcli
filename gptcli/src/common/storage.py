@@ -4,8 +4,6 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
-from glob import glob
 from logging import Logger
 from os import path
 from time import time
@@ -16,10 +14,13 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import ANSI
 
 from gptcli.constants import (
-    GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR,
+    GPTCLI_MANIFEST_FILENAME,
+    GPTCLI_METADATA_FILENAME,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_CHAT_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR,
-    GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_CHAT_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
+    GPTCLI_SESSION_FILENAME,
 )
 from gptcli.src.common.constants import (
     GRN,
@@ -51,7 +52,7 @@ class Storage:
 
     Attributes:
         _provider: The LLM provider name (e.g., 'mistral', 'openai').
-        _json_dir: Directory path for storing chat JSON files.
+        _chat_dir: Directory path for storing chat sessions.
         _ocr_dir: Directory path for storing OCR results.
     """
 
@@ -71,13 +72,13 @@ class Storage:
         self._provider: str = provider
         self._encryption: Encryption | None = encryption
 
-        self._json_dir: str = ""
+        self._chat_dir: str = ""
         self._ocr_dir: str = ""
         if self._provider == MISTRAL:
-            self._json_dir = GPTCLI_PROVIDER_MISTRAL_STORAGE_JSON_DIR
+            self._chat_dir = GPTCLI_PROVIDER_MISTRAL_STORAGE_CHAT_DIR
             self._ocr_dir = GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR
         elif self._provider == OPENAI:
-            self._json_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_JSON_DIR
+            self._chat_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_CHAT_DIR
             self._ocr_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
@@ -128,43 +129,142 @@ class Storage:
                 return fp.read()
         return None
 
-    def store_messages(self, messages: Messages) -> None:
-        """Store a Messages collection to the local filesystem.
+    # ── Manifest operations ──────────────────────────────────────────
 
-        Saves the messages as a JSON file with a timestamped filename
-        in the provider's storage directory.
+    def _read_manifest(self, storage_dir: str) -> list[dict[str, Any]]:
+        """Read the manifest from a storage directory.
 
         Args:
-            messages: A Messages collection containing Message objects to store.
+            storage_dir (str): The storage directory containing the manifest.
+
+        Returns:
+            list[dict[str, Any]]: List of manifest entries, each with 'uuid' and 'created' keys.
+                Returns an empty list if the manifest does not exist.
+        """
+        content = self._read_text(path.join(storage_dir, GPTCLI_MANIFEST_FILENAME))
+        if content is None:
+            return []
+        result: list[dict[str, Any]] = json.loads(content)
+        return result
+
+    def _write_manifest(self, storage_dir: str, entries: list[dict[str, Any]]) -> None:
+        """Write the manifest to a storage directory.
+
+        Args:
+            storage_dir (str): The storage directory to write the manifest to.
+            entries (list[dict[str, Any]]): List of manifest entries to write.
+        """
+        self._write_text(path.join(storage_dir, GPTCLI_MANIFEST_FILENAME), json.dumps(entries, ensure_ascii=False))
+
+    def _append_to_manifest(self, storage_dir: str, session_uuid: str, created: float) -> None:
+        """Append a new entry to the manifest in a storage directory.
+
+        Non-atomic read-modify-write: acceptable for a single-user CLI.
+
+        Args:
+            storage_dir (str): The storage directory containing the manifest.
+            session_uuid (str): The UUID of the new session.
+            created (float): The creation timestamp (epoch seconds).
+        """
+        entries = self._read_manifest(storage_dir)
+        entries.append({"uuid": session_uuid, "created": created})
+        self._write_manifest(storage_dir, entries)
+
+    def _prune_deleted_sessions(self, storage_dir: str, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Remove manifest entries whose session directory no longer exists on disk.
+
+        Args:
+            storage_dir (str): The storage directory containing the session subdirectories.
+            entries (list[dict[str, Any]]): The current manifest entries.
+
+        Returns:
+            list[dict[str, Any]]: Entries filtered to only those with an existing session directory.
+        """
+        valid_entries = [e for e in entries if os.path.isdir(path.join(storage_dir, e["uuid"]))]
+        if len(valid_entries) < len(entries):
+            self._write_manifest(storage_dir, valid_entries)
+        return valid_entries
+
+    def _find_latest_uuid(self, storage_dir: str) -> str | None:
+        """Find the UUID of the most recently created session.
+
+        Args:
+            storage_dir (str): The storage directory to search.
+
+        Returns:
+            str | None: The UUID with the highest 'created' timestamp, or None if no valid entries exist.
+        """
+        entries = self._prune_deleted_sessions(storage_dir, self._read_manifest(storage_dir))
+        if not entries:
+            return None
+        latest = max(entries, key=lambda e: e["created"])
+        uuid: str = latest["uuid"]
+        return uuid
+
+    # ── Session directory creation ───────────────────────────────────
+
+    def _create_session_dir(self, base_dir: str) -> tuple[str, str, float]:
+        """Create a new UUID-based session directory.
+
+        Args:
+            base_dir (str): The parent storage directory (chat_dir or ocr_dir).
+
+        Returns:
+            tuple[str, str, float]: A tuple of (session_dir_path, uuid_string, created_timestamp).
+        """
+        session_uuid = str(uuid.uuid4())
+        created = time()
+        session_dir = path.join(base_dir, session_uuid)
+        os.makedirs(session_dir, exist_ok=True)
+        return session_dir, session_uuid, created
+
+    # ── Chat session storage ─────────────────────────────────────────
+
+    @staticmethod
+    def build_chat_metadata(session_uuid: str, created: float, model: str, provider: str) -> dict[str, Any]:
+        """Build a metadata dictionary for a chat session.
+
+        Args:
+            session_uuid (str): The UUID of the chat session.
+            created (float): The creation timestamp (epoch seconds).
+            model (str): The model used for the chat session.
+            provider (str): The provider name.
+
+        Returns:
+            dict[str, Any]: A dictionary containing chat session metadata.
+        """
+        return {
+            "chat": {
+                "created": created,
+                "uuid": session_uuid,
+                "model": model,
+                "provider": provider,
+            }
+        }
+
+    def store_messages(self, messages: Messages, model: str = "") -> None:
+        """Store a Messages collection to the local filesystem.
+
+        Creates a UUID-based directory containing session.json and metadata.json,
+        and updates the chat manifest.
+
+        Args:
+            messages (Messages): A Messages collection containing Message objects to store.
+            model (str): The model used for the chat session.
         """
         logger.info("Storing Messages to local filesystem.")
         if len(messages) > 0:
-            filepath = self._create_json_filepath()
-            self._write_text(filepath, messages.to_json())
+            session_dir, session_uuid, created = self._create_session_dir(self._chat_dir)
+            session_filepath = path.join(session_dir, GPTCLI_SESSION_FILENAME)
+            self._write_text(session_filepath, messages.to_json())
 
-    def _create_json_filepath(self) -> str:
-        """Generate a unique filepath for storing chat messages.
+            metadata = self.build_chat_metadata(session_uuid, created, model, self._provider)
+            metadata_filepath = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+            self._write_text(metadata_filepath, json.dumps(metadata, ensure_ascii=False))
 
-        Returns:
-            A filepath in the format: {json_dir}/{epoch}__{datetime}__chat.json
-        """
-        epoch: str = str(int(time()))
-        datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S_")
-        filename: str = "_".join([epoch, datetime_now_utc, "chat"]) + ".json"
-        filepath: str = path.join(self._json_dir, filename)
-        return filepath
+            self._append_to_manifest(self._chat_dir, session_uuid, created)
 
-    def _create_ocr_session_dir(self) -> str:
-        """Generate a unique directory path for storing OCR results.
-
-        Returns:
-            A directory path in the format: {ocr_dir}/{epoch}__{datetime}__ocr
-        """
-        epoch: str = str(int(time()))
-        datetime_now_utc: str = datetime.now(tz=timezone.utc).strftime(r"_%Y_%m_%d__%H_%M_%S_")
-        folder_name: str = "_".join([epoch, datetime_now_utc, "ocr"])
-        session_dir: str = path.join(self._ocr_dir, folder_name)
-        return session_dir
+    # ── OCR session storage ──────────────────────────────────────────
 
     @staticmethod
     def extract_filename_from_source(source: str) -> str:
@@ -225,19 +325,23 @@ class Storage:
         page_count: int,
         markdown_file: str,
         images: list[str],
+        session_uuid: str,
+        created: float,
     ) -> dict[str, Any]:
         """Build a metadata dictionary for an OCR result.
 
         Args:
-            source: The original input source (URL or filepath).
-            model: The OCR model used for processing.
-            page_count: Number of pages processed.
-            markdown_file: Name of the generated Markdown file.
-            images: List of generated image filenames.
+            source (str): The original input source (URL or filepath).
+            model (str): The OCR model used for processing.
+            page_count (int): Number of pages processed.
+            markdown_file (str): Name of the generated Markdown file.
+            images (list[str]): List of generated image filenames.
+            session_uuid (str): The UUID of the OCR session.
+            created (float): The creation timestamp (epoch seconds).
 
         Returns:
-            A dictionary containing source info, OCR processing details,
-            and output file references.
+            dict[str, Any]: A dictionary containing source info, OCR processing details,
+                and output file references.
         """
         input_type = InputType.URL.value if is_url(source) else InputType.FILEPATH.value
         filename = self.extract_filename_from_source(source)
@@ -249,8 +353,8 @@ class Storage:
                 "filename": filename,
             },
             "ocr": {
-                "created": time(),
-                "uuid": str(uuid.uuid4()),
+                "created": created,
+                "uuid": session_uuid,
                 "model": model,
                 "provider": self._provider,
                 "page_count": page_count,
@@ -271,10 +375,12 @@ class Storage:
     ) -> str:
         """Store an OCR processing result to local storage.
 
-        Creates a session directory containing:
+        Creates a UUID-based session directory containing:
         - A Markdown file with the extracted text
         - Any extracted images
         - A metadata.json file with processing details
+
+        Updates the OCR manifest with the new session entry.
 
         Args:
             source: The original input source (URL or filepath) that was processed.
@@ -288,8 +394,7 @@ class Storage:
         """
         logger.info("Storing OCR result to local filesystem.")
 
-        session_dir = self._create_ocr_session_dir()
-        os.makedirs(session_dir, exist_ok=True)
+        session_dir, session_uuid, created = self._create_session_dir(self._ocr_dir)
 
         markdown_filename = self.derive_markdown_filename_from_source(source)
         markdown_filepath = path.join(session_dir, markdown_filename)
@@ -320,20 +425,21 @@ class Storage:
             page_count=page_count,
             markdown_file=markdown_filename,
             images=image_filenames,
+            session_uuid=session_uuid,
+            created=created,
         )
-        metadata_filepath = path.join(session_dir, "metadata.json")
-        with open(metadata_filepath, "w", encoding="utf8") as fp:
-            json.dump(metadata, fp, ensure_ascii=False)
-        if self._encryption:
-            self._encryption.encrypt_file(metadata_filepath)
+        metadata_filepath = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        self._write_text(metadata_filepath, json.dumps(metadata, ensure_ascii=False))
+
+        self._append_to_manifest(self._ocr_dir, session_uuid, created)
 
         return session_dir
 
     def extract_last_ocr_result(self) -> str | None:
         """Extract the Markdown content from the most recent OCR session.
 
-        Finds the newest session directory by epoch prefix in the directory
-        name, locates the Markdown file within it, and returns its content.
+        Uses the manifest to find the latest session UUID, then reads
+        the Markdown file from that session directory.
 
         Returns:
             str: The Markdown content from the most recent OCR session.
@@ -342,28 +448,29 @@ class Storage:
             StorageEmpty: If no OCR sessions exist in storage.
         """
         logger.info("Extracting last OCR result from storage.")
-        session_dirs: list[str] = glob(path.join(self._ocr_dir, "*__ocr"))
-
-        if not session_dirs:
+        latest_uuid = self._find_latest_uuid(self._ocr_dir)
+        if latest_uuid is None:
             raise StorageEmpty(f"No OCR sessions found in {self._ocr_dir}")
 
-        last_session_dir: str = max(session_dirs, key=lambda p: path.basename(p))
+        session_dir = path.join(self._ocr_dir, latest_uuid)
 
-        markdown_files: list[str] = sorted(glob(path.join(last_session_dir, "*.md")))
-        markdown_enc_files: list[str] = sorted(glob(path.join(last_session_dir, "*.md.enc")))
+        # Single listdir call, partition into plaintext and encrypted markdown files
+        all_files = os.listdir(session_dir)
+        markdown_enc_files: list[str] = sorted(f for f in all_files if f.endswith(".md.enc"))
+        markdown_files: list[str] = sorted(f for f in all_files if f.endswith(".md") and not f.endswith(".md.enc"))
 
         if not markdown_files and not markdown_enc_files:
-            raise StorageEmpty(f"No markdown file found in {last_session_dir}")
+            raise StorageEmpty(f"No markdown file found in {session_dir}")
 
-        plaintext_path: str = markdown_files[0] if markdown_files else ""
-        encrypted_path: str | None = markdown_enc_files[0] if markdown_enc_files else None
+        plaintext_path: str = path.join(session_dir, markdown_files[0]) if markdown_files else ""
+        encrypted_path: str | None = path.join(session_dir, markdown_enc_files[0]) if markdown_enc_files else None
 
         if not plaintext_path and encrypted_path:
             plaintext_path = encrypted_path[: -len(".enc")]
 
         content: str | None = self._read_text(plaintext_path, encrypted_path)
         if content is None and not markdown_files and not markdown_enc_files:
-            raise StorageEmpty(f"No readable markdown file found in {last_session_dir}")
+            raise StorageEmpty(f"No readable markdown file found in {session_dir}")
         return content
 
     def display_last_ocr_result(self) -> None:
@@ -388,8 +495,8 @@ class Storage:
     def extract_messages(self) -> Messages | None:
         """Extract messages from the most recent chat session.
 
-        Finds the newest JSON file by epoch prefix in the filename
-        and reconstructs the Messages collection.
+        Uses the manifest to find the latest session UUID, then reads
+        session.json from that directory.
 
         Returns:
             A Messages collection containing all messages from the last session.
@@ -398,22 +505,12 @@ class Storage:
             StorageEmpty: If no chat sessions exist in storage.
         """
         logger.info("Extracting messages from storage.")
-        filepaths: list[str] = glob(path.expanduser(path.join(self._json_dir, "*.json")))
-        filepaths += glob(path.expanduser(path.join(self._json_dir, "*.json.enc")))
+        latest_uuid = self._find_latest_uuid(self._chat_dir)
+        if latest_uuid is None:
+            raise StorageEmpty(f"No chat sessions found in {self._chat_dir}")
 
-        if not filepaths:
-            raise StorageEmpty(f"No chat sessions found in {self._json_dir}")
-
-        last_chat_session: str = max(filepaths, key=lambda p: path.basename(p))
-
-        if last_chat_session.endswith(".enc"):
-            plaintext_path: str = last_chat_session[: -len(".enc")]
-            encrypted_path: str | None = last_chat_session
-        else:
-            plaintext_path = last_chat_session
-            encrypted_path = None
-
-        raw_content: str | None = self._read_text(plaintext_path, encrypted_path)
+        session_file = path.join(self._chat_dir, latest_uuid, GPTCLI_SESSION_FILENAME)
+        raw_content: str | None = self._read_text(session_file)
         if raw_content is None:
             return None
         file_contents_messages: list[dict[str, Any]] = json.loads(raw_content)["messages"]
