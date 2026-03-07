@@ -164,6 +164,7 @@ class ChatUser(Chat):
         filepath: str = "",
         store: bool = True,
         load_last: bool = False,
+        load_session_uuid: str = "",
         encryption: Encryption | None = None,
         api_key: str = "",
     ) -> None:
@@ -179,6 +180,7 @@ class ChatUser(Chat):
             filepath (str, optional): The filepath of the file to load (text) contents from. Defaults to "".
             store (bool, optional): Store the chat messages to disk. Defaults to True.
             load_last (bool, optional): Load the most recent chat as context. Defaults to False.
+            load_session_uuid (str, optional): Load a specific chat session by UUID. Defaults to "".
             encryption (Encryption | None, optional): Encryption instance for encrypting stored data. Defaults to None.
             api_key (str, optional): The API key for authentication. Defaults to "".
         """
@@ -194,10 +196,19 @@ class ChatUser(Chat):
         self._filepath: str = filepath
         self._store: bool = store
         self._load_last: bool = load_last
+        self._load_session_uuid: str = load_session_uuid
         self._encryption_enabled: bool = encryption is not None
         self._storage: Storage = Storage(provider=provider, encryption=encryption)
-        loaded: Messages | None = self._storage.extract_messages() if self._load_last else Messages()
-        self._encryption_required: bool = self._load_last and loaded is None
+
+        loaded: Messages | None
+        if load_session_uuid:
+            loaded = self._storage.extract_messages_by_uuid(load_session_uuid)
+        elif self._load_last:
+            loaded = self._storage.extract_messages()
+        else:
+            loaded = Messages()
+
+        self._encryption_required: bool = (bool(load_session_uuid) or self._load_last) and loaded is None
         self._messages: Messages = loaded if loaded is not None else Messages()
         self._message_factory: MessageFactory = MessageFactory(provider=provider)
         self._chat: ChatAPIHelper = ChatAPIHelper(
@@ -242,9 +253,11 @@ class ChatUser(Chat):
         count_when_loaded: int = 0
         if self._filepath is not None and len(self._filepath) > 0:
             self._ingest_file_as_context()
-        if self._load_last:
+        if self._load_session_uuid:
+            self._storage.display_chat_by_uuid(self._load_session_uuid)
+            count_when_loaded = len(self._messages)
+        elif self._load_last:
             self._storage.display_last_chat()
-        if self._load_last:
             count_when_loaded = len(self._messages)
 
         commands_multiline = ChatCommands.multiline()

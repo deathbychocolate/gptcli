@@ -205,6 +205,7 @@ class ModeNames(BaseEnum):
     SE = "se"
     CHAT = "chat"
     OCR = "ocr"
+    SEARCH = "search"
     ENCRYPT = "encrypt"
     DECRYPT = "decrypt"
     REKEY = "rekey"
@@ -214,6 +215,13 @@ class ModeNames(BaseEnum):
     def all_provider_modes(cls) -> tuple[str, ...]:
         """Return mode names that apply to all providers (under 'gptcli all')."""
         return (cls.ENCRYPT.value, cls.DECRYPT.value, cls.REKEY.value, cls.NUKE.value)
+
+
+class SearchActions(BaseEnum):
+    """The actions that can be returned from the search TUI."""
+
+    LOAD = "load"
+    PRINT = "print"
 
 
 class ProviderNames(BaseEnum):

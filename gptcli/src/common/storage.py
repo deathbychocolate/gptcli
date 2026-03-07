@@ -33,7 +33,8 @@ from gptcli.src.common.constants import (
     OpenaiUserRoles,
 )
 from gptcli.src.common.encryption import Encryption
-from gptcli.src.common.message import Message, MessageFactory, Messages
+from gptcli.src.common.file_io import read_text_file
+from gptcli.src.common.message import MessageFactory, Messages
 from gptcli.src.common.validators import InputType, is_url
 
 logger: Logger = logging.getLogger(__name__)
@@ -82,6 +83,11 @@ class Storage:
             self._ocr_dir = GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
+
+    @property
+    def chat_dir(self) -> str:
+        """The directory where chat sessions are stored."""
+        return self._chat_dir
 
     def _write_image(self, filepath: str, data: bytes) -> None:
         """Write image data to a file, encrypting if encryption is enabled.
@@ -142,10 +148,7 @@ class Storage:
                 print_formatted_text(ANSI(f"{RED}>>>{RST} Failed to decrypt data."))
                 return None
             return decrypted.decode("utf-8")
-        if os.path.exists(filepath_plaintext):
-            with open(filepath_plaintext, "r", encoding="utf8") as fp:
-                return fp.read()
-        return None
+        return read_text_file(filepath_plaintext, self._encryption)
 
     # ── Manifest operations ──────────────────────────────────────────
 
@@ -507,6 +510,21 @@ class Storage:
         print(content)
         return None
 
+    @staticmethod
+    def _parse_messages(raw_content: str) -> Messages:
+        """Parse a JSON session file into a Messages collection.
+
+        Args:
+            raw_content (str): The raw JSON string from session.json.
+
+        Returns:
+            Messages: A Messages collection built from the JSON data.
+        """
+        messages: Messages = Messages()
+        for message in json.loads(raw_content)["messages"]:
+            messages.add(MessageFactory.message_from_dict(message=message))
+        return messages
+
     def extract_messages(self) -> Messages | None:
         """Extract messages from the most recent chat session.
 
@@ -528,14 +546,84 @@ class Storage:
         raw_content: str | None = self._read_text(session_file)
         if raw_content is None:
             return None
-        file_contents_messages: list[dict[str, Any]] = json.loads(raw_content)["messages"]
+        return self._parse_messages(raw_content)
 
-        messages: Messages = Messages()
-        for message in file_contents_messages:
-            m: Message = MessageFactory.message_from_dict(message=message)
-            messages.add(message=m)
+    def extract_messages_by_uuid(self, session_uuid: str) -> Messages | None:
+        """Extract messages from a specific chat session by UUID.
 
-        return messages
+        Args:
+            session_uuid (str): The UUID of the chat session to load.
+
+        Returns:
+            Messages | None: A Messages collection, or None if the file is unreadable.
+
+        Raises:
+            StorageEmpty: If no session directory exists for the given UUID.
+        """
+        session_dir = path.join(self._chat_dir, session_uuid)
+        if not os.path.isdir(session_dir):
+            raise StorageEmpty(f"No chat session found for UUID {session_uuid}")
+
+        session_file = path.join(session_dir, GPTCLI_SESSION_FILENAME)
+        raw_content: str | None = self._read_text(session_file)
+        if raw_content is None:
+            return None
+        return self._parse_messages(raw_content)
+
+    def read_session_model(self, session_uuid: str) -> str | None:
+        """Read the model name from a session's metadata file.
+
+        Args:
+            session_uuid (str): The UUID of the chat session.
+
+        Returns:
+            str | None: The model name, or None if the metadata is unreadable.
+        """
+        session_dir = path.join(self._chat_dir, session_uuid)
+        metadata_file = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        raw_content: str | None = self._read_text(metadata_file)
+        if raw_content is None:
+            return None
+        try:
+            metadata: dict[str, Any] = json.loads(raw_content)
+            model: str = metadata.get("chat", {}).get("model", "")
+            return model or None
+        except (json.JSONDecodeError, AttributeError):
+            return None
+
+    @staticmethod
+    def _display_messages(messages: Messages) -> None:
+        """Format and display a collection of chat messages with ANSI color codes.
+
+        Args:
+            messages (Messages): The messages to display.
+        """
+        for message in messages:
+            if message.is_reply:
+                print_formatted_text(ANSI(f"{MGA}>>>{RST} " + message.content.strip()))
+            elif message.is_system:
+                label: str = "dev" if message.role == OpenaiUserRoles.system_role() else "sys"
+                print_formatted_text(ANSI(f"{GRY}[{label}]{RST} " + message.content.strip()))
+            else:
+                print_formatted_text(ANSI(f"{GRN}>>>{RST} " + message.content.strip()))
+
+    def display_chat_by_uuid(self, session_uuid: str) -> None:
+        """Extract, format, and display messages from a specific chat session.
+
+        Args:
+            session_uuid (str): The UUID of the chat session to display.
+        """
+        try:
+            messages: Messages | None = self.extract_messages_by_uuid(session_uuid)
+        except StorageEmpty:
+            print_formatted_text(ANSI(f"{RED}>>>{RST} No chat session found for UUID {session_uuid}."))
+            return None
+
+        if messages is None:
+            return None
+
+        self._display_messages(messages)
+        return None
 
     def display_last_chat(self) -> None:
         """Extract, format, and display messages from the most recent chat session.
@@ -555,13 +643,5 @@ class Storage:
         if messages is None:
             return None
 
-        for message in messages:
-            if message.is_reply:
-                print_formatted_text(ANSI(f"{MGA}>>>{RST} " + message.content.strip()))
-            elif message.is_system:
-                label: str = "dev" if message.role == OpenaiUserRoles.system_role() else "sys"
-                print_formatted_text(ANSI(f"{GRY}[{label}]{RST} " + message.content.strip()))
-            else:
-                print_formatted_text(ANSI(f"{GRN}>>>{RST} " + message.content.strip()))
-
+        self._display_messages(messages)
         return None

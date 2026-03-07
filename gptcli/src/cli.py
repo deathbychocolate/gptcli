@@ -195,6 +195,20 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
     )
     parser_chat.set_defaults(parser=parser_chat)
 
+    # parser options for 'search' mode
+    parser_search = subparser_modes.add_parser(
+        ModeNames.SEARCH.value,
+        formatter_class=custom_formatter,
+        help="'Search' mode lets you search your chat history with full-text search.",
+    )
+    parser_search.add_argument(
+        "--key",
+        type=str,
+        help=f"Defaults to the value in '{default_key}'. The API key to use if loading a session.",
+        metavar="<string>",
+    )
+    parser_search.set_defaults(parser=parser_search)
+
     # parser options for 'ocr' mode
     if provider == ProviderNames.MISTRAL.value:  # for now, only Mistral will have OCR mode
         parser_ocr = subparser_modes.add_parser(

@@ -16,15 +16,27 @@ from gptcli.constants import (
 from gptcli.src.cli import CommandParser
 from gptcli.src.commands.encryption_commands import EncryptionCommands
 from gptcli.src.commands.nuke import Nuke
-from gptcli.src.common.constants import ModeNames, ProviderNames
+from gptcli.src.common.constants import (
+    MistralModelRoles,
+    MistralModelsChat,
+    MistralUserRoles,
+    ModeNames,
+    OpenaiModelRoles,
+    OpenaiModelsChat,
+    OpenaiUserRoles,
+    ProviderNames,
+    SearchActions,
+)
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager, make_key_manager
 from gptcli.src.common.passphrase import PassphrasePrompt
+from gptcli.src.common.storage import Storage
 from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.optical_character_recognition import (
     OpticalCharacterRecognition,
 )
+from gptcli.src.modes.search import ChatSearch
 from gptcli.src.modes.single_exchange import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
@@ -222,6 +234,52 @@ def enter_chat_mode(parser: CommandParser, encryption: Encryption | None = None,
     ).start()
 
 
+def _provider_defaults(provider: str) -> tuple[str, str, str]:
+    """Return the default model, role_user, and role_model for a given provider.
+
+    Args:
+        provider (str): The provider name.
+
+    Returns:
+        tuple[str, str, str]: A tuple of (model, role_user, role_model) default values.
+    """
+    if provider == ProviderNames.MISTRAL.value:
+        return MistralModelsChat.default(), MistralUserRoles.default(), MistralModelRoles.default()
+    return OpenaiModelsChat.default(), OpenaiUserRoles.default(), OpenaiModelRoles.default()
+
+
+def enter_search_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+    """Launch the full-text search TUI and handle the user's chosen action.
+
+    Args:
+        parser (CommandParser): The parsed CLI arguments.
+        encryption (Encryption | None, optional): Encryption instance. Defaults to None.
+        api_key (str, optional): The API key to use if loading a session in chat. Defaults to "".
+    """
+    provider: str = parser.args.provider
+    storage = Storage(provider=provider, encryption=encryption)
+
+    action, session_uuid = ChatSearch(
+        chat_dir=storage.chat_dir,
+        encryption=encryption,
+    ).run()
+
+    if action == SearchActions.LOAD.value and session_uuid:
+        default_model, role_user, role_model = _provider_defaults(provider)
+        model: str = storage.read_session_model(session_uuid) or default_model
+        ChatUser(
+            model=model,
+            provider=provider,
+            role_user=role_user,
+            role_model=role_model,
+            load_session_uuid=session_uuid,
+            encryption=encryption,
+            api_key=api_key,
+        ).start()
+    elif action == SearchActions.PRINT.value and session_uuid:
+        storage.display_chat_by_uuid(session_uuid)
+
+
 def enter_ocr_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
     logger.info("Entering OCR mode.")
     OpticalCharacterRecognition(
@@ -289,6 +347,8 @@ def main() -> None:
             enter_chat_mode(parser=parser, encryption=encryption, api_key=api_key)
         case ModeNames.OCR.value:
             enter_ocr_mode(parser=parser, encryption=encryption, api_key=api_key)
+        case ModeNames.SEARCH.value:
+            enter_search_mode(parser=parser, encryption=encryption, api_key=api_key)
 
     return None
 
