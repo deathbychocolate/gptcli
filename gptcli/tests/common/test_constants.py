@@ -24,6 +24,7 @@ from gptcli.src.common.constants import (
 
 class TestMistralModelsChat:
 
+    @pytest.mark.third_party_api
     @pytest.mark.parametrize("model", [class_var.value for class_var in MistralModelsChat])
     def test_should_successfully_send_a_message_to_the_api_given_a_valid_model(self, model: str) -> None:
         url: str = MISTRAL_ENDPOINT_CHAT_COMPLETIONS
@@ -47,6 +48,7 @@ class TestMistralModelsChat:
 
 class TestOpenaiModelsChat:
 
+    @pytest.mark.third_party_api
     @pytest.mark.parametrize("model", [class_var.value for class_var in OpenaiModelsChat])
     def test_should_successfully_send_a_message_to_the_api_given_a_valid_model(self, model: str) -> None:
         url: str = OPENAI_ENDPOINT_CHAT_COMPLETIONS

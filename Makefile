@@ -15,8 +15,15 @@ install: ## Install project dependencies using uv.
 	@uv run mypy --install-types --non-interactive
 
 .PHONY: test
-test: ## Run tests with pytest.
-	@uv run pytest -x --log-cli-level=ERROR
+test: ## Run tests with pytest (skips live API tests).
+	@uv run pytest -x --log-cli-level=ERROR -m "not third_party_api"
+
+.PHONY: test_integration
+test_integration: ## Run only the live third-party API tests (requires valid API keys).
+	@uv run pytest --log-cli-level=ERROR -m "third_party_api"
+
+.PHONY: test_all
+test_all: test test_integration ## Run all tests (stops early if unit tests fail).
 
 .PHONY: test_nox
 test_nox: ## Run tests with pytest on all supported Python versions.
@@ -24,7 +31,7 @@ test_nox: ## Run tests with pytest on all supported Python versions.
 
 .PHONY: coverage
 coverage: ## Run tests with pytest and generate code coverage report (html).
-	@uv run pytest -x --log-cli-level=ERROR --cov=gptcli/src/ --cov-report html --cov-branch
+	@uv run pytest -x --log-cli-level=ERROR -m "not third_party_api" --cov=gptcli/src/ --cov-report html --cov-branch
 
 .PHONY: clean
 clean: ## Remove __pycache__ and cpython generated files (gptcli folder only).
