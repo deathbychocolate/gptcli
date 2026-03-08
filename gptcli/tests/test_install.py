@@ -354,3 +354,66 @@ class TestMigrateToOpaqueStorage:
         assert len(subdirs) == 1
         session_dir = os.path.join(storage_env["openai_chat"], subdirs[0])
         assert os.path.exists(os.path.join(session_dir, "session.json.enc"))
+
+
+class TestMigrateOcrMarkdownFilename:
+
+    @staticmethod
+    def _make_session(session_dir: str, markdown_filename: str, metadata: dict[str, Any]) -> None:
+        os.makedirs(session_dir, exist_ok=True)
+        with open(os.path.join(session_dir, markdown_filename), "w", encoding="utf8") as f:
+            f.write("# content")
+        with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+            json.dump(metadata, f)
+
+    def test_no_op_when_already_document_md(self, tmp_path: str) -> None:
+        session_dir = os.path.join(str(tmp_path), "session1")
+        metadata: dict[str, Any] = {"output": {"markdown_file": "document.md", "images": []}}
+        self._make_session(session_dir, "document.md", metadata)
+
+        Migrate._migrate_ocr_markdown_filename(session_dir, None)
+
+        assert os.path.exists(os.path.join(session_dir, "document.md"))
+        with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
+            result = json.load(f)
+        assert result["output"]["markdown_file"] == "document.md"
+        assert "original_filename" not in result["output"]
+
+    def test_renames_file_and_updates_metadata(self, tmp_path: str) -> None:
+        session_dir = os.path.join(str(tmp_path), "session2")
+        metadata: dict[str, Any] = {"output": {"markdown_file": "report.md", "images": []}}
+        self._make_session(session_dir, "report.md", metadata)
+
+        Migrate._migrate_ocr_markdown_filename(session_dir, None)
+
+        assert os.path.exists(os.path.join(session_dir, "document.md"))
+        assert not os.path.exists(os.path.join(session_dir, "report.md"))
+        with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
+            result = json.load(f)
+        assert result["output"]["markdown_file"] == "document.md"
+        assert result["output"]["original_filename"] == "report.md"
+
+    def test_renames_encrypted_file(self, tmp_path: str) -> None:
+        session_dir = os.path.join(str(tmp_path), "session3")
+        os.makedirs(session_dir)
+        # Write an .enc variant instead of plaintext
+        with open(os.path.join(session_dir, "report.md.enc"), "wb") as f:
+            f.write(b"encrypted-content")
+        metadata: dict[str, Any] = {"output": {"markdown_file": "report.md", "images": []}}
+        with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+            json.dump(metadata, f)
+
+        Migrate._migrate_ocr_markdown_filename(session_dir, None)
+
+        assert os.path.exists(os.path.join(session_dir, "document.md.enc"))
+        assert not os.path.exists(os.path.join(session_dir, "report.md.enc"))
+        with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
+            result = json.load(f)
+        assert result["output"]["markdown_file"] == "document.md"
+        assert result["output"]["original_filename"] == "report.md"
+
+    def test_skips_when_metadata_missing(self, tmp_path: str) -> None:
+        session_dir = os.path.join(str(tmp_path), "session4")
+        os.makedirs(session_dir)
+        # No metadata.json present — should not raise
+        Migrate._migrate_ocr_markdown_filename(session_dir, None)

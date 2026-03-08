@@ -395,6 +395,7 @@ class Storage:
         model: str,
         page_count: int,
         markdown_file: str,
+        original_filename: str,
         images: list[str],
         session_uuid: str,
         created: float,
@@ -405,7 +406,8 @@ class Storage:
             source (str): The original input source (URL or filepath).
             model (str): The OCR model used for processing.
             page_count (int): Number of pages processed.
-            markdown_file (str): Name of the generated Markdown file.
+            markdown_file (str): Name of the stored Markdown file (always "document.md").
+            original_filename (str): The source-derived Markdown filename (e.g. "report.md").
             images (list[str]): List of generated image filenames.
             session_uuid (str): The UUID of the OCR session.
             created (float): The creation timestamp (epoch seconds).
@@ -432,6 +434,7 @@ class Storage:
             },
             "output": {
                 "markdown_file": markdown_file,
+                "original_filename": original_filename,
                 "images": images,
             },
         }
@@ -467,7 +470,8 @@ class Storage:
 
         session_dir, session_uuid, created = self._create_session_dir(self._ocr_dir)
 
-        markdown_filename = self.derive_markdown_filename_from_source(source)
+        original_filename = self.derive_markdown_filename_from_source(source)
+        markdown_filename = self._FALLBACK_MARKDOWN_FILENAME
         markdown_filepath = path.join(session_dir, markdown_filename)
         self._write_text(markdown_filepath, markdown_content)
 
@@ -492,6 +496,7 @@ class Storage:
             model=model,
             page_count=page_count,
             markdown_file=markdown_filename,
+            original_filename=original_filename,
             images=image_filenames,
             session_uuid=session_uuid,
             created=created,

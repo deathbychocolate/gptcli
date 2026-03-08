@@ -405,11 +405,54 @@ class Migrate:
 
             # Update metadata.json uuid if it exists
             Migrate._update_ocr_metadata_uuid(target_dir, session_uuid, encryption)
+            Migrate._migrate_ocr_markdown_filename(target_dir, encryption)
 
             manifest_entries.append({"uuid": session_uuid, "created": created})
             logger.info(f"Migrated OCR dir '{dirname}' to '{session_uuid}/'")
 
         Migrate._extend_manifest(ocr_dir, manifest_entries, encryption)
+
+    @staticmethod
+    def _migrate_ocr_markdown_filename(session_dir: str, encryption: Encryption | None) -> None:
+        """Migrate an OCR session's markdown file to the opaque name "document.md".
+
+        If the stored markdown_file is already "document.md", does nothing. Otherwise
+        renames the file (and its .enc counterpart if encrypted) to "document.md" /
+        "document.md.enc", sets original_filename in metadata, and updates markdown_file.
+
+        Args:
+            session_dir (str): Path to the OCR session directory.
+            encryption (Encryption | None): Encryption instance, or None for plaintext.
+        """
+        metadata_path = os.path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        data = Migrate._read_json(metadata_path, encryption)
+        if data is None:
+            return
+
+        try:
+            old_markdown_file = data["output"]["markdown_file"]
+        except (KeyError, TypeError):
+            return
+
+        if not isinstance(old_markdown_file, str):
+            return
+
+        opaque_name = Storage._FALLBACK_MARKDOWN_FILENAME
+        if old_markdown_file == opaque_name:
+            return
+
+        # Rename the file, handling both plain and encrypted variants.
+        for suffix in ("", ".enc"):
+            old_path = os.path.join(session_dir, old_markdown_file + suffix)
+            new_path = os.path.join(session_dir, opaque_name + suffix)
+            try:
+                os.rename(old_path, new_path)
+            except FileNotFoundError:
+                pass
+
+        data["output"]["original_filename"] = old_markdown_file
+        data["output"]["markdown_file"] = opaque_name
+        Migrate._write_json(metadata_path, data, encryption)
 
     @staticmethod
     def _extract_epoch_from_filename(filename: str) -> str:

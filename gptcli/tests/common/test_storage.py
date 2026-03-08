@@ -294,6 +294,7 @@ class TestStorage:
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
                 markdown_file="document.md",
+                original_filename="document.md",
                 images=[],
                 session_uuid="test-uuid",
                 created=1704067200.0,
@@ -306,7 +307,8 @@ class TestStorage:
                 source=f"{self.URL}/files/report.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
-                markdown_file="report.md",
+                markdown_file="document.md",
+                original_filename="report.md",
                 images=[],
                 session_uuid="test-uuid-2",
                 created=1704067200.0,
@@ -320,7 +322,8 @@ class TestStorage:
                 source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=5,
-                markdown_file="doc.md",
+                markdown_file="document.md",
+                original_filename="doc.md",
                 images=[],
                 session_uuid=test_uuid,
                 created=1704067200.0,
@@ -337,19 +340,22 @@ class TestStorage:
                 source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=2,
-                markdown_file="doc.md",
+                markdown_file="document.md",
+                original_filename="doc.md",
                 images=images,
                 session_uuid="test-uuid",
                 created=1704067200.0,
             )
-            assert result["output"]["markdown_file"] == "doc.md"
+            assert result["output"]["markdown_file"] == "document.md"
+            assert result["output"]["original_filename"] == "doc.md"
             assert result["output"]["images"] == images
 
             empty_result = storage._build_ocr_metadata(
                 source="/path/to/doc.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
-                markdown_file="doc.md",
+                markdown_file="document.md",
+                original_filename="doc.md",
                 images=[],
                 session_uuid="test-uuid",
                 created=1704067200.0,
@@ -361,7 +367,8 @@ class TestStorage:
                 source="/path/to/文档.pdf",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
-                markdown_file="文档.md",
+                markdown_file="document.md",
+                original_filename="文档.md",
                 images=[],
                 session_uuid="test-uuid",
                 created=1704067200.0,
@@ -372,7 +379,8 @@ class TestStorage:
                 source=f"{self.URL}/doc.pdf?token=abc123",
                 model=MistralModelsOcr.MISTRAL_OCR.value,
                 page_count=1,
-                markdown_file="doc.md",
+                markdown_file="document.md",
+                original_filename="doc.md",
                 images=[],
                 session_uuid="test-uuid",
                 created=1704067200.0,
@@ -432,7 +440,7 @@ class TestStorage:
 
         # Markdown file
 
-        def test_creates_markdown_file_with_derived_name(self, storage_with_tmp_dir: Storage) -> None:
+        def test_creates_markdown_file_with_opaque_name(self, storage_with_tmp_dir: Storage) -> None:
             session_dir = storage_with_tmp_dir.store_ocr_result(
                 source="/path/to/document.pdf",
                 markdown_content="# Test",
@@ -441,6 +449,18 @@ class TestStorage:
                 image_data=[],
             )
             assert os.path.exists(os.path.join(session_dir, "document.md"))
+            assert not os.path.exists(os.path.join(session_dir, "document.md.bak"))
+
+        def test_markdown_file_always_named_document_md(self, storage_with_tmp_dir: Storage) -> None:
+            session_dir = storage_with_tmp_dir.store_ocr_result(
+                source="/path/to/report.pdf",
+                markdown_content="# Report",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                image_data=[],
+            )
+            assert os.path.exists(os.path.join(session_dir, "document.md"))
+            assert not os.path.exists(os.path.join(session_dir, "report.md"))
 
         def test_markdown_file_contains_correct_content(self, storage_with_tmp_dir: Storage) -> None:
             markdown_content = "# Title\n\nSome content here."
@@ -451,7 +471,7 @@ class TestStorage:
                 page_count=1,
                 image_data=[],
             )
-            with open(os.path.join(session_dir, "doc.md"), "r", encoding="utf8") as f:
+            with open(os.path.join(session_dir, "document.md"), "r", encoding="utf8") as f:
                 assert f.read() == markdown_content
 
         def test_markdown_file_handles_unicode_content(self, storage_with_tmp_dir: Storage) -> None:
@@ -463,7 +483,7 @@ class TestStorage:
                 page_count=1,
                 image_data=[],
             )
-            with open(os.path.join(session_dir, "文档.md"), "r", encoding="utf8") as f:
+            with open(os.path.join(session_dir, "document.md"), "r", encoding="utf8") as f:
                 assert f.read() == markdown_content
 
         def test_markdown_file_handles_empty_content(self, storage_with_tmp_dir: Storage) -> None:
@@ -474,7 +494,7 @@ class TestStorage:
                 page_count=0,
                 image_data=[],
             )
-            with open(os.path.join(session_dir, "doc.md"), "r", encoding="utf8") as f:
+            with open(os.path.join(session_dir, "document.md"), "r", encoding="utf8") as f:
                 assert f.read() == ""
 
         # Metadata file
@@ -538,7 +558,8 @@ class TestStorage:
             )
             with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
                 metadata = json.load(f)
-            assert metadata["output"]["markdown_file"] == "report.md"
+            assert metadata["output"]["markdown_file"] == "document.md"
+            assert metadata["output"]["original_filename"] == "report.md"
             assert metadata["output"]["images"] == ["page_1_img_0.png", "page_1_img_1.jpg"]
 
         # Image saving
@@ -568,7 +589,7 @@ class TestStorage:
 
         # URL source edge cases
 
-        def test_url_source_extracts_filename_for_markdown(self, storage_with_tmp_dir: Storage) -> None:
+        def test_url_source_stores_as_document_md_and_preserves_original(self, storage_with_tmp_dir: Storage) -> None:
             session_dir = storage_with_tmp_dir.store_ocr_result(
                 source=f"{self.URL}/files/report.pdf?token=abc",
                 markdown_content="# Test",
@@ -576,7 +597,11 @@ class TestStorage:
                 page_count=1,
                 image_data=[],
             )
-            assert os.path.exists(os.path.join(session_dir, "report.md"))
+            assert os.path.exists(os.path.join(session_dir, "document.md"))
+            assert not os.path.exists(os.path.join(session_dir, "report.md"))
+            with open(os.path.join(session_dir, "metadata.json"), "r", encoding="utf8") as f:
+                metadata = json.load(f)
+            assert metadata["output"]["original_filename"] == "report.md"
 
         def test_url_source_uses_fallback_filename_when_no_path(self, storage_with_tmp_dir: Storage) -> None:
             session_dir = storage_with_tmp_dir.store_ocr_result(
@@ -955,10 +980,10 @@ class TestStorage:
                 image_data=[("img1.png", b"fake image data")],
             )
             files = os.listdir(session_dir)
-            assert "doc.md.enc" in files
+            assert "document.md.enc" in files
             assert "metadata.json.enc" in files
             assert "img1.png.enc" in files
-            assert "doc.md" not in files
+            assert "document.md" not in files
             assert "metadata.json" not in files
             assert "img1.png" not in files
 
@@ -970,7 +995,7 @@ class TestStorage:
                 page_count=1,
                 image_data=[],
             )
-            enc_file = os.path.join(session_dir, "doc.md.enc")
+            enc_file = os.path.join(session_dir, "document.md.enc")
             with open(enc_file, "rb") as f:
                 content = f.read()
             assert b"# Test content here" not in content
