@@ -284,7 +284,6 @@ class TestStorage:
 
 ### In Development (TODOs in README)
 - Additional role types (developer, tool, function)
-- Database storage backend
 
 ### Known Issues
 - OCR mode only supports Mistral (OpenAI not implemented)

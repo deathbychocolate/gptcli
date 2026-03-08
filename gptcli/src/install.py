@@ -21,8 +21,8 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_MISTRAL_KEY_FILE,
     GPTCLI_PROVIDER_MISTRAL_KEYS_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_CHAT_DIR,
-    GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR,
+    GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_DB_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_JSON_DIR,
     GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR,
     GPTCLI_PROVIDER_OPENAI,
@@ -30,8 +30,8 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_OPENAI_KEY_FILE,
     GPTCLI_PROVIDER_OPENAI_KEYS_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_CHAT_DIR,
-    GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_DIR,
+    GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_DB_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_JSON_DIR,
     GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
     GPTCLI_SESSION_FILENAME,
@@ -112,7 +112,6 @@ class Migrate:
             ├── keys
             │   └── main
             └── storage
-                ├── db
                 └── json
                     ├── 1733422696__2024_12_05__18_18_16_chat.json
                     ├── 1733433483__2024_12_05__21_18_03_chat.json
@@ -135,8 +134,6 @@ class Migrate:
                     target = os.path.join(GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_JSON_DIR, file)
                     os.replace(GPTCLI_LEGACY_STORAGE + "/" + file, target)
 
-            # complete the new tree structure
-            os.makedirs(GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR, exist_ok=True)
             with open(GPTCLI_PROVIDER_OPENAI_INSTALL_SUCCESSFUL_FILE, mode="w", encoding="utf8"):
                 pass
 
@@ -243,6 +240,22 @@ class Migrate:
             ocr_dir = os.path.join(storage_dir, "ocr")
             if os.path.isdir(ocr_dir):
                 Migrate._migrate_ocr_dirs(ocr_dir, encryption)
+
+    @staticmethod
+    def remove_db_dirs() -> None:
+        """Remove the legacy db/ storage directories if they exist and are empty.
+
+        These directories were created speculatively for a database storage backend
+        that was never implemented. They are safe to remove: nothing was ever written
+        to them.
+        """
+        for db_dir in [GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_DB_DIR, GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_DB_DIR]:
+            if os.path.isdir(db_dir):
+                try:
+                    os.rmdir(db_dir)
+                    logger.info("Removed legacy db directory: %s", db_dir)
+                except OSError:
+                    logger.warning("Could not remove legacy db directory (not empty?): %s", db_dir)
 
     @staticmethod
     def _merge_legacy_json_into_chat(legacy_json_dir: str, chat_dir: str) -> None:
@@ -636,7 +649,6 @@ class Mistral(ProviderInstaller):
                 GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR,
                 GPTCLI_PROVIDER_MISTRAL_STORAGE_CHAT_DIR,
                 GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR,
-                GPTCLI_PROVIDER_MISTRAL_STORAGE_DB_DIR,
             ],
             keys_dir=GPTCLI_PROVIDER_MISTRAL_KEYS_DIR,
             key_file=GPTCLI_PROVIDER_MISTRAL_KEY_FILE,
@@ -659,7 +671,6 @@ class Openai(ProviderInstaller):
                 GPTCLI_PROVIDER_OPENAI_STORAGE_DIR,
                 GPTCLI_PROVIDER_OPENAI_STORAGE_CHAT_DIR,
                 GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR,
-                GPTCLI_PROVIDER_OPENAI_STORAGE_DB_DIR,
             ],
             keys_dir=GPTCLI_PROVIDER_OPENAI_KEYS_DIR,
             key_file=GPTCLI_PROVIDER_OPENAI_KEY_FILE,

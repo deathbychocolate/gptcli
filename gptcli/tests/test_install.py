@@ -417,3 +417,63 @@ class TestMigrateOcrMarkdownFilename:
         os.makedirs(session_dir)
         # No metadata.json present — should not raise
         Migrate._migrate_ocr_markdown_filename(session_dir, None)
+
+
+class TestRemoveDbDirs:
+
+    @pytest.fixture
+    def db_env(self, tmp_path: str) -> dict[str, str]:
+        """Set up isolated db directory paths for migration tests."""
+        return {
+            "openai_db": os.path.join(str(tmp_path), "openai", "storage", "db"),
+            "mistral_db": os.path.join(str(tmp_path), "mistral", "storage", "db"),
+        }
+
+    @staticmethod
+    def _apply_db_patches(env: dict[str, str]) -> contextlib.ExitStack:
+        """Patch legacy db directory constants to isolated tmp paths."""
+        stack = contextlib.ExitStack()
+        stack.enter_context(patch("gptcli.src.install.GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_DB_DIR", env["openai_db"]))
+        stack.enter_context(
+            patch("gptcli.src.install.GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_DB_DIR", env["mistral_db"])
+        )
+        return stack
+
+    def test_removes_empty_db_directories(self, db_env: dict[str, str]) -> None:
+
+        # Given both db/ directories exist and are empty.
+        os.makedirs(db_env["openai_db"])
+        os.makedirs(db_env["mistral_db"])
+
+        # When we run the migration.
+        with self._apply_db_patches(db_env):
+            Migrate.remove_db_dirs()
+
+        # Then both directories should be removed.
+        assert not os.path.exists(db_env["openai_db"])
+        assert not os.path.exists(db_env["mistral_db"])
+
+    def test_leaves_non_empty_db_directories_untouched(self, db_env: dict[str, str]) -> None:
+
+        # Given a db/ directory that unexpectedly contains a file.
+        os.makedirs(db_env["openai_db"])
+        with open(os.path.join(db_env["openai_db"], "unexpected.db"), "w") as f:
+            f.write("data")
+
+        # When we run the migration.
+        with self._apply_db_patches(db_env):
+            Migrate.remove_db_dirs()  # Should not raise.
+
+        # Then the non-empty directory should still exist.
+        assert os.path.isdir(db_env["openai_db"])
+
+    def test_no_op_when_db_directories_do_not_exist(self, db_env: dict[str, str]) -> None:
+
+        # Given neither db/ directory exists.
+        # When we run the migration.
+        with self._apply_db_patches(db_env):
+            Migrate.remove_db_dirs()  # Should not raise.
+
+        # Then nothing is created or raised.
+        assert not os.path.exists(db_env["openai_db"])
+        assert not os.path.exists(db_env["mistral_db"])
