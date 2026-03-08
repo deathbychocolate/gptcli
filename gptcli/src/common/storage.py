@@ -609,20 +609,16 @@ class Storage:
         print(content)
         return None
 
-    def write_ocr_by_uuid(self, session_uuid: str, output_dir: str | None) -> None:
+    def write_ocr_by_uuid(self, session_uuid: str, output_dir: str) -> None:
         """Write an OCR session's Markdown and images to a local output directory.
 
-        When output_dir is None (``--no-output-dir`` was passed), does nothing.
         Creates a subfolder named ``gptcli__{provider}__ocr__{name}`` inside
         output_dir, containing the Markdown file and any extracted images.
 
         Args:
             session_uuid (str): The UUID of the OCR session to write.
-            output_dir (str | None): Destination directory, or None to skip writing.
+            output_dir (str): Destination directory.
         """
-        if output_dir is None:
-            return None
-
         session_dir = path.join(self._ocr_dir, session_uuid)
         if not os.path.isdir(session_dir):
             self._warn(f"No OCR session found for UUID {session_uuid}.")

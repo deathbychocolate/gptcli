@@ -218,6 +218,27 @@ class TestSpinnerRecognizing:
         assert "✗" in out
         assert "Recognizing" in out
 
+    def test_spinner_resets_after_failure(
+        self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given a SpinnerRecognizing that previously failed.
+        recognizing_spinner: SpinnerRecognizing = setup_teardown
+        with pytest.raises(RuntimeError):
+            with recognizing_spinner:
+                time.sleep(0.05)
+                raise RuntimeError("failure")
+        capfd.readouterr()  # drain first run
+
+        # When we run the spinner again successfully.
+        with recognizing_spinner:
+            time.sleep(0.05)
+
+        # Then the output should contain a checkmark, not an error indicator.
+        out, err = capfd.readouterr()
+        assert "✔" in out
+        assert "✗" not in out
+
     def test_spinner_stops_printing_frames(
         self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
     ) -> None:

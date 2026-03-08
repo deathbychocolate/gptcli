@@ -82,7 +82,7 @@ class Spinner:
         sys.stdout.write("\r")
 
     def _on_failure(self) -> None:
-        """Clears the spinner line on failure; override to show an error indicator."""
+        """Clears the spinner line silently on failure. Override to show an error indicator."""
         sys.stdout.write("\r")
 
     def __enter__(self) -> Self:
