@@ -78,6 +78,7 @@ update_changelog_on_bump = true
 post_bump_hooks = ["python3 scripts/update_uv_lock_version.py"]
 
 [tool.pytest.ini_options]
+log_cli = true
 markers = [
     "third_party_api: marks tests that make real calls to external APIs (deselect with '-m not third_party_api')",
 ]
