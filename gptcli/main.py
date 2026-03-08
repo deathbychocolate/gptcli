@@ -26,6 +26,7 @@ from gptcli.src.common.constants import (
     OpenaiUserRoles,
     ProviderNames,
     SearchActions,
+    SearchTargets,
 )
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager, make_key_manager
@@ -36,7 +37,7 @@ from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.optical_character_recognition import (
     OpticalCharacterRecognition,
 )
-from gptcli.src.modes.search import ChatSearch
+from gptcli.src.modes.search import ChatSearch, OcrSearch
 from gptcli.src.modes.single_exchange import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
@@ -234,6 +235,24 @@ def enter_chat_mode(parser: CommandParser, encryption: Encryption | None = None,
     ).start()
 
 
+def enter_ocr_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+    logger.info("Entering OCR mode.")
+    OpticalCharacterRecognition(
+        model=parser.args.model,
+        provider=parser.args.provider,
+        store=parser.args.store,
+        display_last=parser.args.display_last,
+        display=parser.args.display,
+        filelist=parser.args.filelist,
+        output_dir=parser.args.output_dir,
+        no_output_dir=parser.args.no_output_dir,
+        inputs=parser.args.inputs,
+        include_images=not parser.args.no_images,
+        encryption=encryption,
+        api_key=api_key,
+    ).start()
+
+
 def _provider_defaults(provider: str) -> tuple[str, str, str]:
     """Return the default model, role_user, and role_model for a given provider.
 
@@ -248,8 +267,8 @@ def _provider_defaults(provider: str) -> tuple[str, str, str]:
     return OpenaiModelsChat.default(), OpenaiUserRoles.default(), OpenaiModelRoles.default()
 
 
-def enter_search_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
-    """Launch the full-text search TUI and handle the user's chosen action.
+def enter_chat_search_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+    """Launch the chat full-text search TUI and handle the user's chosen action.
 
     Args:
         parser (CommandParser): The parsed CLI arguments.
@@ -280,22 +299,26 @@ def enter_search_mode(parser: CommandParser, encryption: Encryption | None = Non
         storage.display_chat_by_uuid(session_uuid)
 
 
-def enter_ocr_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
-    logger.info("Entering OCR mode.")
-    OpticalCharacterRecognition(
-        model=parser.args.model,
-        provider=parser.args.provider,
-        store=parser.args.store,
-        display_last=parser.args.display_last,
-        display=parser.args.display,
-        filelist=parser.args.filelist,
-        output_dir=parser.args.output_dir,
-        no_output_dir=parser.args.no_output_dir,
-        inputs=parser.args.inputs,
-        include_images=not parser.args.no_images,
+def enter_ocr_search_mode(parser: CommandParser, encryption: Encryption | None = None) -> None:
+    """Launch the OCR full-text search TUI and handle the user's chosen action.
+
+    Args:
+        parser (CommandParser): The parsed CLI arguments.
+        encryption (Encryption | None, optional): Encryption instance. Defaults to None.
+    """
+    provider: str = parser.args.provider
+    storage = Storage(provider=provider, encryption=encryption)
+
+    action, session_uuid = OcrSearch(
+        ocr_dir=storage.ocr_dir,
         encryption=encryption,
-        api_key=api_key,
-    ).start()
+    ).run()
+
+    if action == SearchActions.PRINT.value and session_uuid:
+        storage.display_ocr_by_uuid(session_uuid)
+    elif action == SearchActions.WRITE.value and session_uuid:
+        output_dir = None if parser.args.no_output_dir else parser.args.output_dir
+        storage.write_ocr_by_uuid(session_uuid, output_dir)
 
 
 def main() -> None:
@@ -310,6 +333,9 @@ def main() -> None:
     elif not args.mode_name:  # mode is missing
         args.parser.print_help()
         return None
+    elif args.mode_name == ModeNames.SEARCH.value and not args.search_target:
+        args.parser.print_help()
+        return None
     elif args.mode_name == ModeNames.OCR.value and not (args.inputs or args.filelist or args.display_last):
         parser.args.parser.print_help()
         return None
@@ -322,8 +348,7 @@ def main() -> None:
     no_cache: bool = args.no_cache
 
     # Migrations run in order: legacy tree → encryption → opaque storage.
-    # to_encrypted must complete before migrate_to_opaque_storage so that
-    # the encrypted/unencrypted state of files is resolved before migration.
+    # Do not change the order.
     Migrate.migrate_legacy_tree()
     Migrate.to_encrypted(no_cache=no_cache)
     encryption: Encryption | None = _load_encryption(no_cache=no_cache)
@@ -348,7 +373,10 @@ def main() -> None:
         case ModeNames.OCR.value:
             enter_ocr_mode(parser=parser, encryption=encryption, api_key=api_key)
         case ModeNames.SEARCH.value:
-            enter_search_mode(parser=parser, encryption=encryption, api_key=api_key)
+            if parser.args.search_target == SearchTargets.CHAT.value:
+                enter_chat_search_mode(parser=parser, encryption=encryption, api_key=api_key)
+            elif parser.args.search_target == SearchTargets.OCR.value:
+                enter_ocr_search_mode(parser=parser, encryption=encryption)
 
     return None
 

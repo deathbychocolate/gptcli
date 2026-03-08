@@ -139,45 +139,6 @@ class OpticalCharacterRecognition:
         if self._display:
             print(document_as_markdown)
 
-    @staticmethod
-    def _derive_folder_name_from_source(provider: str, source: str) -> str:
-        """Derive a folder name from the provider and source document path or URL.
-
-        Args:
-            provider (str): The API provider name (e.g., 'mistral').
-            source (str): A URL or filesystem path to the source document.
-
-        Returns:
-            str: A folder name in the format 'gptcli__{provider}__ocr__{name}'.
-        """
-        filename = Storage.extract_filename_from_source(source)
-        if filename and "." in filename and not filename.startswith("."):
-            name = filename.rsplit(".", 1)[0]
-        else:
-            name = filename
-
-        return f"gptcli__{provider}__ocr__{name or 'document'}"
-
-    @staticmethod
-    def _resolve_folder_collision(base_path: str) -> str:
-        """Resolve folder name collisions by appending a numeric suffix.
-
-        Args:
-            base_path (str): The desired folder path.
-
-        Returns:
-            str: The original path if no collision, or path with '__1', '__2', etc. appended.
-        """
-        if not os.path.exists(base_path):
-            return base_path
-
-        counter = 1
-        while True:
-            candidate = f"{base_path}__{counter}"
-            if not os.path.exists(candidate):
-                return candidate
-            counter += 1
-
     def _validate_output_dir(self) -> None:
         """Validate that the output directory path is usable and create it if missing.
 
@@ -220,9 +181,9 @@ class OpticalCharacterRecognition:
         if self._output_dir is None:
             return None
 
-        folder_name = self._derive_folder_name_from_source(self._provider, document)
+        folder_name = Storage._derive_folder_name_from_source(self._provider, document)
         folder_path = os.path.join(self._output_dir, folder_name)
-        folder_path = self._resolve_folder_collision(folder_path)
+        folder_path = Storage._resolve_folder_collision(folder_path)
         os.makedirs(folder_path, exist_ok=True)
 
         markdown_filename = Storage.derive_markdown_filename_from_source(document)

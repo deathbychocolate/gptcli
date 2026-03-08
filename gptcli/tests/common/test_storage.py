@@ -4,6 +4,7 @@ import json
 import os
 import re
 import uuid
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -210,6 +211,74 @@ class TestStorage:
         def test_whitespace_only_raises_value_error(self) -> None:
             with pytest.raises(ValueError):
                 Storage.derive_markdown_filename_from_source("   ")
+
+    class TestDeriveFolderNameFromSource:
+
+        mistral: str = ProviderNames.MISTRAL.value
+        openai: str = ProviderNames.OPENAI.value
+
+        def test_filepath_with_extension(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "/path/to/report.pdf")
+            assert result == "gptcli__mistral__ocr__report"
+
+        def test_url_with_extension(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "https://example.com/docs/report.pdf")
+            assert result == "gptcli__mistral__ocr__report"
+
+        def test_fallback_when_no_filename(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "https://example.com/")
+            assert result == "gptcli__mistral__ocr__document"
+
+        def test_fallback_when_empty_url_path(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "https://example.com")
+            assert result == "gptcli__mistral__ocr__document"
+
+        def test_different_provider(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.openai, "/path/to/report.pdf")
+            assert result == "gptcli__openai__ocr__report"
+
+        def test_filename_with_spaces(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "/path/to/my report.pdf")
+            assert result == "gptcli__mistral__ocr__my report"
+
+        def test_filename_with_multiple_dots(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "/path/to/my.report.v2.pdf")
+            assert result == "gptcli__mistral__ocr__my.report.v2"
+
+        def test_hidden_file(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "/path/to/.hidden")
+            assert result == "gptcli__mistral__ocr__.hidden"
+
+        def test_filename_without_extension(self) -> None:
+            result = Storage._derive_folder_name_from_source(self.mistral, "/path/to/README")
+            assert result == "gptcli__mistral__ocr__README"
+
+    class TestResolveFolderCollision:
+
+        def test_no_collision(self, tmp_path: Path) -> None:
+            target = str(tmp_path / "gptcli__mistral__ocr__report")
+            result = Storage._resolve_folder_collision(target)
+            assert result == target
+
+        def test_single_collision(self, tmp_path: Path) -> None:
+            target = str(tmp_path / "gptcli__mistral__ocr__report")
+            os.makedirs(target)
+            result = Storage._resolve_folder_collision(target)
+            assert result == f"{target}__1"
+
+        def test_multiple_collisions(self, tmp_path: Path) -> None:
+            target = str(tmp_path / "gptcli__mistral__ocr__report")
+            os.makedirs(target)
+            os.makedirs(f"{target}__1")
+            os.makedirs(f"{target}__2")
+            result = Storage._resolve_folder_collision(target)
+            assert result == f"{target}__3"
+
+        def test_file_at_path_collision(self, tmp_path: Path) -> None:
+            target = str(tmp_path / "gptcli__mistral__ocr__report")
+            Path(target).touch()
+            result = Storage._resolve_folder_collision(target)
+            assert result == f"{target}__1"
 
     class TestBuildOcrMetadata:
 

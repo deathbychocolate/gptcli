@@ -22,6 +22,7 @@ from gptcli.src.common.constants import (
     OpenaiUserRoles,
     OutputTypes,
     ProviderNames,
+    SearchTargets,
 )
 
 logger: Logger = logging.getLogger(__name__)
@@ -199,14 +200,39 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
     parser_search = subparser_modes.add_parser(
         ModeNames.SEARCH.value,
         formatter_class=custom_formatter,
-        help="'Search' mode lets you search your chat history with full-text search.",
+        help="Search history with full-text search.",
     )
-    parser_search.add_argument(
-        "--key",
-        type=str,
-        help=f"Defaults to the value in '{default_key}'. The API key to use if loading a session.",
-        metavar="<string>",
+    subparser_search_targets = parser_search.add_subparsers(dest="search_target")
+
+    parser_search_chat = subparser_search_targets.add_parser(
+        SearchTargets.CHAT.value,
+        formatter_class=custom_formatter,
+        help="Search chat history.",
     )
+    parser_search_chat.set_defaults(parser=parser_search_chat)
+
+    if provider == ProviderNames.MISTRAL.value:
+        parser_search_ocr = subparser_search_targets.add_parser(
+            SearchTargets.OCR.value,
+            formatter_class=custom_formatter,
+            help="Search OCR history.",
+        )
+        ocr_search_output_group = parser_search_ocr.add_mutually_exclusive_group()
+        ocr_search_output_group.add_argument(
+            "--output-dir",
+            type=str,
+            default=".",
+            help="Defaults to '.'. Directory to write selected OCR result to.",
+            metavar="<string>",
+        )
+        ocr_search_output_group.add_argument(
+            "--no-output-dir",
+            action="store_true",
+            default=False,
+            help="Disable writing selected OCR result to a local directory.",
+        )
+        parser_search_ocr.set_defaults(parser=parser_search_ocr)
+
     parser_search.set_defaults(parser=parser_search)
 
     # parser options for 'ocr' mode

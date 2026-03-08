@@ -222,6 +222,14 @@ class SearchActions(BaseEnum):
 
     LOAD = "load"
     PRINT = "print"
+    WRITE = "write"
+
+
+class SearchTargets(BaseEnum):
+    """The data sources that can be searched."""
+
+    CHAT = "chat"
+    OCR = "ocr"
 
 
 class ProviderNames(BaseEnum):

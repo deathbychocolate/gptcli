@@ -1,7 +1,8 @@
-"""Interactive full-text search TUI over local chat history."""
+"""Interactive full-text search TUI over local chat and OCR history."""
 
 import re
-from typing import Any
+from abc import ABC, abstractmethod
+from typing import Any, Generic, TypeVar
 
 from prompt_toolkit import Application
 from prompt_toolkit.buffer import Buffer
@@ -14,44 +15,57 @@ from prompt_toolkit.styles import Style
 
 from gptcli.src.common.constants import GRN, RST, SearchActions
 from gptcli.src.common.encryption import Encryption
-from gptcli.src.common.fts import ChatFTS, MessageSnippet, SessionHit
+from gptcli.src.common.fts import (
+    ChatFTS,
+    MessageSnippet,
+    OcrFTS,
+    OcrHit,
+    SessionHit,
+    _BaseFTS,
+    tokenize,
+)
 
 _RESULTS_HEIGHT = 14
 _FOOTER_TEXT = " [↑↓/PgUp/PgDn] Navigate   [Enter] Load   [^P] Print   [^U] Clear   [ESC] Quit "
+_OCR_FOOTER_TEXT = " [↑↓/PgUp/PgDn] Navigate   [Enter] Print   [^W] Write   [^U] Clear   [ESC] Quit "
 _STYLE = Style.from_dict({"search-prefix": "bold"})
 _LABEL_WIDTH = len("Assistant")
 _SELECTED_GUTTER_STYLE = "fg:ansibrightcyan bold"
+_OCR_ACCENT_STYLE = "fg:ansibrightblue bold"
+_OCR_DOC_LABEL = "Doc:"
+
+_T = TypeVar("_T")
 
 
-class ChatSearch:
-    """Interactive TUI for full-text search over chat history.
+class _BaseSearch(ABC, Generic[_T]):
+    """Abstract base for full-text search TUI applications.
 
-    Builds a ChatFTS index on initialisation, then runs a prompt_toolkit
-    Application that updates results on every keystroke.
+    Manages navigation state and shared TUI layout. Subclasses provide the FTS
+    query, per-hit line count, hit rendering, footer text, and action key bindings.
 
     Attributes:
-        _fts: The full-text search index.
-        _total: Total number of sessions in the index.
-        _total_width: Digit width of _total, for fixed-width counter formatting.
-        _results: The current list of matching SessionHit objects.
+        _results: The current list of matching hits.
         _selected_idx: Index into _results of the highlighted row.
         _scroll_offset: Index of the first result rendered in the viewport.
-        _action: The action chosen by the user ('load', 'print', or None).
+        _action: The action chosen by the user (e.g. 'load', 'print', 'write', or None).
         _selected_uuid: The UUID of the session the user acted on.
         _cache_key: Identifies the last rendered state for fragment caching.
         _cached_fragments: Cached StyleAndTextTuples from the last render.
         _query_tokens: Lowercase alphanumeric tokens from the current query, for highlight logic.
         _highlight_pattern: Compiled regex built from _query_tokens, or None when no query.
+        _total: Total number of sessions in the index.
+        _total_width: Digit width of _total, for fixed-width counter formatting.
     """
 
-    def __init__(self, chat_dir: str, encryption: Encryption | None) -> None:
-        """Build the FTS index and prepare the TUI state.
+    def __init__(self, fts: _BaseFTS[_T], total: int) -> None:
+        """Initialise shared search state from a pre-built FTS index.
 
         Args:
-            chat_dir (str): Path to the provider's chat storage directory.
-            encryption (Encryption | None): Encryption instance, or None.
+            fts (_BaseFTS[_T]): The pre-built full-text search index.
+            total (int): Total number of sessions in the index.
         """
-        self._results: list[SessionHit] = []
+        self._fts = fts
+        self._results: list[_T] = []
         self._selected_idx: int = 0
         self._scroll_offset: int = 0
         self._action: str | None = None
@@ -60,20 +74,42 @@ class ChatSearch:
         self._cached_fragments: StyleAndTextTuples = []
         self._query_tokens: list[str] = []
         self._highlight_pattern: re.Pattern[str] | None = None
+        self._total: int = total
+        self._total_width: int = len(str(total))
 
-        print(f"{GRN}>>>{RST} Indexing chat history…", end="\r", flush=True)
-        self._fts = ChatFTS()
-        self._total: int = self._fts.build(chat_dir=chat_dir, encryption=encryption)
-        self._total_width: int = len(str(self._total))
-        print(" " * 40, end="\r", flush=True)  # clear the indexing line
+    def _query(self, text: str) -> list[_T]:
+        """Search the FTS index and return matching hits."""
+        return self._fts.search(text)
+
+    @abstractmethod
+    def _lines_for(self, hit: _T) -> int:
+        """Return the number of terminal lines this hit occupies in the viewport."""
+        ...
+
+    @abstractmethod
+    def _render_hit_fragments(
+        self, idx: int, hit: _T, is_selected: bool, pattern: re.Pattern[str] | None
+    ) -> StyleAndTextTuples:
+        """Render a single hit as styled text fragments."""
+        ...
+
+    @abstractmethod
+    def _footer_text(self) -> str:
+        """Return the footer help text shown at the bottom of the TUI."""
+        ...
+
+    @abstractmethod
+    def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
+        """Register action key bindings (enter, ctrl+P, ctrl+W, etc.) onto kb."""
+        ...
 
     def run(self) -> tuple[str | None, str | None]:
         """Build and run the prompt_toolkit search application.
 
         Returns:
             tuple[str | None, str | None]: A tuple of (action, session_uuid) where
-                action is 'load', 'print', or None, and session_uuid is the selected
-                session UUID or None if the user exited without selecting.
+                action is the chosen action string or None, and session_uuid is the
+                selected session UUID or None if the user exited without selecting.
         """
         search_buffer = Buffer(name="search")
         kb = self._build_key_bindings(search_buffer)
@@ -93,7 +129,7 @@ class ChatSearch:
                     ),
                     Window(height=1, char="─"),
                     Window(
-                        content=FormattedTextControl(lambda: _FOOTER_TEXT, focusable=False),
+                        content=FormattedTextControl(lambda: self._footer_text(), focusable=False),
                         height=1,
                     ),
                 ]
@@ -110,8 +146,8 @@ class ChatSearch:
         )
 
         def _on_query_changed(_: Buffer) -> None:
-            self._results = self._fts.search(search_buffer.text)
-            self._query_tokens = ChatFTS._tokenize(search_buffer.text)
+            self._results = self._query(search_buffer.text)
+            self._query_tokens = tokenize(search_buffer.text)
             self._highlight_pattern = (
                 re.compile("|".join(re.escape(t) for t in self._query_tokens), re.IGNORECASE)
                 if self._query_tokens
@@ -123,7 +159,7 @@ class ChatSearch:
 
         search_buffer.on_text_changed += _on_query_changed
 
-        self._results = self._fts.search("")
+        self._results = self._query("")
 
         app.run()
 
@@ -132,7 +168,9 @@ class ChatSearch:
     # ── Internal helpers ────────────────────────────────────────────────
 
     def _build_key_bindings(self, search_buffer: Buffer) -> KeyBindings:
-        """Build key bindings for navigation and actions.
+        """Build navigation key bindings shared by all search TUIs.
+
+        Subclasses extend these by implementing _add_action_bindings.
 
         Args:
             search_buffer (Buffer): The search input buffer, needed for Ctrl+U.
@@ -160,24 +198,10 @@ class ChatSearch:
                 self._clamp_scroll()
                 event.app.invalidate()
 
-        @kb.add("enter")  # type: ignore[misc]
-        def _load(event: Any) -> None:
-            if self._results:
-                self._action = SearchActions.LOAD.value
-                self._selected_uuid = self._results[self._selected_idx].uuid
-                event.app.exit()
-
-        @kb.add("c-p")  # type: ignore[misc]
-        def _print(event: Any) -> None:
-            if self._results:
-                self._action = SearchActions.PRINT.value
-                self._selected_uuid = self._results[self._selected_idx].uuid
-                event.app.exit()
-
         @kb.add("c-u")  # type: ignore[misc]
         def _clear(event: Any) -> None:
             search_buffer.reset()
-            self._results = self._fts.search("")
+            self._results = self._query("")
             self._query_tokens = []
             self._highlight_pattern = None
             self._selected_idx = 0
@@ -198,6 +222,8 @@ class ChatSearch:
                 self._clamp_scroll()
                 event.app.invalidate()
 
+        self._add_action_bindings(kb, search_buffer)
+
         return kb
 
     def _clamp_scroll(self) -> None:
@@ -214,7 +240,7 @@ class ChatSearch:
         while self._scroll_offset < self._selected_idx:
             lines = 0
             for i in range(self._scroll_offset, len(self._results)):
-                lines += 2 + len(self._results[i].snippets)  # header + snippets + blank
+                lines += self._lines_for(self._results[i])
                 if i == self._selected_idx:
                     if lines <= _RESULTS_HEIGHT:
                         return  # selected fits — done
@@ -232,7 +258,7 @@ class ChatSearch:
         lines = 0
         count = 0
         for i in range(self._scroll_offset, len(self._results)):
-            lines += 2 + len(self._results[i].snippets)
+            lines += self._lines_for(self._results[i])
             if lines > _RESULTS_HEIGHT:
                 break
             count += 1
@@ -274,10 +300,10 @@ class ChatSearch:
             last_rendered = self._scroll_offset - 1
             for idx in range(self._scroll_offset, len(self._results)):
                 hit = self._results[idx]
-                hit_lines = 2 + len(hit.snippets)  # header + snippets + blank
+                hit_lines = self._lines_for(hit)
                 if lines_used + hit_lines > _RESULTS_HEIGHT:
                     break
-                fragments += _render_hit(idx, hit, idx == self._selected_idx, self._highlight_pattern)
+                fragments += self._render_hit_fragments(idx, hit, idx == self._selected_idx, self._highlight_pattern)
                 lines_used += hit_lines
                 last_rendered = idx
             if last_rendered < len(self._results) - 1:
@@ -286,6 +312,138 @@ class ChatSearch:
         self._cache_key = cache_key
         self._cached_fragments = fragments
         return fragments
+
+
+class ChatSearch(_BaseSearch[SessionHit]):
+    """Interactive TUI for full-text search over chat history.
+
+    Builds a ChatFTS index on initialisation, then runs a prompt_toolkit
+    Application that updates results on every keystroke.
+    """
+
+    def __init__(self, chat_dir: str, encryption: Encryption | None) -> None:
+        """Build the chat FTS index and initialise search state.
+
+        Args:
+            chat_dir (str): Path to the provider's chat storage directory.
+            encryption (Encryption | None): Encryption instance, or None.
+        """
+        print(f"{GRN}>>>{RST} Indexing chat history…", end="\r", flush=True)
+        fts = ChatFTS()
+        total = fts.build(storage_dir=chat_dir, encryption=encryption)
+        print(" " * 40, end="\r", flush=True)
+        super().__init__(fts, total)
+
+    def _lines_for(self, hit: SessionHit) -> int:
+        return 2 + len(hit.snippets)
+
+    def _render_hit_fragments(
+        self, idx: int, hit: SessionHit, is_selected: bool, pattern: re.Pattern[str] | None
+    ) -> StyleAndTextTuples:
+        return _render_hit(idx, hit, is_selected, pattern)
+
+    def _footer_text(self) -> str:
+        return _FOOTER_TEXT
+
+    def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
+        @kb.add("enter")  # type: ignore[misc]
+        def _load(event: Any) -> None:
+            if self._results:
+                self._action = SearchActions.LOAD.value
+                self._selected_uuid = self._results[self._selected_idx].uuid
+                event.app.exit()
+
+        @kb.add("c-p")  # type: ignore[misc]
+        def _print(event: Any) -> None:
+            if self._results:
+                self._action = SearchActions.PRINT.value
+                self._selected_uuid = self._results[self._selected_idx].uuid
+                event.app.exit()
+
+
+class OcrSearch(_BaseSearch[OcrHit]):
+    """Interactive TUI for full-text search over OCR history.
+
+    Builds an OcrFTS index on initialisation, then runs a prompt_toolkit
+    Application that updates results on every keystroke.
+    """
+
+    def __init__(self, ocr_dir: str, encryption: Encryption | None) -> None:
+        """Build the OCR FTS index and initialise search state.
+
+        Args:
+            ocr_dir (str): Path to the provider's OCR storage directory.
+            encryption (Encryption | None): Encryption instance, or None.
+        """
+        print(f"{GRN}>>>{RST} Indexing OCR history…", end="\r", flush=True)
+        fts = OcrFTS()
+        total = fts.build(storage_dir=ocr_dir, encryption=encryption)
+        print(" " * 40, end="\r", flush=True)
+        super().__init__(fts, total)
+
+    def _lines_for(self, hit: OcrHit) -> int:
+        return 2
+
+    def _render_hit_fragments(
+        self, idx: int, hit: OcrHit, is_selected: bool, pattern: re.Pattern[str] | None
+    ) -> StyleAndTextTuples:
+        return _render_ocr_hit(idx, hit, is_selected, pattern)
+
+    def _footer_text(self) -> str:
+        return _OCR_FOOTER_TEXT
+
+    def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
+        @kb.add("enter")  # type: ignore[misc]
+        def _print(event: Any) -> None:
+            if self._results:
+                self._action = SearchActions.PRINT.value
+                self._selected_uuid = self._results[self._selected_idx].uuid
+                event.app.exit()
+
+        @kb.add("c-w")  # type: ignore[misc]
+        def _write(event: Any) -> None:
+            if self._results:
+                self._action = SearchActions.WRITE.value
+                self._selected_uuid = self._results[self._selected_idx].uuid
+                event.app.exit()
+
+
+def _render_ocr_hit(idx: int, hit: OcrHit, is_selected: bool, pattern: re.Pattern[str] | None) -> StyleAndTextTuples:
+    """Render a single OCR search result as formatted text fragments.
+
+    Args:
+        idx (int): Zero-based index of this result in the list.
+        hit (OcrHit): The search result to render.
+        is_selected (bool): Whether this row is currently selected.
+        pattern (re.Pattern[str] | None): Compiled highlight pattern for snippets.
+
+    Returns:
+        StyleAndTextTuples: Formatted text fragments for this result.
+    """
+    fragments: StyleAndTextTuples = []
+    page_str = f"{hit.page_count} page{'s' if hit.page_count != 1 else ''}"
+
+    if is_selected:
+        fragments.append((_SELECTED_GUTTER_STYLE, f" [{idx + 1}] ▶ "))
+        fragments.append(("bold", hit.created_display))
+        fragments.append((_OCR_ACCENT_STYLE, f"  {hit.model or '?'}"))
+        fragments.append(("fg:ansigray", f"  {page_str}"))
+        fragments.append(("bold", f"  {hit.source_filename or '?'}\n"))
+    else:
+        fragments.append(("fg:ansigray", f" [{idx + 1}]   "))
+        fragments.append(("bold", hit.created_display))
+        fragments.append(("fg:ansigray", f"  {hit.model or '?'}  {page_str}  {hit.source_filename or '?'}\n"))
+
+    if hit.snippet:
+        fragments.append(("", "       "))
+        fragments.append((_OCR_ACCENT_STYLE, _OCR_DOC_LABEL))
+        fragments.append(("", "  "))
+        fragments += _highlight_content(hit.snippet, pattern)
+        fragments.append(("", "\n"))
+    else:
+        fragments.append(("", "\n"))
+
+    return fragments
 
 
 def _highlight_content(content: str, pattern: re.Pattern[str] | None) -> StyleAndTextTuples:

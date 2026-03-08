@@ -89,6 +89,11 @@ class Storage:
         """The directory where chat sessions are stored."""
         return self._chat_dir
 
+    @property
+    def ocr_dir(self) -> str:
+        """The directory where OCR sessions are stored."""
+        return self._ocr_dir
+
     def _write_image(self, filepath: str, data: bytes) -> None:
         """Write image data to a file, encrypting if encryption is enabled.
 
@@ -125,6 +130,14 @@ class Storage:
             with open(filepath, "w", encoding="utf8") as fp:
                 fp.write(content)
 
+    def _warn(self, message: str) -> None:
+        """Print a red warning message to the terminal.
+
+        Args:
+            message (str): The warning text to display.
+        """
+        print_formatted_text(ANSI(f"{RED}>>>{RST} {message}"))
+
     def _read_text(self, filepath_plaintext: str, filepath_encrypted: str | None = None) -> str | None:
         """Read text content from a plaintext or encrypted file.
 
@@ -141,11 +154,11 @@ class Storage:
         enc_path: str = filepath_encrypted if filepath_encrypted is not None else filepath_plaintext + ".enc"
         if os.path.exists(enc_path):
             if self._encryption is None:
-                print_formatted_text(ANSI(f"{RED}>>>{RST} {self._ENCRYPTED_DATA_WITHOUT_KEY}"))
+                self._warn(self._ENCRYPTED_DATA_WITHOUT_KEY)
                 return None
             decrypted: bytes | None = self._encryption.decrypt_file(enc_path)
             if decrypted is None:
-                print_formatted_text(ANSI(f"{RED}>>>{RST} Failed to decrypt data."))
+                self._warn("Failed to decrypt data.")
                 return None
             return decrypted.decode("utf-8")
         return read_text_file(filepath_plaintext, self._encryption)
@@ -339,6 +352,43 @@ class Storage:
         else:
             return f"{filename}.md"
 
+    @staticmethod
+    def _derive_folder_name_from_source(provider: str, source: str) -> str:
+        """Derive a folder name from the provider and source document path or URL.
+
+        Args:
+            provider (str): The API provider name (e.g., 'mistral').
+            source (str): A URL or filesystem path to the source document.
+
+        Returns:
+            str: A folder name in the format 'gptcli__{provider}__ocr__{name}'.
+        """
+        filename = Storage.extract_filename_from_source(source)
+        if filename and "." in filename and not filename.startswith("."):
+            name = filename.rsplit(".", 1)[0]
+        else:
+            name = filename
+        return f"gptcli__{provider}__ocr__{name or 'document'}"
+
+    @staticmethod
+    def _resolve_folder_collision(base_path: str) -> str:
+        """Resolve folder name collisions by appending a numeric suffix.
+
+        Args:
+            base_path (str): The desired folder path.
+
+        Returns:
+            str: The original path if no collision, or path with '__1', '__2', etc. appended.
+        """
+        if not os.path.exists(base_path):
+            return base_path
+        counter = 1
+        while True:
+            candidate = f"{base_path}__{counter}"
+            if not os.path.exists(candidate):
+                return candidate
+            counter += 1
+
     def _build_ocr_metadata(
         self,
         source: str,
@@ -453,6 +503,33 @@ class Storage:
 
         return session_dir
 
+    def _read_ocr_markdown(self, session_dir: str) -> str | None:
+        """Read the Markdown content from an OCR session directory.
+
+        Args:
+            session_dir (str): Path to the OCR session directory.
+
+        Returns:
+            str | None: The Markdown content, or None if unreadable.
+
+        Raises:
+            StorageEmpty: If no markdown file is found in the session directory.
+        """
+        all_files = os.listdir(session_dir)
+        markdown_enc_files: list[str] = sorted(f for f in all_files if f.endswith(".md.enc"))
+        markdown_files: list[str] = sorted(f for f in all_files if f.endswith(".md") and not f.endswith(".md.enc"))
+
+        if not markdown_files and not markdown_enc_files:
+            raise StorageEmpty(f"No markdown file found in {session_dir}")
+
+        plaintext_path: str = path.join(session_dir, markdown_files[0]) if markdown_files else ""
+        encrypted_path: str | None = path.join(session_dir, markdown_enc_files[0]) if markdown_enc_files else None
+
+        if not plaintext_path and encrypted_path:
+            plaintext_path = encrypted_path[: -len(".enc")]
+
+        return self._read_text(plaintext_path, encrypted_path)
+
     def extract_last_ocr_result(self) -> str | None:
         """Extract the Markdown content from the most recent OCR session.
 
@@ -471,25 +548,7 @@ class Storage:
             raise StorageEmpty(f"No OCR sessions found in {self._ocr_dir}")
 
         session_dir = path.join(self._ocr_dir, latest_uuid)
-
-        # Single listdir call, partition into plaintext and encrypted markdown files
-        all_files = os.listdir(session_dir)
-        markdown_enc_files: list[str] = sorted(f for f in all_files if f.endswith(".md.enc"))
-        markdown_files: list[str] = sorted(f for f in all_files if f.endswith(".md") and not f.endswith(".md.enc"))
-
-        if not markdown_files and not markdown_enc_files:
-            raise StorageEmpty(f"No markdown file found in {session_dir}")
-
-        plaintext_path: str = path.join(session_dir, markdown_files[0]) if markdown_files else ""
-        encrypted_path: str | None = path.join(session_dir, markdown_enc_files[0]) if markdown_enc_files else None
-
-        if not plaintext_path and encrypted_path:
-            plaintext_path = encrypted_path[: -len(".enc")]
-
-        content: str | None = self._read_text(plaintext_path, encrypted_path)
-        if content is None and not markdown_files and not markdown_enc_files:
-            raise StorageEmpty(f"No readable markdown file found in {session_dir}")
-        return content
+        return self._read_ocr_markdown(session_dir)
 
     def display_last_ocr_result(self) -> None:
         """Extract and display the Markdown content from the most recent OCR session.
@@ -497,17 +556,135 @@ class Storage:
         Retrieves the last OCR result from storage and prints it to the
         terminal. Prints a warning if no OCR sessions exist.
         """
-        logger.info("Extracting last OCR result from storage.")
         try:
             content: str | None = self.extract_last_ocr_result()
         except StorageEmpty:
-            print_formatted_text(ANSI(f"{RED}>>>{RST} No OCR results found in storage; storage is likely empty."))
+            self._warn("No OCR results found in storage; storage is likely empty.")
             return None
 
         if content is None:
             return None
 
         print(content)
+        return None
+
+    def extract_ocr_by_uuid(self, session_uuid: str) -> str | None:
+        """Extract the Markdown content from a specific OCR session by UUID.
+
+        Args:
+            session_uuid (str): The UUID of the OCR session to read.
+
+        Returns:
+            str | None: The Markdown content, or None if unreadable.
+
+        Raises:
+            StorageEmpty: If no session directory exists for the given UUID.
+        """
+        session_dir = path.join(self._ocr_dir, session_uuid)
+        if not os.path.isdir(session_dir):
+            raise StorageEmpty(f"No OCR session found for UUID {session_uuid}")
+
+        return self._read_ocr_markdown(session_dir)
+
+    def display_ocr_by_uuid(self, session_uuid: str) -> None:
+        """Extract and display the Markdown content from a specific OCR session.
+
+        Args:
+            session_uuid (str): The UUID of the OCR session to display.
+        """
+        try:
+            content: str | None = self.extract_ocr_by_uuid(session_uuid)
+        except StorageEmpty:
+            self._warn(f"No OCR session found for UUID {session_uuid}.")
+            return None
+
+        if content is None:
+            return None
+
+        print(content)
+        return None
+
+    def write_ocr_by_uuid(self, session_uuid: str, output_dir: str | None) -> None:
+        """Write an OCR session's Markdown and images to a local output directory.
+
+        When output_dir is None (``--no-output-dir`` was passed), does nothing.
+        Creates a subfolder named ``gptcli__{provider}__ocr__{name}`` inside
+        output_dir, containing the Markdown file and any extracted images.
+
+        Args:
+            session_uuid (str): The UUID of the OCR session to write.
+            output_dir (str | None): Destination directory, or None to skip writing.
+        """
+        if output_dir is None:
+            return None
+
+        session_dir = path.join(self._ocr_dir, session_uuid)
+        if not os.path.isdir(session_dir):
+            self._warn(f"No OCR session found for UUID {session_uuid}.")
+            return None
+
+        metadata_file = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        raw_metadata = self._read_text(metadata_file)
+        if raw_metadata is None:
+            return None
+
+        try:
+            metadata: dict[str, Any] = json.loads(raw_metadata)
+        except json.JSONDecodeError:
+            return None
+
+        source: str = metadata.get("source", {}).get("input", "document")
+        image_filenames: list[str] = metadata.get("output", {}).get("images", [])
+
+        try:
+            content: str | None = self.extract_ocr_by_uuid(session_uuid)
+        except StorageEmpty:
+            return None
+
+        if content is None:
+            return None
+
+        folder_name = Storage._derive_folder_name_from_source(self._provider, source)
+        folder_path = os.path.join(output_dir, folder_name)
+        folder_path = Storage._resolve_folder_collision(folder_path)
+        os.makedirs(folder_path, exist_ok=True)
+
+        markdown_filename = Storage.derive_markdown_filename_from_source(source)
+        markdown_filepath = os.path.join(folder_path, markdown_filename)
+        with open(markdown_filepath, "w", encoding="utf8") as fp:
+            fp.write(content)
+
+        resolved_folder_path = os.path.realpath(folder_path)
+        for img_filename in image_filenames:
+            safe_filename = path.basename(img_filename)
+            if not safe_filename:
+                logger.warning("Possible malicious filename detected; path traversal.")
+                logger.warning(f"Filename of: '{img_filename}'")
+                continue
+
+            enc_path = path.join(session_dir, safe_filename + ".enc")
+            plain_path = path.join(session_dir, safe_filename)
+
+            img_data: bytes | None = None
+            if os.path.exists(enc_path):
+                if self._encryption is not None:
+                    img_data = self._encryption.decrypt_file(enc_path)
+            elif os.path.exists(plain_path):
+                with open(plain_path, "rb") as fp_img:
+                    img_data = fp_img.read()
+
+            if img_data is None:
+                continue
+
+            dest_path = os.path.join(folder_path, safe_filename)
+            if not os.path.realpath(dest_path).startswith(resolved_folder_path):
+                logger.warning(f"Image path escapes output folder; skipping '{img_filename}'.")
+                continue
+            with open(dest_path, "wb") as fp_out:
+                fp_out.write(img_data)
+
+        abs_path = str(os.path.abspath(folder_path))
+        print(f"OCR result saved to '{abs_path}'.")
         return None
 
     @staticmethod
@@ -616,7 +793,7 @@ class Storage:
         try:
             messages: Messages | None = self.extract_messages_by_uuid(session_uuid)
         except StorageEmpty:
-            print_formatted_text(ANSI(f"{RED}>>>{RST} No chat session found for UUID {session_uuid}."))
+            self._warn(f"No chat session found for UUID {session_uuid}.")
             return None
 
         if messages is None:
@@ -637,7 +814,7 @@ class Storage:
         try:
             messages: Messages | None = self.extract_messages()
         except StorageEmpty:
-            print_formatted_text(ANSI(f"{RED}>>>{RST} No chats found in storage; storage is likely empty."))
+            self._warn("No chats found in storage; storage is likely empty.")
             return None
 
         if messages is None:
