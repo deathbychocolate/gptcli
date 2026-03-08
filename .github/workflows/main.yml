@@ -42,4 +42,4 @@ jobs:
           DBC_GPTCLI_OPENAI_API_KEY: ${{ secrets.DBC_GPTCLI_OPENAI_API_KEY }}
         run: |
           uv sync
-          uv run pytest
+          uv run pytest -m "not third_party_api"
