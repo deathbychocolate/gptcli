@@ -1,3 +1,41 @@
+## 0.25.0 (2026-03-08)
+
+### Feat
+
+- Add full text search for ocr.
+- :construction: Add full text search for chats.
+- Obfuscate the directory names and structure.
+- Upgrade spinner animation and show checkmark for OCR queries.
+- Add tab completions for in-chat commands.
+- Add system/developer message roles and allow addition/removal of them with in-chat commands.
+- Add in-chat config command to show current chat config.
+- Add nuke option.
+- Add --no-images flag for OCR queries.
+- Add encryption at rest
+
+### Fix
+
+- Remove no_output_dir flag for search mode.
+- Handle failure condition for spinners.
+- Obfuscate the ocr document name.
+- Merge json chats to new chat tree structure.
+- Write images in an encrypted fashion when encryption is available.
+- Handle API's failure to reply and do not add None to message list.
+
+### Refactor
+
+- Remove unused db dir during migration process.
+- Clean up Spinner logic after removing no output dir flag.
+- Use a visually smaller character for 'x'.
+- Show absolute path rather than relative.
+- Use subprocess instead of system.
+- Show only the full name commands for autocomplete.
+- Improve performance of chat.
+- Extract variables, handle pattern match for not implemented provider, refactor test.
+- Separate 'all' provider from other providers.
+- Centralize mode names to enum.
+- **ocr**: Adjust label.
+
 ## 0.24.1 (2026-02-13)
 
 ### Fix
