@@ -148,7 +148,7 @@ OCR search navigation and actions:
 | `Ctrl+U` | Clear the search query |
 | `Esc` | Quit |
 
-For OCR search, the output directory for `Ctrl+W` can be set with `--output-dir` (defaults to `.`) or disabled with `--no-output-dir`.
+For OCR search, the output directory for `Ctrl+W` can be set with `--output-dir` (defaults to `.`).
 
 ### Encryption
 

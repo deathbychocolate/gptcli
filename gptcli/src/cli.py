@@ -217,19 +217,12 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             formatter_class=custom_formatter,
             help="Search OCR history.",
         )
-        ocr_search_output_group = parser_search_ocr.add_mutually_exclusive_group()
-        ocr_search_output_group.add_argument(
+        parser_search_ocr.add_argument(
             "--output-dir",
             type=str,
             default=".",
             help="Defaults to '.'. Directory to write selected OCR result to.",
             metavar="<string>",
-        )
-        ocr_search_output_group.add_argument(
-            "--no-output-dir",
-            action="store_true",
-            default=False,
-            help="Disable writing selected OCR result to a local directory.",
         )
         parser_search_ocr.set_defaults(parser=parser_search_ocr)
 

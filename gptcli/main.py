@@ -317,8 +317,7 @@ def enter_ocr_search_mode(parser: CommandParser, encryption: Encryption | None =
     if action == SearchActions.PRINT.value and session_uuid:
         storage.display_ocr_by_uuid(session_uuid)
     elif action == SearchActions.WRITE.value and session_uuid:
-        output_dir = None if parser.args.no_output_dir else parser.args.output_dir
-        storage.write_ocr_by_uuid(session_uuid, output_dir)
+        storage.write_ocr_by_uuid(session_uuid, parser.args.output_dir)
 
 
 def main() -> None:
