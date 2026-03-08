@@ -33,14 +33,20 @@ gptcli [--no-cache] [--loglevel LEVEL]
 ├── all
 │   ├── encrypt       # Encrypt all cleartext files
 │   ├── decrypt       # Decrypt all encrypted files
-│   └── rekey         # Re-encrypt with a new passphrase
+│   ├── rekey         # Re-encrypt with a new passphrase
+│   └── nuke          # Permanently delete all gptcli data
 ├── mistral
 │   ├── chat          # Multi-turn conversation
 │   ├── se            # Single exchange
-│   └── ocr           # Document to Markdown conversion
+│   ├── ocr           # Document to Markdown conversion
+│   └── search
+│       ├── chat      # Full-text search over chat history
+│       └── ocr       # Full-text search over OCR history
 └── openai
     ├── chat          # Multi-turn conversation
-    └── se            # Single exchange
+    ├── se            # Single exchange
+    └── search
+        └── chat      # Full-text search over chat history
 ```
 
 ## How to get an API key
@@ -110,6 +116,40 @@ OCR mode also automatically:
 - Displays the most recent OCR session from storage via the `--display-last` flag.
 - Excludes images from the OCR response via the `--no-images` flag, returning only Markdown text.
 
+#### Search (Full-Text Search)
+
+Search mode provides an interactive TUI for full-text search over locally stored history. It is available for both providers under `chat`, and for Mistral AI also under `ocr`.
+
+```bash
+gptcli mistral search chat   # Search Mistral chat history
+gptcli openai search chat    # Search OpenAI chat history
+gptcli mistral search ocr    # Search Mistral OCR history
+```
+
+Type to filter results in real time. Chat search navigation and actions:
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move selection |
+| `PgUp` / `PgDn` | Page through results |
+| `Enter` | Load session into chat |
+| `Ctrl+P` | Print session to stdout |
+| `Ctrl+U` | Clear the search query |
+| `Esc` | Quit |
+
+OCR search navigation and actions:
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move selection |
+| `PgUp` / `PgDn` | Page through results |
+| `Enter` | Print result to stdout |
+| `Ctrl+W` | Write result to a file |
+| `Ctrl+U` | Clear the search query |
+| `Esc` | Quit |
+
+For OCR search, the output directory for `Ctrl+W` can be set with `--output-dir` (defaults to `.`) or disabled with `--no-output-dir`.
+
 ### Encryption
 
 GPTCLI encrypts all data at rest using AES-256-GCM with scrypt key derivation. On first run, you are prompted to create a passphrase (16 characters minimum). The derived encryption key is cached for 12 hours using a wrapping key in volatile storage, so you don't need to re-enter your passphrase on every invocation.
@@ -142,12 +182,13 @@ Use the `--no-cache` flag to disable key caching and prompt for the passphrase e
 - [x] Add encryption at rest for all locally stored data.
 - [x] Add key caching with automatic expiry.
 - [x] Add passphrase rekeying.
+- [x] Add FTS for chats in storage.
+- [x] Add FTS for OCR results in storage.
+- [x] Add nuke command to permanently delete all gptcli data.
 
 ### In Development
 
 - [ ] Send OCR queries for images and PDF documents to OpenAI API.
-- [ ] Add FTS for chats in storage.
-- [ ] Add FTS for OCR results in storage.
 - [ ] Add role-based messages for Mistral AI:
   `user` `system` `assistant` `developer` `tool` `function`
 - [ ] Add role-based messages for OpenAI:

@@ -77,6 +77,7 @@ HTTP POST to Provider API
 - **Chat** (`chat.py`): Multi-turn conversations with prompt-toolkit, streaming, local storage, history navigation
 - **SingleExchange** (`single_exchange.py`): One message → one reply → exit (automation-friendly)
 - **OCR** (`optical_character_recognition.py`): Document-to-markdown conversion (Mistral only)
+- **Search** (`search.py`): Interactive TUI (prompt-toolkit) for full-text search over chat and OCR history; `ChatSearch` and `OcrSearch` subclasses
 
 **2. Provider Abstraction** (`gptcli/src/common/`)
 - **api.py**: `EndpointHelper`, `Chat`, `SingleExchange` classes handle provider-specific endpoints, keys, message factories
@@ -111,9 +112,15 @@ HTTP POST to Provider API
 - **PassphrasePrompt**: User passphrase input with 16-character minimum and confirmation
 - Files: salt (`~/.gptcli/.salt`), verification token (`.verify.enc`), cached key (`.key`)
 
-**8. Encryption Commands** (`gptcli/src/modes/encryption_commands.py`)
-- `EncryptionCommands`: Orchestrates batch encrypt/decrypt/rekey operations across providers
-- Atomic 3-phase rekey: decrypt with old key → re-encrypt with new key → swap files → update key material
+**8. Commands** (`gptcli/src/commands/`)
+- **EncryptionCommands** (`encryption_commands.py`): Orchestrates batch encrypt/decrypt/rekey operations across providers; atomic 3-phase rekey: decrypt with old key → re-encrypt with new key → swap files → update key material
+- **Nuke** (`nuke.py`): Permanently deletes the entire `~/.gptcli` directory after interactive confirmation
+
+**9. Full-Text Search** (`gptcli/src/common/fts.py`)
+- SQLite FTS5 index built on-demand from storage files
+- `ChatFTS`: indexes message content across all chat sessions
+- `OcrFTS`: indexes OCR Markdown output across all OCR sessions
+- Returns ranked hits with snippets; max 50 results
 
 ### Provider Configuration
 
@@ -144,14 +151,20 @@ gptcli [--no-cache]
 ├── all
 │   ├── encrypt
 │   ├── decrypt
-│   └── rekey
+│   ├── rekey
+│   └── nuke
 ├── mistral
 │   ├── chat [--context] [--stream] [--store] [--load-last]
 │   ├── se [--output plain|choices|all]
-│   └── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir] [--no-output-dir] [--no-images]
+│   ├── ocr [--store] [--display-last] [--display] [--filelist] [--output-dir] [--no-output-dir] [--no-images]
+│   └── search
+│       ├── chat
+│       └── ocr [--output-dir] [--no-output-dir]
 └── openai
     ├── chat
-    └── se
+    ├── se
+    └── search
+        └── chat
 ```
 
 Common arguments added to all modes: `--model`, `--role-user`, `--role-model`, `--key`, `--filepath`
@@ -265,10 +278,11 @@ class TestStorage:
 - File ingestion (text, PDF)
 - OCR mode (Mistral only)
 - Encryption at rest (AES-256-GCM with scrypt key derivation)
+- Full Text Search for chat storage (both providers)
+- Full Text Search for OCR results (Mistral only)
+- Nuke command (permanent data deletion)
 
 ### In Development (TODOs in README)
-- Full Text Search for chat storage
-- Full Text Search for OCR results
 - Additional role types (developer, tool, function)
 - Database storage backend
 
