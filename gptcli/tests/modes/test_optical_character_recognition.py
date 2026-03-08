@@ -1279,27 +1279,33 @@ class TestOcrFromFilepathIntegration:
         markdown, _, _ = ocr._perform_ocr_from_filepath(SAMPLE_PDF_PATH)
         return markdown
 
+    @pytest.mark.third_party_api
     def test_returns_str_type(self, ocr_filepath_result: str) -> None:
         assert isinstance(ocr_filepath_result, str)
 
+    @pytest.mark.third_party_api
     def test_returns_non_empty_output(self, ocr_filepath_result: str) -> None:
         assert len(ocr_filepath_result) > 0
 
+    @pytest.mark.third_party_api
     def test_output_contains_expected_phrase_sample(self, ocr_filepath_result: str) -> None:
         assert "sample" in ocr_filepath_result.lower(), (
             f"Expected phrase 'sample' not found in OCR output.\n" f"Actual output:\n{ocr_filepath_result}"
         )
 
+    @pytest.mark.third_party_api
     def test_output_contains_expected_phrase_pdf(self, ocr_filepath_result: str) -> None:
         assert "pdf" in ocr_filepath_result.lower(), (
             f"Expected phrase 'pdf' not found in OCR output.\n" f"Actual output:\n{ocr_filepath_result}"
         )
 
+    @pytest.mark.third_party_api
     def test_output_contains_expected_phrase_file(self, ocr_filepath_result: str) -> None:
         assert "file" in ocr_filepath_result.lower(), (
             f"Expected phrase 'file' not found in OCR output.\n" f"Actual output:\n{ocr_filepath_result}"
         )
 
+    @pytest.mark.third_party_api
     def test_output_includes_page_header(self, ocr_filepath_result: str) -> None:
         assert "### Page" in ocr_filepath_result, (
             f"OCR output missing markdown page header '### Page'.\n" f"Actual output:\n{ocr_filepath_result}"
@@ -1332,12 +1338,15 @@ class TestOcrFromUrlIntegration:
         markdown, _, _ = ocr._perform_ocr_from_url(TestOcrFromUrlIntegration.TEST_IMAGE_URL)
         return markdown
 
+    @pytest.mark.third_party_api
     def test_returns_str_type(self, ocr_url_result: str) -> None:
         assert isinstance(ocr_url_result, str)
 
+    @pytest.mark.third_party_api
     def test_returns_non_empty_output(self, ocr_url_result: str) -> None:
         assert len(ocr_url_result) > 0
 
+    @pytest.mark.third_party_api
     def test_output_includes_page_header(self, ocr_url_result: str) -> None:
         assert "### Page" in ocr_url_result, (
             f"OCR output missing markdown page header '### Page'.\n" f"Actual output:\n{ocr_url_result}"
