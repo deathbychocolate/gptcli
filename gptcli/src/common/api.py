@@ -130,7 +130,7 @@ class SpinnerProgress(Spinner):
         sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
 
     def _on_failure(self) -> None:
-        sys.stdout.write(f"\r{RED}❌{RST} {self.label}\n")
+        sys.stdout.write(f"\r{RED}✗{RST} {self.label}\n")
 
 
 class SpinnerRecognizing(Spinner):
@@ -143,7 +143,7 @@ class SpinnerRecognizing(Spinner):
         sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
 
     def _on_failure(self) -> None:
-        sys.stdout.write(f"\r{RED}❌{RST} {self.label}\n")
+        sys.stdout.write(f"\r{RED}✗{RST} {self.label}\n")
 
 
 class SpinnerThinking(Spinner):

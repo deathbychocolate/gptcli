@@ -139,7 +139,7 @@ class TestSpinnerProgress:
 
         # Then the output should contain the error indicator and the label.
         out, err = capfd.readouterr()
-        assert "❌" in out
+        assert "✗" in out
         assert "Processing" in out
 
     def test_spinner_resets_after_failure(self, setup_teardown: SpinnerProgress, capfd: CaptureFixture[str]) -> None:
@@ -159,7 +159,7 @@ class TestSpinnerProgress:
         # Then the output should contain a checkmark, not an error indicator.
         out, err = capfd.readouterr()
         assert "✔" in out
-        assert "❌" not in out
+        assert "✗" not in out
 
 
 class TestSpinnerRecognizing:
@@ -215,7 +215,7 @@ class TestSpinnerRecognizing:
 
         # Then the output should contain the error indicator and the label.
         out, err = capfd.readouterr()
-        assert "❌" in out
+        assert "✗" in out
         assert "Recognizing" in out
 
     def test_spinner_stops_printing_frames(
