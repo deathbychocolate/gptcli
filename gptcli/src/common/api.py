@@ -29,7 +29,15 @@ from gptcli.constants import (
     MISTRAL_API_KEY,
     OPENAI_API_KEY,
 )
-from gptcli.src.common.constants import BLU, GRN, MGA, MISTRAL, OPENAI, RST
+from gptcli.src.common.constants import (
+    BLU,
+    GRN,
+    MGA,
+    MISTRAL,
+    OPENAI,
+    RED,
+    RST,
+)
 from gptcli.src.common.decorators import allow_graceful_stream_exit
 from gptcli.src.common.message import Message, MessageFactory, Messages
 
@@ -48,6 +56,7 @@ class Spinner:
             label (str, optional): Label displayed next to the spinner character. Defaults to empty string.
         """
         self._stop = threading.Event()
+        self._failed: bool = False
         self._thread: threading.Thread | None = None
         self._interval = interval
         self.label: str = label
@@ -63,14 +72,22 @@ class Spinner:
             time.sleep(self._interval)
 
         if printed:
-            self._on_complete()
+            if self._failed:
+                self._on_failure()
+            else:
+                self._on_complete()
 
     def _on_complete(self) -> None:
         """Clears the spinner line with a carriage return."""
         sys.stdout.write("\r")
 
+    def _on_failure(self) -> None:
+        """Clears the spinner line on failure; override to show an error indicator."""
+        sys.stdout.write("\r")
+
     def __enter__(self) -> Self:
         self._stop.clear()
+        self._failed = False
         self._thread = threading.Thread(target=self._animate, daemon=True)
         self._thread.start()
         return self
@@ -81,6 +98,7 @@ class Spinner:
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool | None:
+        self._failed = exc_type is not None
         self._stop.set()
         if self._thread:
             self._thread.join()
@@ -111,15 +129,21 @@ class SpinnerProgress(Spinner):
     def _on_complete(self) -> None:
         sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
 
+    def _on_failure(self) -> None:
+        sys.stdout.write(f"\r{RED}❌{RST} {self.label}\n")
+
 
 class SpinnerRecognizing(Spinner):
-    """Spinner displayed during OCR recognition; shows a checkmark on completion."""
+    """Spinner displayed during OCR recognition; shows a checkmark on completion or failure indicator on error."""
 
     def __init__(self, interval: float = 0.1, label: str = "Recognizing") -> None:
         super().__init__(interval=interval, label=label)
 
     def _on_complete(self) -> None:
         sys.stdout.write(f"\r{GRN}✔{RST} {self.label}\n")
+
+    def _on_failure(self) -> None:
+        sys.stdout.write(f"\r{RED}❌{RST} {self.label}\n")
 
 
 class SpinnerThinking(Spinner):

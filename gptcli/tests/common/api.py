@@ -124,6 +124,43 @@ class TestSpinnerProgress:
         assert "✔" in out
         assert "Processing" in out
 
+    def test_spinner_shows_error_indicator_on_failure(
+        self, setup_teardown: SpinnerProgress, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a SpinnerProgress.
+        spinner: SpinnerProgress = setup_teardown
+
+        # When we raise inside the with block.
+        with pytest.raises(RuntimeError):
+            with spinner:
+                time.sleep(0.05)
+                raise RuntimeError("failure")
+
+        # Then the output should contain the error indicator and the label.
+        out, err = capfd.readouterr()
+        assert "❌" in out
+        assert "Processing" in out
+
+    def test_spinner_resets_after_failure(self, setup_teardown: SpinnerProgress, capfd: CaptureFixture[str]) -> None:
+
+        # Given a SpinnerProgress that previously failed.
+        spinner: SpinnerProgress = setup_teardown
+        with pytest.raises(RuntimeError):
+            with spinner:
+                time.sleep(0.05)
+                raise RuntimeError("failure")
+        capfd.readouterr()  # drain first run
+
+        # When we run the spinner again successfully.
+        with spinner:
+            time.sleep(0.05)
+
+        # Then the output should contain a checkmark, not an error indicator.
+        out, err = capfd.readouterr()
+        assert "✔" in out
+        assert "❌" not in out
+
 
 class TestSpinnerRecognizing:
 
@@ -161,6 +198,24 @@ class TestSpinnerRecognizing:
         # Then the output should contain a green checkmark and the label.
         out, err = capfd.readouterr()
         assert "✔" in out
+        assert "Recognizing" in out
+
+    def test_spinner_shows_error_indicator_on_failure(
+        self, setup_teardown: SpinnerRecognizing, capfd: CaptureFixture[str]
+    ) -> None:
+
+        # Given we have instantiated a SpinnerRecognizing.
+        recognizing_spinner: SpinnerRecognizing = setup_teardown
+
+        # When we raise inside the with block.
+        with pytest.raises(RuntimeError):
+            with recognizing_spinner:
+                time.sleep(0.05)
+                raise RuntimeError("failure")
+
+        # Then the output should contain the error indicator and the label.
+        out, err = capfd.readouterr()
+        assert "❌" in out
         assert "Recognizing" in out
 
     def test_spinner_stops_printing_frames(
