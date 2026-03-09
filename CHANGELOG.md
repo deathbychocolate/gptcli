@@ -1,3 +1,9 @@
+## 0.25.1 (2026-03-09)
+
+### Fix
+
+- Reload encryption in case it was enabled during a fresh install.
+
 ## 0.25.0 (2026-03-08)
 
 ### Feat
