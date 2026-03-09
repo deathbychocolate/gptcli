@@ -363,6 +363,10 @@ def main() -> None:
         case _:
             raise NotImplementedError(f"Provider '{parser.args.provider}' not yet supported.")
 
+    # Reload encryption in case it was just initialized during install (fresh machine).
+    if encryption is None:
+        encryption = _load_encryption(no_cache=no_cache)
+
     api_key: str = load_api_key(parser=parser, encryption=encryption)
 
     match parser.args.mode_name:
