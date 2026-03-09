@@ -100,24 +100,20 @@ class _BaseSearch(ABC, Generic[_T]):
     @abstractmethod
     def _lines_for(self, hit: _T) -> int:
         """Return the number of terminal lines this hit occupies in the viewport."""
-        ...
 
     @abstractmethod
     def _render_hit_fragments(
         self, idx: int, hit: _T, is_selected: bool, pattern: re.Pattern[str] | None
     ) -> StyleAndTextTuples:
         """Render a single hit as styled text fragments."""
-        ...
 
     @abstractmethod
     def _footer_text(self) -> str:
         """Return the footer help text shown at the bottom of the TUI."""
-        ...
 
     @abstractmethod
     def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
         """Register action key bindings (enter, ctrl+P, ctrl+W, etc.) onto kb."""
-        ...
 
     def run(self) -> tuple[str | None, str | None]:
         """Build and run the prompt_toolkit search application.
