@@ -61,7 +61,7 @@ class MessageSnippet:
     """A truncated message used as a search result preview.
 
     Attributes:
-        role: The role of the message sender (e.g. 'user', 'assistant').
+        role: The role of the message sender (e.g. 'user', 'assistant', 'system', 'developer').
         content: The message content, truncated to 120 characters, newlines removed.
     """
 

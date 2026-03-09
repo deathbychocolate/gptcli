@@ -510,11 +510,29 @@ def _snippet_label(snippet: MessageSnippet) -> tuple[str, str, str]:
     Returns:
         tuple[str, str, str]: label+colon, alignment padding, and the colour style string.
     """
-    is_user = "user" in snippet.role.lower()
-    label = "User" if is_user else "Assistant"
+    label: str = ""
+    role_style: str = ""
+    match snippet.role.lower():
+        case "user":
+            label = snippet.role.title()
+            role_style = "fg:ansibrightgreen bold"
+        case "assistant":
+            label = snippet.role.title()
+            role_style = "fg:ansimagenta bold"
+        case "system":
+            label = snippet.role.title()
+            role_style = "fg:ansibrightblue bold"
+        case "developer":
+            label = snippet.role.title()
+            role_style = "fg:ansibrightblue bold"
+        case _:
+            label = snippet.role.title()
+            role_style = "fg:ansigray bold"
+
+    # add colon and padding
     label_colon = label + ":"
-    padding = " " * (_LABEL_WIDTH + 1 - len(label))
-    role_style = "fg:ansibrightgreen bold" if is_user else "fg:ansimagenta bold"
+    padding = " " * max(0, _LABEL_WIDTH + 1 - len(label))
+
     return label_colon, padding, role_style
 
 
