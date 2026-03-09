@@ -25,14 +25,30 @@ from gptcli.src.common.fts import (
     tokenize,
 )
 
-_RESULTS_HEIGHT = 14
-_FOOTER_TEXT = " [↑↓/PgUp/PgDn] Navigate   [Enter] Load   [^P] Print   [^U] Clear   [ESC] Quit "
-_OCR_FOOTER_TEXT = " [↑↓/PgUp/PgDn] Navigate   [Enter] Print   [^W] Write   [^U] Clear   [ESC] Quit "
+_HEIGHT_RESULTS = 14
+_TEXT_FOOTER_CHAT = " [↑↓/PgUp/PgDn] Navigate   [Enter] Load   [^P] Print   [^U] Clear   [ESC] Quit "
+_TEXT_FOOTER_OCR = " [↑↓/PgUp/PgDn] Navigate   [Enter] Print   [^W] Write   [^U] Clear   [ESC] Quit "
+_TEXT_NO_RESULTS = "  No results.\n"
+_TEXT_MORE = "  ↓ more…\n"
 _STYLE = Style.from_dict({"search-prefix": "bold"})
 _LABEL_WIDTH = len("Assistant")
-_SELECTED_GUTTER_STYLE = "fg:ansibrightcyan bold"
-_OCR_ACCENT_STYLE = "fg:ansibrightblue bold"
-_OCR_DOC_LABEL = "Doc:"
+_LABEL_OCR_DOC = "Doc:"
+
+
+class _Styles:
+    DEFAULT = ""
+    MUTED = "fg:ansigray"
+    BOLD = "bold"
+    HIGHLIGHT = "fg:ansiyellow bold"
+    SEARCH_PREFIX = "class:search-prefix"
+    SELECTED_GUTTER = "fg:ansibrightcyan bold"
+    OCR_ACCENT = "fg:ansibrightblue bold"
+    ROLE_USER = "fg:ansibrightgreen bold"
+    ROLE_ASSISTANT = "fg:ansimagenta bold"
+    ROLE_DEVELOPER = "fg:ansibrightblue bold"
+    ROLE_SYSTEM = "fg:ansibrightblue bold"
+    ROLE_OTHER = "fg:ansigray bold"
+
 
 _T = TypeVar("_T")
 
@@ -125,7 +141,7 @@ class _BaseSearch(ABC, Generic[_T]):
                     Window(height=1, char="─"),
                     Window(
                         content=FormattedTextControl(self._get_results_text, focusable=False),
-                        height=_RESULTS_HEIGHT,
+                        height=_HEIGHT_RESULTS,
                     ),
                     Window(height=1, char="─"),
                     Window(
@@ -164,8 +180,6 @@ class _BaseSearch(ABC, Generic[_T]):
         app.run()
 
         return self._action, self._selected_uuid
-
-    # ── Internal helpers ────────────────────────────────────────────────
 
     def _build_key_bindings(self, search_buffer: Buffer) -> KeyBindings:
         """Build navigation key bindings shared by all search TUIs.
@@ -231,7 +245,7 @@ class _BaseSearch(ABC, Generic[_T]):
 
         Scrolls up instantly when selected moves above the viewport.
         Scrolls down one step at a time until the selected item fits within
-        _RESULTS_HEIGHT lines.
+        _HEIGHT_RESULTS lines.
         """
         if self._selected_idx < self._scroll_offset:
             self._scroll_offset = self._selected_idx
@@ -242,10 +256,10 @@ class _BaseSearch(ABC, Generic[_T]):
             for i in range(self._scroll_offset, len(self._results)):
                 lines += self._lines_for(self._results[i])
                 if i == self._selected_idx:
-                    if lines <= _RESULTS_HEIGHT:
+                    if lines <= _HEIGHT_RESULTS:
                         return  # selected fits — done
                     break  # selected overflows — advance offset
-                if lines >= _RESULTS_HEIGHT:
+                if lines >= _HEIGHT_RESULTS:
                     break  # selected not reached — advance offset
             self._scroll_offset += 1
 
@@ -259,7 +273,7 @@ class _BaseSearch(ABC, Generic[_T]):
         count = 0
         for i in range(self._scroll_offset, len(self._results)):
             lines += self._lines_for(self._results[i])
-            if lines > _RESULTS_HEIGHT:
+            if lines > _HEIGHT_RESULTS:
                 break
             count += 1
         return max(1, count)
@@ -275,7 +289,7 @@ class _BaseSearch(ABC, Generic[_T]):
             AnyFormattedText: The formatted prefix text.
         """
         return [
-            ("class:search-prefix", f" Search [{len(self._results):>{self._total_width}}/{self._total}]: "),
+            (_Styles.SEARCH_PREFIX, f" Search [{len(self._results):>{self._total_width}}/{self._total}]: "),
         ]
 
     def _get_results_text(self) -> StyleAndTextTuples:
@@ -293,7 +307,7 @@ class _BaseSearch(ABC, Generic[_T]):
             return self._cached_fragments
 
         if not self._results:
-            fragments: StyleAndTextTuples = [("fg:ansigray", "  No results.\n")]
+            fragments: StyleAndTextTuples = [(_Styles.MUTED, _TEXT_NO_RESULTS)]
         else:
             fragments = []
             lines_used = 0
@@ -301,13 +315,13 @@ class _BaseSearch(ABC, Generic[_T]):
             for idx in range(self._scroll_offset, len(self._results)):
                 hit = self._results[idx]
                 hit_lines = self._lines_for(hit)
-                if lines_used + hit_lines > _RESULTS_HEIGHT:
+                if lines_used + hit_lines > _HEIGHT_RESULTS:
                     break
                 fragments += self._render_hit_fragments(idx, hit, idx == self._selected_idx, self._highlight_pattern)
                 lines_used += hit_lines
                 last_rendered = idx
             if last_rendered < len(self._results) - 1:
-                fragments.append(("fg:ansigray", "  ↓ more…\n"))
+                fragments.append((_Styles.MUTED, _TEXT_MORE))
 
         self._cache_key = cache_key
         self._cached_fragments = fragments
@@ -343,7 +357,7 @@ class ChatSearch(_BaseSearch[SessionHit]):
         return _render_hit(idx, hit, is_selected, pattern)
 
     def _footer_text(self) -> str:
-        return _FOOTER_TEXT
+        return _TEXT_FOOTER_CHAT
 
     def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
         @kb.add("enter")  # type: ignore[misc]
@@ -390,7 +404,7 @@ class OcrSearch(_BaseSearch[OcrHit]):
         return _render_ocr_hit(idx, hit, is_selected, pattern)
 
     def _footer_text(self) -> str:
-        return _OCR_FOOTER_TEXT
+        return _TEXT_FOOTER_OCR
 
     def _add_action_bindings(self, kb: KeyBindings, search_buffer: Buffer) -> None:
         @kb.add("enter")  # type: ignore[misc]
@@ -424,24 +438,24 @@ def _render_ocr_hit(idx: int, hit: OcrHit, is_selected: bool, pattern: re.Patter
     page_str = f"{hit.page_count} page{'s' if hit.page_count != 1 else ''}"
 
     if is_selected:
-        fragments.append((_SELECTED_GUTTER_STYLE, f" [{idx + 1}] ▶ "))
-        fragments.append(("bold", hit.created_display))
-        fragments.append((_OCR_ACCENT_STYLE, f"  {hit.model or '?'}"))
-        fragments.append(("fg:ansigray", f"  {page_str}"))
-        fragments.append(("bold", f"  {hit.source_filename or '?'}\n"))
+        fragments.append((_Styles.SELECTED_GUTTER, f" [{idx + 1}] ▶ "))
+        fragments.append((_Styles.BOLD, hit.created_display))
+        fragments.append((_Styles.OCR_ACCENT, f"  {hit.model or '?'}"))
+        fragments.append((_Styles.MUTED, f"  {page_str}"))
+        fragments.append((_Styles.BOLD, f"  {hit.source_filename or '?'}\n"))
     else:
-        fragments.append(("fg:ansigray", f" [{idx + 1}]   "))
-        fragments.append(("bold", hit.created_display))
-        fragments.append(("fg:ansigray", f"  {hit.model or '?'}  {page_str}  {hit.source_filename or '?'}\n"))
+        fragments.append((_Styles.MUTED, f" [{idx + 1}]   "))
+        fragments.append((_Styles.BOLD, hit.created_display))
+        fragments.append((_Styles.MUTED, f"  {hit.model or '?'}  {page_str}  {hit.source_filename or '?'}\n"))
 
     if hit.snippet:
-        fragments.append(("", "       "))
-        fragments.append((_OCR_ACCENT_STYLE, _OCR_DOC_LABEL))
-        fragments.append(("", "  "))
+        fragments.append((_Styles.DEFAULT, "       "))
+        fragments.append((_Styles.OCR_ACCENT, _LABEL_OCR_DOC))
+        fragments.append((_Styles.DEFAULT, "  "))
         fragments += _highlight_content(hit.snippet, pattern)
-        fragments.append(("", "\n"))
+        fragments.append((_Styles.DEFAULT, "\n"))
     else:
-        fragments.append(("", "\n"))
+        fragments.append((_Styles.DEFAULT, "\n"))
 
     return fragments
 
@@ -457,16 +471,16 @@ def _highlight_content(content: str, pattern: re.Pattern[str] | None) -> StyleAn
         StyleAndTextTuples: Fragments with matched spans styled in bold yellow.
     """
     if pattern is None:
-        return [("", content)]
+        return [(_Styles.DEFAULT, content)]
     fragments: StyleAndTextTuples = []
     pos = 0
     for m in pattern.finditer(content):
         if pos < m.start():
-            fragments.append(("", content[pos : m.start()]))
-        fragments.append(("fg:ansiyellow bold", content[m.start() : m.end()]))
+            fragments.append((_Styles.DEFAULT, content[pos : m.start()]))
+        fragments.append((_Styles.HIGHLIGHT, content[m.start() : m.end()]))
         pos = m.end()
     if pos < len(content):
-        fragments.append(("", content[pos:]))
+        fragments.append((_Styles.DEFAULT, content[pos:]))
     return fragments
 
 
@@ -486,18 +500,18 @@ def _render_hit(idx: int, hit: SessionHit, is_selected: bool, pattern: re.Patter
     meta = f"  {hit.model or '?'}  {hit.message_count} msg\n"
 
     if is_selected:
-        fragments.append((_SELECTED_GUTTER_STYLE, f" [{idx + 1}] ▶ "))
-        fragments.append(("bold", hit.created_display))
-        fragments.append(("", meta))
+        fragments.append((_Styles.SELECTED_GUTTER, f" [{idx + 1}] ▶ "))
+        fragments.append((_Styles.BOLD, hit.created_display))
+        fragments.append((_Styles.DEFAULT, meta))
     else:
-        fragments.append(("fg:ansigray", f" [{idx + 1}]   "))
-        fragments.append(("bold", hit.created_display))
-        fragments.append(("fg:ansigray", meta))
+        fragments.append((_Styles.MUTED, f" [{idx + 1}]   "))
+        fragments.append((_Styles.BOLD, hit.created_display))
+        fragments.append((_Styles.MUTED, meta))
 
     for snippet in hit.snippets:
         fragments += _render_snippet(snippet, pattern)
 
-    fragments.append(("", "\n"))
+    fragments.append((_Styles.DEFAULT, "\n"))
     return fragments
 
 
@@ -515,19 +529,19 @@ def _snippet_label(snippet: MessageSnippet) -> tuple[str, str, str]:
     match snippet.role.lower():
         case "user":
             label = snippet.role.title()
-            role_style = "fg:ansibrightgreen bold"
+            role_style = _Styles.ROLE_USER
         case "assistant":
             label = snippet.role.title()
-            role_style = "fg:ansimagenta bold"
+            role_style = _Styles.ROLE_ASSISTANT
         case "system":
             label = snippet.role.title()
-            role_style = "fg:ansibrightblue bold"
+            role_style = _Styles.ROLE_SYSTEM
         case "developer":
             label = snippet.role.title()
-            role_style = "fg:ansibrightblue bold"
+            role_style = _Styles.ROLE_DEVELOPER
         case _:
             label = snippet.role.title()
-            role_style = "fg:ansigray bold"
+            role_style = _Styles.ROLE_OTHER
 
     # add colon and padding
     label_colon = label + ":"
@@ -548,9 +562,9 @@ def _render_snippet(snippet: MessageSnippet, pattern: re.Pattern[str] | None) ->
     """
     label_colon, padding, role_style = _snippet_label(snippet)
     return [
-        ("", "       "),
+        (_Styles.DEFAULT, "       "),
         (role_style, label_colon),
-        ("", padding),
+        (_Styles.DEFAULT, padding),
         *_highlight_content(snippet.content, pattern),
-        ("", "\n"),
+        (_Styles.DEFAULT, "\n"),
     ]
