@@ -37,8 +37,8 @@ from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.ocr import (
     OpticalCharacterRecognition,
 )
+from gptcli.src.modes.se import SingleExchange
 from gptcli.src.modes.search import ChatSearch, OcrSearch
-from gptcli.src.modes.single_exchange import SingleExchange
 
 logger: Logger = logging.getLogger(__name__)
 

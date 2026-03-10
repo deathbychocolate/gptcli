@@ -13,7 +13,7 @@ from gptcli.src.common.constants import (
     OutputTypes,
     ProviderNames,
 )
-from gptcli.src.modes.single_exchange import SingleExchange
+from gptcli.src.modes.se import SingleExchange
 
 
 # pylint: disable=W0212:protected-access
