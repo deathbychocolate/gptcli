@@ -32,7 +32,7 @@ from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.key_management import KeyManager, make_key_manager
 from gptcli.src.common.passphrase import PassphrasePrompt
 from gptcli.src.common.storage import Storage
-from gptcli.src.install import Migrate, Mistral, Openai
+from gptcli.src.install import Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
 from gptcli.src.modes.ocr import (
     OpticalCharacterRecognition,
@@ -346,13 +346,7 @@ def main() -> None:
 
     no_cache: bool = args.no_cache
 
-    # Migrations run in order: legacy tree → encryption → opaque storage → remove db dirs.
-    # Do not change the order.
-    Migrate.migrate_legacy_tree()
-    Migrate.to_encrypted(no_cache=no_cache)
     encryption: Encryption | None = _load_encryption(no_cache=no_cache)
-    Migrate.migrate_to_opaque_storage(encryption=encryption)
-    Migrate.remove_db_dirs()
 
     # install
     match parser.args.provider:

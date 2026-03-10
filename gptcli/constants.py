@@ -48,18 +48,3 @@ GPTCLI_VERIFICATION_PLAINTEXT: bytes = b"gptcli-verify"
 GPTCLI_MANIFEST_FILENAME: str = ".manifest.json"
 GPTCLI_SESSION_FILENAME: str = "session.json"
 GPTCLI_METADATA_FILENAME: str = "metadata.json"
-
-
-# Legacy (up to version 0.20.2)
-GPTCLI_LEGACY_INSTALL_SUCCESSFUL: str = os.path.join(GPTCLI_ROOT_FILEPATH, ".install_successful")
-GPTCLI_LEGACY_KEYS: str = os.path.join(GPTCLI_ROOT_FILEPATH, "keys")
-GPTCLI_LEGACY_API_KEY: str = os.path.join(GPTCLI_LEGACY_KEYS, "openai")
-GPTCLI_LEGACY_STORAGE: str = os.path.join(GPTCLI_ROOT_FILEPATH, "storage")
-
-# Legacy (up to version 0.25.0):
-# json/ directories before rename to chat/
-# db/   directories that were never used
-GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_JSON_DIR: str = os.path.join(GPTCLI_PROVIDER_OPENAI_STORAGE_DIR, "json")
-GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_JSON_DIR: str = os.path.join(GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR, "json")
-GPTCLI_PROVIDER_OPENAI_STORAGE_LEGACY_DB_DIR: str = os.path.join(GPTCLI_PROVIDER_OPENAI_STORAGE_DIR, "db")
-GPTCLI_PROVIDER_MISTRAL_STORAGE_LEGACY_DB_DIR: str = os.path.join(GPTCLI_PROVIDER_MISTRAL_STORAGE_DIR, "db")
