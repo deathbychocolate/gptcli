@@ -6,9 +6,11 @@ import subprocess
 from collections.abc import Iterable
 from logging import Logger
 from textwrap import dedent
-from typing import Any
+from typing import Any, TypedDict
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.auto_suggest import AutoSuggest, Suggestion
+from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import ANSI
@@ -36,6 +38,30 @@ from gptcli.src.common.storage import Storage
 
 logger: Logger = logging.getLogger(__name__)
 _PREVIEW_MAX_LENGTH: int = 80
+
+
+class _CycleState(TypedDict):
+    lcp: str | None
+    matches: list[str]
+    index: int
+
+
+def _longest_common_prefix(strings: list[str]) -> str:
+    """Return the longest string that is a prefix of every element in strings.
+
+    Args:
+        strings (list[str]): List of strings to compare.
+
+    Returns:
+        str: The longest common prefix, or an empty string if the list is empty or no prefix exists.
+    """
+    if not strings:
+        return ""
+    prefix: str = strings[0]
+    for s in strings[1:]:
+        while not s.startswith(prefix):
+            prefix = prefix[:-1]
+    return prefix
 
 
 class CommandCompleter(Completer):  # type: ignore[misc]
@@ -97,13 +123,44 @@ class CommandCompleter(Completer):  # type: ignore[misc]
                 yield Completion(command, start_position=-len(text), display_meta=description)
 
 
+class CommandAutoSuggest(AutoSuggest):  # type: ignore[misc]
+    """Suggests command completions as inline ghost text (fish-shell style)."""
+
+    def __init__(self, commands: dict[str, str]) -> None:
+        """Initialize with available commands.
+
+        Args:
+            commands (dict[str, str]): Mapping of command strings to their descriptions.
+        """
+        self._commands: dict[str, str] = commands
+
+    def get_suggestion(self, buffer: Buffer, document: Document) -> Suggestion | None:
+        """Return an inline suggestion for the current input.
+
+        Args:
+            buffer (Buffer): The current input buffer.
+            document (Document): The current document/input state.
+
+        Returns:
+            Suggestion | None: The remainder of the matching command, or None.
+        """
+        text: str = document.text_before_cursor
+        if not text.startswith("/"):
+            return None
+        for command in self._commands:
+            if command.startswith(text) and command != text:
+                return Suggestion(command[len(text) :])
+        return None
+
+
 class Chat:
     """A simple chat session."""
 
     def __init__(self) -> None:
+        self._kb: KeyBindings = self._configure_key_bindings()
         self.session: PromptSession = PromptSession(
             history=InMemoryHistory(),
-            key_bindings=self._configure_key_bindings(),
+            key_bindings=self._kb,
         )
 
     @staticmethod
@@ -185,7 +242,9 @@ class ChatUser(Chat):
             api_key (str, optional): The API key for authentication. Defaults to "".
         """
         Chat.__init__(self)
-        self.session.completer = CommandCompleter(CommandCompleter.commands_for_provider(provider))
+        commands: dict[str, str] = CommandCompleter.commands_for_provider(provider)
+        self.session.auto_suggest = CommandAutoSuggest(commands)
+        self._add_tab_cycling(commands)
 
         self._model: str = model
         self._provider: str = provider
@@ -234,6 +293,67 @@ class ChatUser(Chat):
                 self._commands_system_show = ChatCommands.system_show()
             case _:
                 raise NotImplementedError(f"No system-message configuration for provider '{provider}'.")
+
+    @staticmethod
+    def _replace_buffer_text(buf: Buffer, current_text: str, new_text: str) -> None:
+        """Replace the current buffer text with new_text.
+
+        Args:
+            buf (Buffer): The prompt-toolkit input buffer.
+            current_text (str): The text currently before the cursor (to be deleted).
+            new_text (str): The replacement text to insert.
+        """
+        buf.delete_before_cursor(len(current_text))
+        buf.insert_text(new_text)
+
+    def _add_tab_cycling(self, commands: dict[str, str]) -> None:
+        """Add a Tab key binding that completes commands fish-shell style.
+
+        First Tab: completes to longest common prefix of all matches.
+        Subsequent Tabs: cycle through each match, wrapping around.
+        Single match: completes immediately.
+
+        Args:
+            commands (dict[str, str]): Mapping of command strings to their descriptions.
+        """
+        cycle: _CycleState = {"lcp": None, "matches": [], "index": -1}
+
+        @self._kb.add("tab")  # type: ignore[misc]
+        def _(event: Any) -> None:
+            buf: Buffer = event.app.current_buffer
+            text: str = buf.document.text_before_cursor
+
+            if not text.startswith("/"):
+                return None
+
+            # Continuing a cycle: buffer holds one of the known candidates.
+            if cycle["lcp"] is not None and text in cycle["matches"]:
+                cycle["index"] = (cycle["index"] + 1) % len(cycle["matches"])
+                self._replace_buffer_text(buf, text, cycle["matches"][cycle["index"]])
+                return None
+
+            # Fresh Tab: compute matches from current text.
+            matches: list[str] = [cmd for cmd in commands if cmd.startswith(text) and cmd != text]
+            if not matches:
+                return None
+
+            if len(matches) == 1:
+                buf.insert_text(matches[0][len(text) :])
+                cycle.update({"lcp": None, "matches": [], "index": -1})  # reset
+                return None
+
+            lcp: str = _longest_common_prefix(matches)
+
+            if lcp != text:
+                # First Tab: expand to longest common prefix and arm cycle state.
+                self._replace_buffer_text(buf, text, lcp)
+                cycle.update({"lcp": lcp, "matches": matches, "index": -1})
+            else:
+                # Already at LCP (or typed it manually): begin cycling.
+                cycle.update({"lcp": lcp, "matches": matches, "index": 0})
+                self._replace_buffer_text(buf, text, matches[0])
+
+            return None
 
     @user_triggered_abort
     def start(self) -> None:
