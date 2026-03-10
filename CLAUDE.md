@@ -76,7 +76,7 @@ HTTP POST to Provider API
 **1. Mode System** (`gptcli/src/modes/`)
 - **Chat** (`chat.py`): Multi-turn conversations with prompt-toolkit, streaming, local storage, history navigation
 - **SingleExchange** (`single_exchange.py`): One message → one reply → exit (automation-friendly)
-- **OCR** (`optical_character_recognition.py`): Document-to-markdown conversion (Mistral only)
+- **OCR** (`ocr.py`): Document-to-markdown conversion (Mistral only)
 - **Search** (`search.py`): Interactive TUI (prompt-toolkit) for full-text search over chat and OCR history; `ChatSearch` and `OcrSearch` subclasses
 
 **2. Provider Abstraction** (`gptcli/src/common/`)

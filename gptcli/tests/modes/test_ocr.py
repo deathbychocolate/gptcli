@@ -1,4 +1,4 @@
-"""Tests for optical_character_recognition.py."""
+"""Tests for ocr.py."""
 
 import base64
 import io
@@ -12,11 +12,11 @@ from PIL import Image as PILImage
 from gptcli.constants import MISTRAL_API_KEY
 from gptcli.src.common.constants import MistralModelsOcr, ProviderNames
 from gptcli.src.common.validators import InputType
-from gptcli.src.modes.optical_character_recognition import (
+from gptcli.src.modes.ocr import (
     OpticalCharacterRecognition,
 )
 
-TEST_DATA_DIR: str = os.path.join(os.path.dirname(__file__), "..", "data", "optical_character_recognition")
+TEST_DATA_DIR: str = os.path.join(os.path.dirname(__file__), "..", "data", "ocr")
 SAMPLE_PDF_PATH: str = os.path.join(TEST_DATA_DIR, "sample.pdf")
 
 
@@ -502,7 +502,7 @@ class TestPerformOcrFromFilepathUnit:
         with pytest.raises(FileNotFoundError):
             ocr._perform_ocr_from_filepath("/nonexistent/path.pdf")
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64encodedcontent")
     def test_returns_tuple_with_markdown_image_data_and_page_count(
         self, _mock_encode: MagicMock, mock_post: MagicMock
@@ -530,7 +530,7 @@ class TestPerformOcrFromFilepathUnit:
         assert isinstance(image_data, list)
         assert page_count == 1
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64encodedcontent")
     def test_include_images_false_sets_payload_to_false(self, _mock_encode: MagicMock, mock_post: MagicMock) -> None:
         mock_post.return_value.ok = True
@@ -563,7 +563,7 @@ class TestPerformOcrFromFilepathUnit:
 # =============================================================================
 class TestPerformOcrFromUrlUnit:
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_returns_tuple_with_markdown_image_data_and_page_count(self, mock_post: MagicMock) -> None:
         mock_post.return_value.ok = True
         mock_post.return_value.content = b"""{
@@ -588,7 +588,7 @@ class TestPerformOcrFromUrlUnit:
         assert isinstance(image_data, list)
         assert page_count == 1
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_include_images_false_sets_payload_to_false(self, mock_post: MagicMock) -> None:
         mock_post.return_value.ok = True
         mock_post.return_value.content = b"""{
@@ -619,7 +619,7 @@ class TestPerformOcrFromUrlUnit:
 # =============================================================================
 class TestStartUnit:
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_returns_none_type(self, _mock_encode: MagicMock, mock_post: MagicMock) -> None:
         mock_post.return_value.content = b"""{
@@ -643,7 +643,7 @@ class TestStartUnit:
 
         assert result is None
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_display_true_prints_output(
         self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
@@ -670,7 +670,7 @@ class TestStartUnit:
         captured = capsys.readouterr()
         assert "Printed content" in captured.out
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_display_false_does_not_print(
         self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
@@ -732,8 +732,8 @@ class TestStartWithStoreFlag:
             "utf8"
         )
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_store_true_calls_store_ocr_result(
         self,
@@ -762,8 +762,8 @@ class TestStartWithStoreFlag:
 
         mock_storage.store_ocr_result.assert_called_once()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_store_true_passes_correct_source(
         self,
@@ -793,8 +793,8 @@ class TestStartWithStoreFlag:
         call_kwargs = mock_storage.store_ocr_result.call_args.kwargs
         assert call_kwargs["source"] == "/fake/document.pdf"
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_store_true_passes_correct_page_count(
         self,
@@ -824,8 +824,8 @@ class TestStartWithStoreFlag:
         call_kwargs = mock_storage.store_ocr_result.call_args.kwargs
         assert call_kwargs["page_count"] == 2
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_store_true_passes_image_data(
         self,
@@ -856,8 +856,8 @@ class TestStartWithStoreFlag:
         assert len(call_kwargs["image_data"]) == 1
         assert call_kwargs["image_data"][0][0] == "img_001.png"
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_store_false_does_not_call_store_ocr_result(
         self,
@@ -905,7 +905,7 @@ class TestStartWithFilelist:
         filelist.write_text("/fake/doc1.pdf\n/fake/doc2.pdf\n")
         return filelist
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_processes_documents_from_filelist(
         self,
@@ -933,7 +933,7 @@ class TestStartWithFilelist:
 
         assert mock_post.call_count == 2
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_empty_filelist_string_does_not_open_file(
         self,
@@ -960,7 +960,7 @@ class TestStartWithFilelist:
 
         assert mock_post.call_count == 1
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_processes_both_inputs_and_filelist(
         self,
@@ -1005,7 +1005,7 @@ class TestStartWithFilelist:
         with pytest.raises(FileNotFoundError):
             ocr.start()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_filelist_with_only_empty_lines(
         self,
         mock_post: MagicMock,
@@ -1030,7 +1030,7 @@ class TestStartWithFilelist:
 
         mock_post.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_filelist_with_only_whitespace_lines(
         self,
         mock_post: MagicMock,
@@ -1055,7 +1055,7 @@ class TestStartWithFilelist:
 
         mock_post.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_filelist_with_nonexistent_filepath_skips_file(
         self,
         mock_post: MagicMock,
@@ -1080,7 +1080,7 @@ class TestStartWithFilelist:
 
         mock_post.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_filelist_with_mix_of_valid_and_invalid_processes_valid_only(
         self,
@@ -1113,7 +1113,7 @@ class TestStartWithFilelist:
 
         assert mock_post.call_count == 1
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
+    @patch("gptcli.src.modes.ocr.post")
     def test_empty_inputs_and_empty_filelist_does_nothing(
         self,
         mock_post: MagicMock,
@@ -1140,7 +1140,7 @@ class TestStartWithFilelist:
 # =============================================================================
 class TestStartWithDisplayLast:
 
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_calls_extract_and_show(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1158,7 +1158,7 @@ class TestStartWithDisplayLast:
         ocr.start()
         mock_storage_instance.display_last_ocr_result.assert_called_once()
 
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_returns_none(self, mock_storage: MagicMock) -> None:
         ocr = OpticalCharacterRecognition(
             model=MistralModelsOcr.default(),
@@ -1175,8 +1175,8 @@ class TestStartWithDisplayLast:
         result = ocr.start()
         assert result is None
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_does_not_process_inputs(self, mock_storage: MagicMock, mock_post: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1195,8 +1195,8 @@ class TestStartWithDisplayLast:
         mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_post.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.post")
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.post")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_does_not_process_filelist(
         self, mock_storage: MagicMock, mock_post: MagicMock, tmp_path: Path
     ) -> None:
@@ -1219,7 +1219,7 @@ class TestStartWithDisplayLast:
         mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_post.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_does_not_store(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1238,7 +1238,7 @@ class TestStartWithDisplayLast:
         mock_storage_instance.display_last_ocr_result.assert_called_once()
         mock_storage_instance.store_ocr_result.assert_not_called()
 
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_ignores_no_display_flag(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(
@@ -1737,7 +1737,7 @@ class TestStartWithOutputDir:
         return ("Content", [], 1)
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
-    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_default_output_dir_writes_folder(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1761,7 +1761,7 @@ class TestStartWithOutputDir:
         assert (folder / "report.md").is_file()
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
-    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_none_output_dir_skips_writing(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1783,7 +1783,7 @@ class TestStartWithOutputDir:
         assert not list(tmp_path.iterdir())
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
-    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_output_dir_independent_of_store(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1809,7 +1809,7 @@ class TestStartWithOutputDir:
         mock_store.assert_not_called()
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
-    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_multiple_inputs_create_multiple_folders(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1832,7 +1832,7 @@ class TestStartWithOutputDir:
         assert (tmp_path / "gptcli__mistral__ocr__invoice").is_dir()
 
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
-    @patch("gptcli.src.modes.optical_character_recognition.classify_input", return_value=InputType.FILEPATH)
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_include_images_false_writes_no_image_files(
         self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
     ) -> None:
@@ -1858,7 +1858,7 @@ class TestStartWithOutputDir:
         assert len(files) == 1
         assert files[0].name == "report.md"
 
-    @patch("gptcli.src.modes.optical_character_recognition.Storage")
+    @patch("gptcli.src.modes.ocr.Storage")
     def test_display_last_skips_validation(self, mock_storage: MagicMock) -> None:
         mock_storage_instance = mock_storage.return_value
         ocr = OpticalCharacterRecognition(

@@ -34,7 +34,7 @@ from gptcli.src.common.passphrase import PassphrasePrompt
 from gptcli.src.common.storage import Storage
 from gptcli.src.install import Migrate, Mistral, Openai
 from gptcli.src.modes.chat import ChatUser
-from gptcli.src.modes.optical_character_recognition import (
+from gptcli.src.modes.ocr import (
     OpticalCharacterRecognition,
 )
 from gptcli.src.modes.search import ChatSearch, OcrSearch
