@@ -141,7 +141,7 @@ class _BaseSearch(ABC, Generic[_T]):
                     ),
                     Window(height=1, char="─"),
                     Window(
-                        content=FormattedTextControl(lambda: self._footer_text(), focusable=False),
+                        content=FormattedTextControl(self._footer_text, focusable=False),
                         height=1,
                     ),
                 ]
@@ -284,8 +284,10 @@ class _BaseSearch(ABC, Generic[_T]):
         Returns:
             AnyFormattedText: The formatted prefix text.
         """
+        count = len(self._results)
+        pad = " " * (self._total_width - len(str(count)))
         return [
-            (_Styles.SEARCH_PREFIX, f" Search [{len(self._results):>{self._total_width}}/{self._total}]: "),
+            (_Styles.SEARCH_PREFIX, f" Search {pad}[{count}/{self._total}]: "),
         ]
 
     def _get_results_text(self) -> StyleAndTextTuples:
@@ -350,7 +352,7 @@ class ChatSearch(_BaseSearch[SessionHit]):
     def _render_hit_fragments(
         self, idx: int, hit: SessionHit, is_selected: bool, pattern: re.Pattern[str] | None
     ) -> StyleAndTextTuples:
-        return _render_hit(idx, hit, is_selected, pattern)
+        return _render_hit(idx, hit, is_selected, pattern, self._total_width)
 
     def _footer_text(self) -> str:
         return _TEXT_FOOTER_CHAT
@@ -397,7 +399,7 @@ class OcrSearch(_BaseSearch[OcrHit]):
     def _render_hit_fragments(
         self, idx: int, hit: OcrHit, is_selected: bool, pattern: re.Pattern[str] | None
     ) -> StyleAndTextTuples:
-        return _render_ocr_hit(idx, hit, is_selected, pattern)
+        return _render_ocr_hit(idx, hit, is_selected, pattern, self._total_width)
 
     def _footer_text(self) -> str:
         return _TEXT_FOOTER_OCR
@@ -418,7 +420,9 @@ class OcrSearch(_BaseSearch[OcrHit]):
                 event.app.exit()
 
 
-def _render_ocr_hit(idx: int, hit: OcrHit, is_selected: bool, pattern: re.Pattern[str] | None) -> StyleAndTextTuples:
+def _render_ocr_hit(
+    idx: int, hit: OcrHit, is_selected: bool, pattern: re.Pattern[str] | None, num_width: int
+) -> StyleAndTextTuples:
     """Render a single OCR search result as formatted text fragments.
 
     Args:
@@ -426,26 +430,29 @@ def _render_ocr_hit(idx: int, hit: OcrHit, is_selected: bool, pattern: re.Patter
         hit (OcrHit): The search result to render.
         is_selected (bool): Whether this row is currently selected.
         pattern (re.Pattern[str] | None): Compiled highlight pattern for snippets.
+        num_width (int): Fixed digit width for the index number.
 
     Returns:
         StyleAndTextTuples: Formatted text fragments for this result.
     """
     fragments: StyleAndTextTuples = []
-    page_str = f"{hit.page_count} page{'s' if hit.page_count != 1 else ''}"
+    page_str: str = f"{hit.page_count} page{'s' if hit.page_count != 1 else ''}"
+    indent: str = " " * (num_width + 6)
+    pad: str = " " * (num_width - len(str(idx + 1)) + 1)
 
     if is_selected:
-        fragments.append((_Styles.SELECTED_GUTTER, f" [{idx + 1}] ▶ "))
+        fragments.append((_Styles.SELECTED_GUTTER, f"{pad}[{idx + 1}] ▶ "))
         fragments.append((_Styles.BOLD, hit.created_display))
         fragments.append((_Styles.OCR_ACCENT, f"  {hit.model or '?'}"))
         fragments.append((_Styles.MUTED, f"  {page_str}"))
         fragments.append((_Styles.BOLD, f"  {hit.source_filename or '?'}\n"))
     else:
-        fragments.append((_Styles.MUTED, f" [{idx + 1}]   "))
+        fragments.append((_Styles.MUTED, f"{pad}[{idx + 1}]   "))
         fragments.append((_Styles.BOLD, hit.created_display))
         fragments.append((_Styles.MUTED, f"  {hit.model or '?'}  {page_str}  {hit.source_filename or '?'}\n"))
 
     if hit.snippet:
-        fragments.append((_Styles.DEFAULT, "       "))
+        fragments.append((_Styles.DEFAULT, indent))
         fragments.append((_Styles.OCR_ACCENT, _LABEL_OCR_DOC))
         fragments.append((_Styles.DEFAULT, "  "))
         fragments += _highlight_content(hit.snippet, pattern)
@@ -480,7 +487,9 @@ def _highlight_content(content: str, pattern: re.Pattern[str] | None) -> StyleAn
     return fragments
 
 
-def _render_hit(idx: int, hit: SessionHit, is_selected: bool, pattern: re.Pattern[str] | None) -> StyleAndTextTuples:
+def _render_hit(
+    idx: int, hit: SessionHit, is_selected: bool, pattern: re.Pattern[str] | None, num_width: int
+) -> StyleAndTextTuples:
     """Render a single search result as formatted text fragments.
 
     Args:
@@ -488,24 +497,26 @@ def _render_hit(idx: int, hit: SessionHit, is_selected: bool, pattern: re.Patter
         hit (SessionHit): The search result to render.
         is_selected (bool): Whether this row is currently selected.
         pattern (re.Pattern[str] | None): Compiled highlight pattern for snippets.
+        num_width (int): Fixed digit width for the index number.
 
     Returns:
         StyleAndTextTuples: Formatted text fragments for this result.
     """
     fragments: StyleAndTextTuples = []
-    meta = f"  {hit.model or '?'}  {hit.message_count} msg\n"
+    meta: str = f"  {hit.model or '?'}  {hit.message_count} msg\n"
+    pad: str = " " * (num_width - len(str(idx + 1)) + 1)
 
     if is_selected:
-        fragments.append((_Styles.SELECTED_GUTTER, f" [{idx + 1}] ▶ "))
+        fragments.append((_Styles.SELECTED_GUTTER, f"{pad}[{idx + 1}] ▶ "))
         fragments.append((_Styles.BOLD, hit.created_display))
         fragments.append((_Styles.DEFAULT, meta))
     else:
-        fragments.append((_Styles.MUTED, f" [{idx + 1}]   "))
+        fragments.append((_Styles.MUTED, f"{pad}[{idx + 1}]   "))
         fragments.append((_Styles.BOLD, hit.created_display))
         fragments.append((_Styles.MUTED, meta))
 
     for snippet in hit.snippets:
-        fragments += _render_snippet(snippet, pattern)
+        fragments += _render_snippet(snippet, pattern, num_width)
 
     fragments.append((_Styles.DEFAULT, "\n"))
     return fragments
@@ -546,19 +557,21 @@ def _snippet_label(snippet: MessageSnippet) -> tuple[str, str, str]:
     return label_colon, padding, role_style
 
 
-def _render_snippet(snippet: MessageSnippet, pattern: re.Pattern[str] | None) -> StyleAndTextTuples:
+def _render_snippet(snippet: MessageSnippet, pattern: re.Pattern[str] | None, num_width: int) -> StyleAndTextTuples:
     """Render a message snippet with colour-coded role label and highlighted query terms.
 
     Args:
         snippet (MessageSnippet): The snippet to render.
         pattern (re.Pattern[str] | None): Compiled highlight pattern, or None for no highlighting.
+        num_width (int): Fixed digit width for the index number, used to compute indent.
 
     Returns:
         StyleAndTextTuples: Formatted text fragments for this snippet.
     """
     label_colon, padding, role_style = _snippet_label(snippet)
+    indent = " " * (num_width + 6)
     return [
-        (_Styles.DEFAULT, "       "),
+        (_Styles.DEFAULT, indent),
         (role_style, label_colon),
         (_Styles.DEFAULT, padding),
         *_highlight_content(snippet.content, pattern),
