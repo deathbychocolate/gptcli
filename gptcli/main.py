@@ -43,7 +43,7 @@ from gptcli.src.modes.search import ChatSearch, OcrSearch
 logger: Logger = logging.getLogger(__name__)
 
 
-def create_command_parser() -> CommandParser:
+def _create_command_parser() -> CommandParser:
     logger.info("Running and configuring argparse.")
     parser: CommandParser = CommandParser()
     parser.configure_command_parser()
@@ -53,57 +53,61 @@ def create_command_parser() -> CommandParser:
 _PROVIDER_DIRS: list[str] = [GPTCLI_PROVIDER_MISTRAL, GPTCLI_PROVIDER_OPENAI]
 
 
+def _handle_rekey(no_cache: bool) -> None:
+    encryption: Encryption | None = _load_encryption(no_cache=no_cache)
+    if encryption is None:
+        print("Encryption is not initialized. Nothing to rekey.")
+        return None
+    if not EncryptionCommands.rekey(old_encryption=encryption, providers=_PROVIDER_DIRS):
+        sys.exit(1)
+    return None
+
+
+def _handle_encrypt(no_cache: bool) -> None:
+    km: KeyManager = make_key_manager(no_cache=no_cache)
+    if not km.is_initialized():
+        passphrase: str | None = PassphrasePrompt.create_with_confirmation()
+        if passphrase is None:
+            sys.exit(1)
+        key: bytes = km.initialize(passphrase)
+    else:
+        loaded_key: bytes | None = km.load_key()
+        if loaded_key is None:
+            sys.exit(1)
+        key = loaded_key
+    enc = Encryption(key=key)
+    for provider_dir in _PROVIDER_DIRS:
+        EncryptionCommands(provider_dir=provider_dir, encryption=enc).encrypt_provider()
+
+
+def _handle_decrypt() -> None:
+    encryption: Encryption | None = _load_encryption()
+    if encryption is None:
+        print("Encryption is not initialized. Nothing to decrypt.")
+        return None
+    print("Warning: Encryption at rest is enabled by default to protect your data.")
+    print("Decrypting should only be done if you plan to migrate data to another platform.")
+    print("Re-encrypt when done.")
+    for provider_dir in _PROVIDER_DIRS:
+        EncryptionCommands(provider_dir=provider_dir, encryption=encryption).decrypt_provider()
+    return None
+
+
 def _handle_all_provider_command(args: Namespace) -> None:
     """Handle commands that apply to all providers: encrypt, decrypt, rekey, and nuke.
 
     Args:
         args (Namespace): The parsed CLI arguments.
     """
-    if args.mode_name == ModeNames.NUKE.value:
-        Nuke.nuke(root_dir=GPTCLI_ROOT_FILEPATH)
-        return None
-
-    provider_dirs: list[str] = _PROVIDER_DIRS
-    no_cache: bool = args.no_cache
-
-    if args.mode_name == ModeNames.REKEY.value:
-        encryption: Encryption | None = _load_encryption(no_cache=no_cache)
-        if encryption is None:
-            print("Encryption is not initialized. Nothing to rekey.")
-            return None
-        if not EncryptionCommands.rekey(old_encryption=encryption, providers=provider_dirs):
-            sys.exit(1)
-        return None
-
-    km: KeyManager = make_key_manager(no_cache=no_cache)
-    if args.mode_name == ModeNames.ENCRYPT.value:
-        if not km.is_initialized():
-            passphrase: str | None = PassphrasePrompt.create_with_confirmation()
-            if passphrase is None:
-                sys.exit(1)
-            key: bytes = km.initialize(passphrase)
-        else:
-            loaded_key: bytes | None = km.load_key()
-            if loaded_key is None:
-                sys.exit(1)
-            key = loaded_key
-        enc = Encryption(key=key)
-        for provider_dir in provider_dirs:
-            cmd = EncryptionCommands(provider_dir=provider_dir, encryption=enc)
-            cmd.encrypt_provider()
-    elif args.mode_name == ModeNames.DECRYPT.value:
-        enc_instance: Encryption | None = _load_encryption()
-        if enc_instance is None:
-            print("Encryption is not initialized. Nothing to decrypt.")
-            return None
-        print("Warning: Encryption at rest is enabled by default to protect your data.")
-        print("Decrypting should only be done if you plan to migrate data to another platform.")
-        print("Re-encrypt when done.")
-        for provider_dir in provider_dirs:
-            cmd = EncryptionCommands(provider_dir=provider_dir, encryption=enc_instance)
-            cmd.decrypt_provider()
-
-    return None
+    match args.mode_name:
+        case ModeNames.NUKE.value:
+            Nuke.nuke(root_dir=GPTCLI_ROOT_FILEPATH)
+        case ModeNames.REKEY.value:
+            _handle_rekey(no_cache=args.no_cache)
+        case ModeNames.ENCRYPT.value:
+            _handle_encrypt(no_cache=args.no_cache)
+        case ModeNames.DECRYPT.value:
+            _handle_decrypt()
 
 
 def _load_encryption(no_cache: bool = False) -> Encryption | None:
@@ -178,11 +182,11 @@ def _read_plaintext_key(filepath: str) -> str:
         return ""
 
 
-def load_api_key(parser: CommandParser, encryption: Encryption | None = None) -> str:
+def load_api_key(args: Namespace, encryption: Encryption | None = None) -> str:
     """Load the API key from CLI arguments, encrypted file, or plaintext file.
 
     Args:
-        parser (CommandParser): The parsed CLI arguments.
+        args (Namespace): The parsed CLI arguments.
         encryption (Encryption | None, optional): Encryption instance for decrypting stored keys. Defaults to None.
 
     Returns:
@@ -190,64 +194,64 @@ def load_api_key(parser: CommandParser, encryption: Encryption | None = None) ->
     """
     logger.info("Loading API key.")
 
-    file: str = _key_file_for_provider(parser.args.provider)
+    file: str = _key_file_for_provider(args.provider)
 
-    if "key" in parser.args and parser.args.key is None:
+    if "key" in args and args.key is None:
         enc_file: str = file + ".enc"
         if os.path.exists(enc_file) and encryption:
             return _read_encrypted_key(enc_file, encryption)
         else:
             return _read_plaintext_key(file)
-    elif "key" in parser.args and str(parser.args.key).isascii():
-        return str(parser.args.key)
+    elif "key" in args and str(args.key).isascii():
+        return str(args.key)
 
     return ""
 
 
-def enter_single_exchange_mode(parser: CommandParser, api_key: str = "") -> None:
+def _enter_single_exchange_mode(args: Namespace, api_key: str = "") -> None:
     logger.info("Entering CLI mode.")
     SingleExchange(
-        input_string=parser.args.input_string,
-        model=parser.args.model,
-        provider=parser.args.provider,
-        role_user=parser.args.role_user,
-        role_model=parser.args.role_model,
-        filepath=parser.args.filepath,
-        output=parser.args.output,
+        input_string=args.input_string,
+        model=args.model,
+        provider=args.provider,
+        role_user=args.role_user,
+        role_model=args.role_model,
+        filepath=args.filepath,
+        output=args.output,
         api_key=api_key,
     ).start()
 
 
-def enter_chat_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+def _enter_chat_mode(args: Namespace, encryption: Encryption | None = None, api_key: str = "") -> None:
     logger.info("Entering chat mode.")
     ChatUser(
-        model=parser.args.model,
-        provider=parser.args.provider,
-        role_user=parser.args.role_user,
-        role_model=parser.args.role_model,
-        context=parser.args.context,
-        stream=parser.args.stream,
-        filepath=parser.args.filepath,
-        store=parser.args.store,
-        load_last=parser.args.load_last,
+        model=args.model,
+        provider=args.provider,
+        role_user=args.role_user,
+        role_model=args.role_model,
+        context=args.context,
+        stream=args.stream,
+        filepath=args.filepath,
+        store=args.store,
+        load_last=args.load_last,
         encryption=encryption,
         api_key=api_key,
     ).start()
 
 
-def enter_ocr_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+def _enter_ocr_mode(args: Namespace, encryption: Encryption | None = None, api_key: str = "") -> None:
     logger.info("Entering OCR mode.")
     OpticalCharacterRecognition(
-        model=parser.args.model,
-        provider=parser.args.provider,
-        store=parser.args.store,
-        display_last=parser.args.display_last,
-        display=parser.args.display,
-        filelist=parser.args.filelist,
-        output_dir=parser.args.output_dir,
-        no_output_dir=parser.args.no_output_dir,
-        inputs=parser.args.inputs,
-        include_images=not parser.args.no_images,
+        model=args.model,
+        provider=args.provider,
+        store=args.store,
+        display_last=args.display_last,
+        display=args.display,
+        filelist=args.filelist,
+        output_dir=args.output_dir,
+        no_output_dir=args.no_output_dir,
+        inputs=args.inputs,
+        include_images=not args.no_images,
         encryption=encryption,
         api_key=api_key,
     ).start()
@@ -267,15 +271,15 @@ def _provider_defaults(provider: str) -> tuple[str, str, str]:
     return OpenaiModelsChat.default(), OpenaiUserRoles.default(), OpenaiModelRoles.default()
 
 
-def enter_chat_search_mode(parser: CommandParser, encryption: Encryption | None = None, api_key: str = "") -> None:
+def _enter_chat_search_mode(args: Namespace, encryption: Encryption | None = None, api_key: str = "") -> None:
     """Launch the chat full-text search TUI and handle the user's chosen action.
 
     Args:
-        parser (CommandParser): The parsed CLI arguments.
+        args (Namespace): The parsed CLI arguments.
         encryption (Encryption | None, optional): Encryption instance. Defaults to None.
         api_key (str, optional): The API key to use if loading a session in chat. Defaults to "".
     """
-    provider: str = parser.args.provider
+    provider: str = args.provider
     storage = Storage(provider=provider, encryption=encryption)
 
     action, session_uuid = ChatSearch(
@@ -299,14 +303,14 @@ def enter_chat_search_mode(parser: CommandParser, encryption: Encryption | None 
         storage.display_chat_by_uuid(session_uuid)
 
 
-def enter_ocr_search_mode(parser: CommandParser, encryption: Encryption | None = None) -> None:
+def _enter_ocr_search_mode(args: Namespace, encryption: Encryption | None = None) -> None:
     """Launch the OCR full-text search TUI and handle the user's chosen action.
 
     Args:
-        parser (CommandParser): The parsed CLI arguments.
+        args (Namespace): The parsed CLI arguments.
         encryption (Encryption | None, optional): Encryption instance. Defaults to None.
     """
-    provider: str = parser.args.provider
+    provider: str = args.provider
     storage = Storage(provider=provider, encryption=encryption)
 
     action, session_uuid = OcrSearch(
@@ -317,12 +321,12 @@ def enter_ocr_search_mode(parser: CommandParser, encryption: Encryption | None =
     if action == SearchActions.PRINT.value and session_uuid:
         storage.display_ocr_by_uuid(session_uuid)
     elif action == SearchActions.WRITE.value and session_uuid:
-        storage.write_ocr_by_uuid(session_uuid, parser.args.output_dir)
+        storage.write_ocr_by_uuid(session_uuid, args.output_dir)
 
 
 def main() -> None:
     """This is the main function."""
-    parser: CommandParser = create_command_parser()
+    parser: CommandParser = _create_command_parser()
     args: Namespace = parser.args
 
     # print help when ...
@@ -336,7 +340,7 @@ def main() -> None:
         args.parser.print_help()
         return None
     elif args.mode_name == ModeNames.OCR.value and not (args.inputs or args.filelist or args.display_last):
-        parser.args.parser.print_help()
+        args.parser.print_help()
         return None
 
     # Handle encryption commands before install/API key loading
@@ -347,30 +351,29 @@ def main() -> None:
     no_cache: bool = args.no_cache
 
     # install
-    match parser.args.provider:
+    match args.provider:
         case ProviderNames.MISTRAL.value:
             Mistral(no_cache=no_cache).install()
         case ProviderNames.OPENAI.value:
             Openai(no_cache=no_cache).install()
         case _:
-            raise NotImplementedError(f"Provider '{parser.args.provider}' not yet supported.")
+            raise NotImplementedError(f"Provider '{args.provider}' not yet supported.")
 
     encryption: Encryption | None = _load_encryption(no_cache=no_cache)
+    api_key: str = load_api_key(args=args, encryption=encryption)
 
-    api_key: str = load_api_key(parser=parser, encryption=encryption)
-
-    match parser.args.mode_name:
+    match args.mode_name:
         case ModeNames.SE.value:
-            enter_single_exchange_mode(parser=parser, api_key=api_key)
+            _enter_single_exchange_mode(args=args, api_key=api_key)
         case ModeNames.CHAT.value:
-            enter_chat_mode(parser=parser, encryption=encryption, api_key=api_key)
+            _enter_chat_mode(args=args, encryption=encryption, api_key=api_key)
         case ModeNames.OCR.value:
-            enter_ocr_mode(parser=parser, encryption=encryption, api_key=api_key)
+            _enter_ocr_mode(args=args, encryption=encryption, api_key=api_key)
         case ModeNames.SEARCH.value:
-            if parser.args.search_target == SearchTargets.CHAT.value:
-                enter_chat_search_mode(parser=parser, encryption=encryption, api_key=api_key)
-            elif parser.args.search_target == SearchTargets.OCR.value:
-                enter_ocr_search_mode(parser=parser, encryption=encryption)
+            if args.search_target == SearchTargets.CHAT.value:
+                _enter_chat_search_mode(args=args, encryption=encryption, api_key=api_key)
+            elif args.search_target == SearchTargets.OCR.value:
+                _enter_ocr_search_mode(args=args, encryption=encryption)
 
     return None
 
