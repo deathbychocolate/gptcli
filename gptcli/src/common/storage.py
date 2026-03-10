@@ -112,6 +112,26 @@ class Storage:
             with open(filepath, "wb") as fp:
                 fp.write(data)
 
+    def _read_image(self, filepath: str) -> bytes | None:
+        """Read image data from a plaintext or encrypted file.
+
+        Args:
+            filepath (str): The base filepath (without .enc suffix).
+
+        Returns:
+            bytes | None: The image data, or None if unreadable or key missing.
+        """
+        enc_path = filepath + ".enc"
+        if os.path.exists(enc_path):
+            if self._encryption is None:
+                self._warn(self._ENCRYPTED_DATA_WITHOUT_KEY)
+                return None
+            return self._encryption.decrypt_file(enc_path)
+        if os.path.exists(filepath):
+            with open(filepath, "rb") as fp:
+                return fp.read()
+        return None
+
     def _write_text(self, filepath: str, content: str) -> None:
         """Write text content to a file, encrypting if encryption is enabled.
 
@@ -163,8 +183,6 @@ class Storage:
             return decrypted.decode("utf-8")
         return read_text_file(filepath_plaintext, self._encryption)
 
-    # ── Manifest operations ──────────────────────────────────────────
-
     def _read_manifest(self, storage_dir: str) -> list[dict[str, Any]]:
         """Read the manifest from a storage directory.
 
@@ -178,8 +196,8 @@ class Storage:
         content = self._read_text(path.join(storage_dir, GPTCLI_MANIFEST_FILENAME))
         if content is None:
             return []
-        result: list[dict[str, Any]] = json.loads(content)
-        return result
+        entries: list[dict[str, Any]] = json.loads(content)
+        return entries
 
     def _write_manifest(self, storage_dir: str, entries: list[dict[str, Any]]) -> None:
         """Write the manifest to a storage directory.
@@ -232,10 +250,8 @@ class Storage:
         if not entries:
             return None
         latest = max(entries, key=lambda e: e["created"])
-        uuid: str = latest["uuid"]
-        return uuid
-
-    # ── Session directory creation ───────────────────────────────────
+        session_uuid: str = latest["uuid"]
+        return session_uuid
 
     def _create_session_dir(self, base_dir: str) -> tuple[str, str, float]:
         """Create a new UUID-based session directory.
@@ -251,8 +267,6 @@ class Storage:
         session_dir = path.join(base_dir, session_uuid)
         os.makedirs(session_dir, exist_ok=True)
         return session_dir, session_uuid, created
-
-    # ── Chat session storage ─────────────────────────────────────────
 
     @staticmethod
     def build_chat_metadata(session_uuid: str, created: float, model: str, provider: str) -> dict[str, Any]:
@@ -298,8 +312,6 @@ class Storage:
 
             self._append_to_manifest(self._chat_dir, session_uuid, created)
 
-    # ── OCR session storage ──────────────────────────────────────────
-
     @staticmethod
     def extract_filename_from_source(source: str) -> str:
         """Extract the filename from a URL or filesystem path.
@@ -316,8 +328,7 @@ class Storage:
             parsed = urlparse(source)
             url_path = unquote(parsed.path)
             return path.basename(url_path)
-        else:
-            return path.basename(source)
+        return path.basename(source)
 
     @staticmethod
     def derive_markdown_filename_from_source(source: str) -> str:
@@ -349,8 +360,7 @@ class Storage:
         if "." in filename and not filename.startswith("."):
             name, _ = filename.rsplit(".", 1)
             return f"{name}.md"
-        else:
-            return f"{filename}.md"
+        return f"{filename}.md"
 
     @staticmethod
     def _derive_folder_name_from_source(provider: str, source: str) -> str:
@@ -475,7 +485,7 @@ class Storage:
         markdown_filepath = path.join(session_dir, markdown_filename)
         self._write_text(markdown_filepath, markdown_content)
 
-        # Get filename safely using os.path.basename() and realpath check.
+        # Get filename safely.
         resolved_session_dir = os.path.realpath(session_dir)
         image_filenames: list[str] = []
         for filename, data in image_data:
@@ -609,6 +619,39 @@ class Storage:
         print(content)
         return None
 
+    def _write_ocr_images(
+        self,
+        session_dir: str,
+        image_filenames: list[str],
+        output_folder: str,
+    ) -> None:
+        """Copy OCR images from storage to the output folder.
+
+        Args:
+            session_dir (str): The OCR session directory in storage.
+            image_filenames (list[str]): Filenames of images to copy.
+            output_folder (str): Destination directory for the images.
+        """
+        resolved_output = os.path.realpath(output_folder)
+        for img_filename in image_filenames:
+            safe_filename = path.basename(img_filename)
+            if not safe_filename:
+                logger.warning("Possible malicious filename detected; path traversal.")
+                logger.warning(f"Filename of: '{img_filename}'")
+                continue
+
+            img_data = self._read_image(path.join(session_dir, safe_filename))
+            if img_data is None:
+                continue
+
+            dest_path = os.path.join(output_folder, safe_filename)
+            if not os.path.realpath(dest_path).startswith(resolved_output):
+                logger.warning(f"Image path escapes output folder; skipping '{img_filename}'.")
+                continue
+
+            with open(dest_path, "wb") as fp_out:
+                fp_out.write(img_data)
+
     def write_ocr_by_uuid(self, session_uuid: str, output_dir: str) -> None:
         """Write an OCR session's Markdown and images to a local output directory.
 
@@ -655,34 +698,7 @@ class Storage:
         with open(markdown_filepath, "w", encoding="utf8") as fp:
             fp.write(content)
 
-        resolved_folder_path = os.path.realpath(folder_path)
-        for img_filename in image_filenames:
-            safe_filename = path.basename(img_filename)
-            if not safe_filename:
-                logger.warning("Possible malicious filename detected; path traversal.")
-                logger.warning(f"Filename of: '{img_filename}'")
-                continue
-
-            enc_path = path.join(session_dir, safe_filename + ".enc")
-            plain_path = path.join(session_dir, safe_filename)
-
-            img_data: bytes | None = None
-            if os.path.exists(enc_path):
-                if self._encryption is not None:
-                    img_data = self._encryption.decrypt_file(enc_path)
-            elif os.path.exists(plain_path):
-                with open(plain_path, "rb") as fp_img:
-                    img_data = fp_img.read()
-
-            if img_data is None:
-                continue
-
-            dest_path = os.path.join(folder_path, safe_filename)
-            if not os.path.realpath(dest_path).startswith(resolved_folder_path):
-                logger.warning(f"Image path escapes output folder; skipping '{img_filename}'.")
-                continue
-            with open(dest_path, "wb") as fp_out:
-                fp_out.write(img_data)
+        self._write_ocr_images(session_dir, image_filenames, folder_path)
 
         abs_path = str(os.path.abspath(folder_path))
         print(f"OCR result saved to '{abs_path}'.")
