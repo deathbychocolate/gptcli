@@ -449,7 +449,6 @@ class ChatUser(Chat):
     @user_triggered_abort
     def prompt_multiline(self, prompt_text: str) -> str:
         """Prompt the user with multiline mode."""
-
         return str(
             self._session_multiline.prompt(
                 message=ANSI(f"{GRN}{prompt_text}{RST}"),
