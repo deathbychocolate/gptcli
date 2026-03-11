@@ -494,7 +494,8 @@ class ChatUser(Chat):
             content (str): The system/developer message content.
         """
         if not content or content.isspace():
-            return
+            return None
+
         message = self._message_factory.user_message(
             role=self._role_system,
             content=content,
@@ -504,17 +505,22 @@ class ChatUser(Chat):
         count: int = sum(1 for m in self._messages if m.is_system)
         print(f"{GRY}  System message added ({count} active, {message.tokens} tokens).{RST}")
 
+        return None
+
     def _display_system_messages(self) -> None:
         """Display all active system/developer messages with 1-based indices."""
         system_contents: list[str] = [m.content for m in self._messages if m.is_system]
         if not system_contents:
             print(f"{GRY}  No active system messages.{RST}")
-            return
+            return None
+
         for idx, content in enumerate(system_contents, start=1):
             preview: str = content.replace("\n", " ")
             if len(preview) > _PREVIEW_MAX_LENGTH:
                 preview = preview[: _PREVIEW_MAX_LENGTH - 3] + "..."
             print(f"{GRY}  [{idx}] {preview}{RST}")
+
+        return None
 
     def _process_system_clear(self, user_input: str) -> None:
         """Clear all system messages or a single one by index.
@@ -525,15 +531,19 @@ class ChatUser(Chat):
         parts: list[str] = user_input.strip().split(maxsplit=1)
         if len(parts) == 1:
             self._messages.flush_by_role({self._role_system})
-            return
+            return None
+
         try:
             index: int = int(parts[1])
         except ValueError:
             print(f"{RED}  Invalid index: '{parts[1]}'. Use a number, e.g. {self._commands_system_clear[0]} 2{RST}")
-            return
+            return None
+
         removed: bool = self._messages.remove_by_role_and_index(role=self._role_system, index=index - 1)
         if not removed:
             print(f"{RED}  No system message at index {index}.{RST}")
+
+        return None
 
     def _process_user_and_reply_messages(self, user_input: str) -> None:
         logger.info("Processing user and reply messages.")
