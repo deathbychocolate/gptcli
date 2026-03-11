@@ -86,18 +86,29 @@ class CommandCompleter(Completer):  # type: ignore[misc]
             dict[str, str]: A mapping of command strings to descriptions.
         """
         commands: dict[str, str] = {
+            ChatCommands.M.value: "Enter multiline mode",
             ChatCommands.MULT.value: "Enter multiline mode",
+            ChatCommands.CFG.value: "Show current config",
             ChatCommands.CONFIG.value: "Show current config",
+            ChatCommands.CLEAR.value: "Clear screen",
             ChatCommands.CLEAR_UNIX.value: "Clear screen",
+            ChatCommands.CLEAR_WINDOWS.value: "Clear screen",
+            ChatCommands.QUESTION_MARK.value: "Show help",
+            ChatCommands.H.value: "Show help",
             ChatCommands.HELP.value: "Show help",
+            ChatCommands.Q.value: "End program",
+            ChatCommands.E.value: "End program",
+            ChatCommands.EXIT.value: "End program",
             ChatCommands.QUIT.value: "End program",
         }
 
         if provider == ProviderNames.OPENAI.value:
+            commands[ChatCommands.DEV.value] = "Set developer message"
             commands[ChatCommands.DEVELOPER.value] = "Set developer message"
             commands[ChatCommands.DEV_CLEAR.value] = "Clear developer messages"
             commands[ChatCommands.DEV_SHOW.value] = "Show developer messages"
         elif provider == ProviderNames.MISTRAL.value:
+            commands[ChatCommands.SYS.value] = "Set system message"
             commands[ChatCommands.SYSTEM.value] = "Set system message"
             commands[ChatCommands.SYS_CLEAR.value] = "Clear system messages"
             commands[ChatCommands.SYS_SHOW.value] = "Show system messages"
@@ -147,10 +158,11 @@ class CommandAutoSuggest(AutoSuggest):  # type: ignore[misc]
         text: str = document.text_before_cursor
         if not text.startswith("/"):
             return None
-        for command in self._commands:
-            if command.startswith(text) and command != text:
-                return Suggestion(command[len(text) :])
-        return None
+        candidates = [cmd for cmd in self._commands if cmd.startswith(text) and cmd != text]
+        if not candidates:
+            return None
+        best = min(candidates, key=len)
+        return Suggestion(best[len(text) :])
 
 
 class Chat:

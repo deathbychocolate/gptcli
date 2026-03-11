@@ -138,6 +138,7 @@ class TestCommandCompleter:
         def test_slash_d_narrows_to_dev_commands(self, openai_completer: CommandCompleter) -> None:
             results = TestCommandCompleter._complete(openai_completer, "/d")
             assert all(r.startswith("/d") for r in results)
+            assert "/dev" in results
             assert "/developer" in results
             assert "/dev-clear" in results
             assert "/dev-show" in results
@@ -183,22 +184,41 @@ class TestCommandCompleter:
     class TestCommandsForProvider:
         """Tests for the commands_for_provider static method."""
 
-        def test_common_commands_present_for_openai(self) -> None:
+        def test_common_commands_present(self) -> None:
+            for provider in (ProviderNames.OPENAI.value, ProviderNames.MISTRAL.value):
+                commands = CommandCompleter.commands_for_provider(provider)
+                assert "/help" in commands
+                assert "/quit" in commands
+                assert "/mult" in commands
+
+        def test_shorthand_commands_present(self) -> None:
+            for provider in (ProviderNames.OPENAI.value, ProviderNames.MISTRAL.value):
+                commands = CommandCompleter.commands_for_provider(provider)
+                assert "/h" in commands
+                assert "/?" in commands
+                assert "/q" in commands
+                assert "/e" in commands
+                assert "/exit" in commands
+                assert "/m" in commands
+                assert "/c" in commands
+                assert "/clear" in commands
+                assert "/cls" in commands
+                assert "/cfg" in commands
+
+        def test_openai_includes_dev_shorthand(self) -> None:
             commands = CommandCompleter.commands_for_provider(ProviderNames.OPENAI.value)
-            assert "/help" in commands
-            assert "/quit" in commands
-            assert "/mult" in commands
+            assert "/dev" in commands
 
-        def test_common_commands_present_for_mistral(self) -> None:
+        def test_mistral_includes_sys_shorthand(self) -> None:
             commands = CommandCompleter.commands_for_provider(ProviderNames.MISTRAL.value)
-            assert "/help" in commands
-            assert "/quit" in commands
-            assert "/mult" in commands
+            assert "/sys" in commands
 
-        def test_unknown_provider_has_no_system_commands(self) -> None:
+        def test_unknown_provider_excludes_provider_specific_commands(self) -> None:
             commands = CommandCompleter.commands_for_provider("unknown")
             assert "/developer" not in commands
+            assert "/dev" not in commands
             assert "/system" not in commands
+            assert "/sys" not in commands
 
 
 class TestLongestCommonPrefix:
