@@ -17,7 +17,7 @@ GPTCLI_PROVIDER_OPENAI_STORAGE_OCR_DIR: str = os.path.join(GPTCLI_PROVIDER_OPENA
 GPTCLI_PROVIDER_OPENAI_KEYS_DIR: str = os.path.join(GPTCLI_PROVIDER_OPENAI, "keys")
 GPTCLI_PROVIDER_OPENAI_KEY_FILE: str = os.path.join(GPTCLI_PROVIDER_OPENAI_KEYS_DIR, "main")
 
-OPENAI_API_KEY: str = "DBC_GPTCLI_OPENAI_API_KEY"  # The key we use to search in os.environ.
+OPENAI_API_KEY: str = "DBC_GPTCLI_OPENAI_API_KEY"  # CI/test-only: env var name for integration tests.
 OPENAI_ENDPOINT_CHAT_COMPLETIONS: str = "https://api.openai.com/v1/chat/completions"
 
 
@@ -30,7 +30,7 @@ GPTCLI_PROVIDER_MISTRAL_STORAGE_OCR_DIR: str = os.path.join(GPTCLI_PROVIDER_MIST
 GPTCLI_PROVIDER_MISTRAL_KEYS_DIR: str = os.path.join(GPTCLI_PROVIDER_MISTRAL, "keys")
 GPTCLI_PROVIDER_MISTRAL_KEY_FILE: str = os.path.join(GPTCLI_PROVIDER_MISTRAL_KEYS_DIR, "main")
 
-MISTRAL_API_KEY: str = "DBC_GPTCLI_MISTRAL_API_KEY"  # The key we use to search in os.environ.
+MISTRAL_API_KEY: str = "DBC_GPTCLI_MISTRAL_API_KEY"  # CI/test-only: env var name for integration tests.
 MISTRAL_ENDPOINT_CHAT_COMPLETIONS: str = "https://api.mistral.ai/v1/chat/completions"
 
 

@@ -165,25 +165,8 @@ def _read_encrypted_key(filepath: str, encryption: Encryption) -> str:
     return api_key_bytes.decode("utf-8")
 
 
-def _read_plaintext_key(filepath: str) -> str:
-    """Read the API key from a plaintext key file.
-
-    Args:
-        filepath (str): Path to the plaintext key file.
-
-    Returns:
-        str: The API key, or empty string if the file is not found.
-    """
-    try:
-        with open(filepath, "r", encoding="utf8") as fp:
-            return fp.read()
-    except FileNotFoundError:
-        logger.warning("File storing API key not found. Skipping loading API from local storage.")
-        return ""
-
-
 def load_api_key(args: Namespace, encryption: Encryption | None = None) -> str:
-    """Load the API key from CLI arguments, encrypted file, or plaintext file.
+    """Load the API key from CLI arguments or encrypted file.
 
     Args:
         args (Namespace): The parsed CLI arguments.
@@ -200,8 +183,8 @@ def load_api_key(args: Namespace, encryption: Encryption | None = None) -> str:
         enc_file: str = file + ".enc"
         if os.path.exists(enc_file) and encryption:
             return _read_encrypted_key(enc_file, encryption)
-        else:
-            return _read_plaintext_key(file)
+        logger.warning("Encrypted key file not found or encryption not initialized.")
+        return ""
     elif "key" in args and str(args.key).isascii():
         return str(args.key)
 

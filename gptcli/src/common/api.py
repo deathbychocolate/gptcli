@@ -23,12 +23,6 @@ from prompt_toolkit.formatted_text import ANSI
 from requests import Response, Session
 from requests.exceptions import ReadTimeout
 
-from gptcli.constants import (
-    GPTCLI_PROVIDER_MISTRAL_KEY_FILE,
-    GPTCLI_PROVIDER_OPENAI_KEY_FILE,
-    MISTRAL_API_KEY,
-    OPENAI_API_KEY,
-)
 from gptcli.src.common.constants import (
     BLU,
     GRN,
@@ -162,35 +156,20 @@ class EndpointHelper:
 
     def __init__(self, provider: str, api_key: str = "") -> None:
         self._provider: str = provider
-        self._resolved_api_key: str = api_key
-        self._api_key_env_var: str = ""
-        self._api_key_file: str = ""
+        self._api_key: str = api_key
         self._url: str = ""
 
         if provider == MISTRAL:
-            self._api_key_env_var = MISTRAL_API_KEY
-            self._api_key_file = GPTCLI_PROVIDER_MISTRAL_KEY_FILE
             self._url = "https://api.mistral.ai/v1/chat/completions"
         elif provider == OPENAI:
-            self._api_key_env_var = OPENAI_API_KEY
-            self._api_key_file = GPTCLI_PROVIDER_OPENAI_KEY_FILE
             self._url = "https://api.openai.com/v1/chat/completions"
         else:
             raise NotImplementedError(f"Provider '{self._provider}' not yet supported.")
 
-    def _resolve_api_key(self) -> str:
-        """Resolve the API key, preferring the directly provided key over file-based fallback.
-
-        Returns:
-            str: The resolved API key.
-        """
-        if self._resolved_api_key:
-            return self._resolved_api_key
-
-        logger.info("API key not provided directly, reading from file.")
-        with open(self._api_key_file, "r", encoding="utf8") as fp:
-            self._resolved_api_key = fp.read()
-        return self._resolved_api_key
+    @property
+    def api_key(self) -> str:
+        """The API key provided at construction time."""
+        return self._api_key
 
     def _check_for_http_errors(self, response: Response | None) -> bool:
         """Check for common HTTP errors when calling the provider endpoint.
@@ -302,7 +281,7 @@ class Chat(EndpointHelper):
         """
         logger.info("Sending message to API endpoint.")
 
-        key: str = self._resolve_api_key()
+        key: str = self.api_key
         message: Message | None = self._send_request(key=key)
 
         if message is None:
@@ -412,7 +391,7 @@ class SingleExchange(EndpointHelper):
         """
         logger.info("Sending message to provider API.")
 
-        key: str = self._resolve_api_key()
+        key: str = self.api_key
         response: Response = self._send_request(key=key)
 
         return response

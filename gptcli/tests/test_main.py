@@ -12,7 +12,6 @@ from gptcli.constants import (
 from gptcli.main import (
     _key_file_for_provider,
     _read_encrypted_key,
-    _read_plaintext_key,
 )
 from gptcli.src.common.constants import ProviderNames
 
@@ -55,22 +54,4 @@ class TestReadEncryptedKey:
 
         result = _read_encrypted_key(filepath, mock_encryption)
 
-        assert result == ""
-
-
-class TestReadPlaintextKey:
-    """Tests for _read_plaintext_key()."""
-
-    def test_returns_key_from_file(self, tmp_path: str) -> None:
-        filepath = os.path.join(str(tmp_path), "key")
-        expected_key = "sk-test-api-key-456"
-        with open(filepath, "w", encoding="utf8") as f:
-            f.write(expected_key)
-
-        result = _read_plaintext_key(filepath)
-
-        assert result == expected_key
-
-    def test_returns_empty_string_when_file_not_found(self) -> None:
-        result = _read_plaintext_key("/nonexistent/path/key")
         assert result == ""
