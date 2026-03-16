@@ -2032,6 +2032,38 @@ class TestPromptForDuplicateDocument:
         result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
         assert result == "skip"
 
+    @patch("gptcli.src.modes.ocr.prompt", return_value="!1")
+    def test_should_persist_choice_when_bang_prefix_used_with_number(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "use"
+        assert ocr_instance._on_duplicate == "use"
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="!use")
+    def test_should_persist_choice_when_bang_prefix_used_with_name(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "use"
+        assert ocr_instance._on_duplicate == "use"
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="1")
+    def test_should_not_persist_choice_without_bang_prefix(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "use"
+        assert ocr_instance._on_duplicate == ""
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="1")
+    def test_should_inform_user_about_bang_prefix(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        captured = capsys.readouterr()
+        assert "!" in captured.out
+
 
 # =============================================================================
 # Unit Tests: _generate_markdown_from (duplicate detection flow)
@@ -2203,3 +2235,31 @@ class TestGenerateMarkdownFrom:
         ocr_instance._storage = MagicMock()
         ocr_instance._generate_markdown_from("not-a-valid-input")
         ocr_instance._storage.store_ocr_result.assert_not_called()
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_prompt_for_duplicate_document", return_value="use")
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_not_prompt_for_second_duplicate_after_persisted_choice(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        mock_prompt: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._on_duplicate = ""
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._storage.load_ocr_session_data.return_value = ("# Cached", [], 1)
+
+        # First call prompts and sets _on_duplicate via bang prefix
+        ocr_instance._generate_markdown_from("/fake/doc1.pdf")
+        mock_prompt.assert_called_once()
+
+        # Simulate the bang prefix having set _on_duplicate
+        ocr_instance._on_duplicate = "use"
+
+        # Second call should NOT prompt again
+        ocr_instance._generate_markdown_from("/fake/doc2.pdf")
+        mock_prompt.assert_called_once()  # still only one call total

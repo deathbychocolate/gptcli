@@ -352,29 +352,39 @@ class OpticalCharacterRecognition:
         choices = [*choice_use, *choice_overwrite, *choice_new, *choice_skip]
 
         print(f"\nDocument '{document}' has already been processed.")
-        print("\nChoose and action:")
+        print("\nChoose an action:")
         print(f"  1 | {DuplicateAction.USE.value:<10}  Use existing cached result.")
         print(f"  2 | {DuplicateAction.OVERWRITE.value:<10}  Overwrite existing session with new OCR.")
         print(f"  3 | {DuplicateAction.NEW.value:<10}  Create new session alongside existing.")
         print(f"  4 | {DuplicateAction.SKIP.value:<10}  Skip this document.")
         print("\nTip: use --on-duplicate to automate this choice.")
+        print("Tip: prefix '!' to apply to all remaining (e.g. '!1' or '!use').")
 
         completer = WordCompleter(choices, ignore_case=True)
 
         while True:
             try:
-                choice = prompt(message=ANSI(f"{GRN}>>>{RST} "), completer=completer).strip().lower()
+                raw_choice = prompt(message=ANSI(f"{GRN}>>>{RST} "), completer=completer).strip().lower()
+                persist = raw_choice.startswith("!")
+                choice = raw_choice.lstrip("!")
 
+                action = ""
                 if choice in choice_use:
-                    return DuplicateAction.USE.value
+                    action = DuplicateAction.USE.value
                 elif choice in choice_overwrite:
-                    return DuplicateAction.OVERWRITE.value
+                    action = DuplicateAction.OVERWRITE.value
                 elif choice in choice_new:
-                    return DuplicateAction.NEW.value
+                    action = DuplicateAction.NEW.value
                 elif choice in choice_skip:
-                    return DuplicateAction.SKIP.value
+                    action = DuplicateAction.SKIP.value
                 else:
                     print("Invalid choice. Please enter 1-4 or the action name.")
+                    continue
+
+                if persist:
+                    self._on_duplicate = action
+
+                return action
             except (EOFError, KeyboardInterrupt):
                 return DuplicateAction.SKIP.value
 
