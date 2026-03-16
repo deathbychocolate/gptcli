@@ -1,3 +1,26 @@
+## 0.26.0 (2026-03-16)
+
+### Feat
+
+- Add option to persist an action on all files.
+- Check storage for file before calling OCR endpoint.
+- Add shorthand commands to command completer, add coverage, and refactor test class.
+- Revamp command autocompleter.
+
+### Fix
+
+- Remove ability to write API keys in cleartext.
+- Vertical alignment in search.
+- Add missing labels and styles.
+
+### Refactor
+
+- Improve readability in storage.
+- Improve readability in main.
+- Remove unnecessary encryption line.
+- Remove migration process.
+- Extract hardcoded styles.
+
 ## 0.25.1 (2026-03-09)
 
 ### Fix
