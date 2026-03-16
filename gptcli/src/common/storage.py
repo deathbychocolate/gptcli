@@ -199,6 +199,45 @@ class Storage:
         entries: list[dict[str, Any]] = json.loads(content)
         return entries
 
+    def find_ocr_sessions_by_hash(self, content_hash: str) -> list[str]:
+        """Find OCR session UUIDs that match a given content hash.
+
+        Scans all OCR session directories for metadata containing a matching
+        ``source.hash`` value. Sessions without a hash field (legacy) or with
+        unreadable metadata are silently skipped.
+
+        Args:
+            content_hash (str): The content hash fingerprint to search for.
+
+        Returns:
+            list[str]: List of session UUIDs whose metadata hash matches.
+        """
+        sessions: list[str] = []
+
+        if not os.path.exists(self._ocr_dir):
+            return sessions
+
+        try:
+            session_dirs = [d for d in os.listdir(self._ocr_dir) if os.path.isdir(os.path.join(self._ocr_dir, d))]
+        except (OSError, PermissionError):
+            return sessions
+
+        for session_uuid in session_dirs:
+            session_dir = os.path.join(self._ocr_dir, session_uuid)
+            metadata_file = os.path.join(session_dir, GPTCLI_METADATA_FILENAME)
+
+            try:
+                metadata_content = self._read_text(metadata_file)
+                if metadata_content:
+                    metadata = json.loads(metadata_content)
+                    stored_hash = metadata.get("source", {}).get("hash")
+                    if stored_hash and stored_hash == content_hash:
+                        sessions.append(session_uuid)
+            except (json.JSONDecodeError, OSError, KeyError):
+                continue
+
+        return sessions
+
     def _write_manifest(self, storage_dir: str, entries: list[dict[str, Any]]) -> None:
         """Write the manifest to a storage directory.
 
@@ -399,6 +438,37 @@ class Storage:
                 return candidate
             counter += 1
 
+    def _write_images_safely(self, target_dir: str, image_data: list[tuple[str, bytes]]) -> list[str]:
+        """Write image files to a directory with path traversal checks.
+
+        Validates each filename to prevent directory traversal attacks.
+        Skips images with empty or escaping filenames.
+
+        Args:
+            target_dir (str): The directory to write images into.
+            image_data (list[tuple[str, bytes]]): List of (filename, bytes) tuples.
+
+        Returns:
+            list[str]: List of safely written image filenames.
+        """
+        resolved_dir = os.path.realpath(target_dir)
+        image_filenames: list[str] = []
+
+        for filename, data in image_data:
+            safe_filename = path.basename(filename)
+            if not safe_filename:
+                logger.warning("Possible malicious filename detected; path traversal.")
+                logger.warning(f"Filename of: '{filename}'")
+                continue
+            image_filepath = path.join(target_dir, safe_filename)
+            if not os.path.realpath(image_filepath).startswith(resolved_dir):
+                logger.warning(f"Image path escapes session folder; skipping '{filename}'.")
+                continue
+            self._write_image(image_filepath, data)
+            image_filenames.append(safe_filename)
+
+        return image_filenames
+
     def _build_ocr_metadata(
         self,
         source: str,
@@ -409,6 +479,7 @@ class Storage:
         images: list[str],
         session_uuid: str,
         created: float,
+        content_hash: str = "",
     ) -> dict[str, Any]:
         """Build a metadata dictionary for an OCR result.
 
@@ -421,6 +492,7 @@ class Storage:
             images (list[str]): List of generated image filenames.
             session_uuid (str): The UUID of the OCR session.
             created (float): The creation timestamp (epoch seconds).
+            content_hash (str): Hash fingerprint of the source document content.
 
         Returns:
             dict[str, Any]: A dictionary containing source info, OCR processing details,
@@ -434,6 +506,7 @@ class Storage:
                 "input": source,
                 "input_type": input_type,
                 "filename": filename,
+                "hash": content_hash,
             },
             "ocr": {
                 "created": created,
@@ -456,6 +529,7 @@ class Storage:
         model: str,
         page_count: int,
         image_data: list[tuple[str, bytes]],
+        content_hash: str = "",
     ) -> str:
         """Store an OCR processing result to local storage.
 
@@ -472,6 +546,7 @@ class Storage:
             model: The OCR model used for processing.
             page_count: Number of pages processed from the source.
             image_data: List of (filename, bytes) tuples for extracted images.
+            content_hash: Hash fingerprint of the source document content.
 
         Returns:
             The full path to the created session directory.
@@ -485,21 +560,7 @@ class Storage:
         markdown_filepath = path.join(session_dir, markdown_filename)
         self._write_text(markdown_filepath, markdown_content)
 
-        # Get filename safely.
-        resolved_session_dir = os.path.realpath(session_dir)
-        image_filenames: list[str] = []
-        for filename, data in image_data:
-            safe_filename = path.basename(filename)
-            if not safe_filename:
-                logger.warning("Possible malicious filename detected; path traversal.")
-                logger.warning(f"Filename of: '{filename}'")
-                continue
-            image_filepath = path.join(session_dir, safe_filename)
-            if not os.path.realpath(image_filepath).startswith(resolved_session_dir):
-                logger.warning(f"Image path escapes session folder; skipping '{filename}'.")
-                continue
-            self._write_image(image_filepath, data)
-            image_filenames.append(safe_filename)
+        image_filenames = self._write_images_safely(session_dir, image_data)
 
         metadata = self._build_ocr_metadata(
             source=source,
@@ -510,11 +571,136 @@ class Storage:
             images=image_filenames,
             session_uuid=session_uuid,
             created=created,
+            content_hash=content_hash,
         )
         metadata_filepath = path.join(session_dir, GPTCLI_METADATA_FILENAME)
         self._write_text(metadata_filepath, json.dumps(metadata, ensure_ascii=False))
 
         self._append_to_manifest(self._ocr_dir, session_uuid, created)
+
+        return session_dir
+
+    def load_ocr_session_data(self, session_uuid: str) -> tuple[str, list[tuple[str, bytes]], int] | None:
+        """Load the full data from an OCR session.
+
+        Args:
+            session_uuid (str): The UUID of the OCR session to load.
+
+        Returns:
+            tuple[str, list[tuple[str, bytes]], int] | None: A tuple of (markdown_content,
+                image_data, page_count), or None if the session cannot be loaded.
+        """
+        session_dir = path.join(self._ocr_dir, session_uuid)
+        if not os.path.isdir(session_dir):
+            return None
+
+        metadata_file = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        raw_metadata = self._read_text(metadata_file)
+        if raw_metadata is None:
+            return None
+
+        try:
+            metadata: dict[str, Any] = json.loads(raw_metadata)
+        except json.JSONDecodeError:
+            return None
+
+        markdown_path = path.join(session_dir, self._FALLBACK_MARKDOWN_FILENAME)
+        markdown_content = self._read_text(markdown_path)
+        if markdown_content is None:
+            return None
+
+        page_count: int = metadata.get("ocr", {}).get("page_count", 1)
+        image_filenames: list[str] = metadata.get("output", {}).get("images", [])
+
+        image_data: list[tuple[str, bytes]] = []
+        for img_filename in image_filenames:
+            img_bytes = self._read_image(path.join(session_dir, img_filename))
+            if img_bytes is not None:
+                image_data.append((img_filename, img_bytes))
+
+        return markdown_content, image_data, page_count
+
+    def overwrite_ocr_result(
+        self,
+        session_uuid: str,
+        source: str,
+        markdown_content: str,
+        model: str,
+        page_count: int,
+        image_data: list[tuple[str, bytes]],
+        content_hash: str = "",
+    ) -> str:
+        """Overwrite an existing OCR session with new content.
+
+        Replaces the markdown file, images, and metadata in the existing session
+        directory. Updates the manifest ``created`` timestamp.
+
+        Args:
+            session_uuid (str): The UUID of the existing session to overwrite.
+            source (str): The original input source (URL or filepath).
+            markdown_content (str): The new Markdown text content.
+            model (str): The OCR model used for processing.
+            page_count (int): Number of pages processed.
+            image_data (list[tuple[str, bytes]]): List of (filename, bytes) tuples for images.
+            content_hash (str): Hash fingerprint of the source document content.
+
+        Returns:
+            str: The full path to the session directory.
+
+        Raises:
+            StorageEmpty: If no session directory exists for the given UUID.
+        """
+        session_dir = path.join(self._ocr_dir, session_uuid)
+        if not os.path.isdir(session_dir):
+            raise StorageEmpty(f"No OCR session found for UUID {session_uuid}")
+
+        # Remove old images
+        metadata_file = path.join(session_dir, GPTCLI_METADATA_FILENAME)
+        raw_metadata = self._read_text(metadata_file)
+        if raw_metadata:
+            try:
+                old_metadata: dict[str, Any] = json.loads(raw_metadata)
+                old_images: list[str] = old_metadata.get("output", {}).get("images", [])
+                for old_img in old_images:
+                    for suffix in ("", ".enc"):
+                        try:
+                            os.remove(path.join(session_dir, old_img + suffix))
+                        except FileNotFoundError:
+                            pass
+            except json.JSONDecodeError:
+                pass
+
+        # Write new markdown
+        original_filename = self.derive_markdown_filename_from_source(source)
+        markdown_filename = self._FALLBACK_MARKDOWN_FILENAME
+        markdown_filepath = path.join(session_dir, markdown_filename)
+        self._write_text(markdown_filepath, markdown_content)
+
+        # Write new images
+        image_filenames = self._write_images_safely(session_dir, image_data)
+
+        # Build and write new metadata
+        created = time()
+        metadata = self._build_ocr_metadata(
+            source=source,
+            model=model,
+            page_count=page_count,
+            markdown_file=markdown_filename,
+            original_filename=original_filename,
+            images=image_filenames,
+            session_uuid=session_uuid,
+            created=created,
+            content_hash=content_hash,
+        )
+        self._write_text(metadata_file, json.dumps(metadata, ensure_ascii=False))
+
+        # Update manifest created timestamp
+        entries = self._read_manifest(self._ocr_dir)
+        for entry in entries:
+            if entry["uuid"] == session_uuid:
+                entry["created"] = created
+                break
+        self._write_manifest(self._ocr_dir, entries)
 
         return session_dir
 

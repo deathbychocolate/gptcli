@@ -619,9 +619,10 @@ class TestPerformOcrFromUrlUnit:
 # =============================================================================
 class TestStartUnit:
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
-    def test_returns_none_type(self, _mock_encode: MagicMock, mock_post: MagicMock) -> None:
+    def test_returns_none_type(self, _mock_encode: MagicMock, mock_post: MagicMock, _mock_fp: MagicMock) -> None:
         mock_post.return_value.content = b"""{
             "pages": [{"index": 0, "markdown": "Text", "images": []}]
         }"""
@@ -643,10 +644,11 @@ class TestStartUnit:
 
         assert result is None
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_display_true_prints_output(
-        self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
+        self, _mock_encode: MagicMock, mock_post: MagicMock, _mock_fp: MagicMock, capsys: pytest.CaptureFixture[str]
     ) -> None:
         mock_post.return_value.content = b"""{
             "pages": [{"index": 0, "markdown": "Printed content", "images": []}]
@@ -670,10 +672,11 @@ class TestStartUnit:
         captured = capsys.readouterr()
         assert "Printed content" in captured.out
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_display_false_does_not_print(
-        self, _mock_encode: MagicMock, mock_post: MagicMock, capsys: pytest.CaptureFixture[str]
+        self, _mock_encode: MagicMock, mock_post: MagicMock, _mock_fp: MagicMock, capsys: pytest.CaptureFixture[str]
     ) -> None:
         mock_post.return_value.content = b"""{
             "pages": [{"index": 0, "markdown": "Should not print", "images": []}]
@@ -732,6 +735,7 @@ class TestStartWithStoreFlag:
             "utf8"
         )
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
@@ -740,10 +744,12 @@ class TestStartWithStoreFlag:
         _mock_encode: MagicMock,
         mock_storage: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response_with_image: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response_with_image
         mock_storage = mock_storage.return_value
+        mock_storage.find_ocr_sessions_by_hash.return_value = []
 
         with patch("os.path.exists", return_value=True):
             ocr = OpticalCharacterRecognition(
@@ -762,6 +768,7 @@ class TestStartWithStoreFlag:
 
         mock_storage.store_ocr_result.assert_called_once()
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
@@ -770,10 +777,12 @@ class TestStartWithStoreFlag:
         _mock_encode: MagicMock,
         mock_storage: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response_with_image: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response_with_image
         mock_storage = mock_storage.return_value
+        mock_storage.find_ocr_sessions_by_hash.return_value = []
 
         with patch("os.path.exists", return_value=True):
             ocr = OpticalCharacterRecognition(
@@ -793,6 +802,7 @@ class TestStartWithStoreFlag:
         call_kwargs = mock_storage.store_ocr_result.call_args.kwargs
         assert call_kwargs["source"] == "/fake/document.pdf"
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
@@ -801,10 +811,12 @@ class TestStartWithStoreFlag:
         _mock_encode: MagicMock,
         mock_storage: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response_with_image: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response_with_image
         mock_storage = mock_storage.return_value
+        mock_storage.find_ocr_sessions_by_hash.return_value = []
 
         with patch("os.path.exists", return_value=True):
             ocr = OpticalCharacterRecognition(
@@ -824,6 +836,7 @@ class TestStartWithStoreFlag:
         call_kwargs = mock_storage.store_ocr_result.call_args.kwargs
         assert call_kwargs["page_count"] == 2
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
@@ -832,10 +845,12 @@ class TestStartWithStoreFlag:
         _mock_encode: MagicMock,
         mock_storage: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response_with_image: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response_with_image
         mock_storage = mock_storage.return_value
+        mock_storage.find_ocr_sessions_by_hash.return_value = []
 
         with patch("os.path.exists", return_value=True):
             ocr = OpticalCharacterRecognition(
@@ -856,6 +871,7 @@ class TestStartWithStoreFlag:
         assert len(call_kwargs["image_data"]) == 1
         assert call_kwargs["image_data"][0][0] == "img_001.png"
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch("gptcli.src.modes.ocr.Storage")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
@@ -864,10 +880,12 @@ class TestStartWithStoreFlag:
         _mock_encode: MagicMock,
         mock_storage: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response_with_image: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response_with_image
         mock_storage = mock_storage.return_value
+        mock_storage.find_ocr_sessions_by_hash.return_value = []
 
         with patch("os.path.exists", return_value=True):
             ocr = OpticalCharacterRecognition(
@@ -905,12 +923,14 @@ class TestStartWithFilelist:
         filelist.write_text("/fake/doc1.pdf\n/fake/doc2.pdf\n")
         return filelist
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_processes_documents_from_filelist(
         self,
         _mock_encode: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response: bytes,
         filelist_file: Path,
     ) -> None:
@@ -933,12 +953,14 @@ class TestStartWithFilelist:
 
         assert mock_post.call_count == 2
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_empty_filelist_string_does_not_open_file(
         self,
         _mock_encode: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response: bytes,
     ) -> None:
         mock_post.return_value.content = mock_ocr_response
@@ -960,12 +982,14 @@ class TestStartWithFilelist:
 
         assert mock_post.call_count == 1
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch("gptcli.src.modes.ocr.post")
     @patch.object(OpticalCharacterRecognition, "_encode_pdf_to_base64", return_value="base64content")
     def test_processes_both_inputs_and_filelist(
         self,
         _mock_encode: MagicMock,
         mock_post: MagicMock,
+        _mock_fp: MagicMock,
         mock_ocr_response: bytes,
         filelist_file: Path,
     ) -> None:
@@ -1736,10 +1760,11 @@ class TestStartWithOutputDir:
     def _mock_ocr_result() -> tuple[str, list[tuple[str, bytes]], int]:
         return ("Content", [], 1)
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_default_output_dir_writes_folder(
-        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, _mock_fp: MagicMock, tmp_path: Path
     ) -> None:
         mock_ocr.return_value = self._mock_ocr_result()
         ocr = OpticalCharacterRecognition(
@@ -1760,10 +1785,11 @@ class TestStartWithOutputDir:
         assert folder.is_dir()
         assert (folder / "report.md").is_file()
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_none_output_dir_skips_writing(
-        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, _mock_fp: MagicMock, tmp_path: Path
     ) -> None:
         mock_ocr.return_value = self._mock_ocr_result()
         ocr = OpticalCharacterRecognition(
@@ -1782,10 +1808,11 @@ class TestStartWithOutputDir:
 
         assert not list(tmp_path.iterdir())
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_output_dir_independent_of_store(
-        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, _mock_fp: MagicMock, tmp_path: Path
     ) -> None:
         mock_ocr.return_value = self._mock_ocr_result()
 
@@ -1808,10 +1835,11 @@ class TestStartWithOutputDir:
         assert folder.is_dir()
         mock_store.assert_not_called()
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_multiple_inputs_create_multiple_folders(
-        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, _mock_fp: MagicMock, tmp_path: Path
     ) -> None:
         mock_ocr.return_value = self._mock_ocr_result()
         ocr = OpticalCharacterRecognition(
@@ -1831,10 +1859,11 @@ class TestStartWithOutputDir:
         assert (tmp_path / "gptcli__mistral__ocr__report").is_dir()
         assert (tmp_path / "gptcli__mistral__ocr__invoice").is_dir()
 
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="fake-hash")
     @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath")
     @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
     def test_include_images_false_writes_no_image_files(
-        self, _mock_classify: MagicMock, mock_ocr: MagicMock, tmp_path: Path
+        self, _mock_classify: MagicMock, mock_ocr: MagicMock, _mock_fp: MagicMock, tmp_path: Path
     ) -> None:
         mock_ocr.return_value = ("Content", [], 1)
         ocr = OpticalCharacterRecognition(
@@ -1875,3 +1904,302 @@ class TestStartWithOutputDir:
         )
         ocr.start()
         mock_storage_instance.display_last_ocr_result.assert_called_once()
+
+
+# =============================================================================
+# Unit Tests: _get_document_fingerprint
+# =============================================================================
+class TestGetDocumentFingerprint:
+
+    @pytest.fixture
+    def ocr_instance(self) -> OpticalCharacterRecognition:
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
+
+    def test_should_produce_sha256_based_fingerprint_for_local_file(
+        self, ocr_instance: OpticalCharacterRecognition, tmp_path: Path
+    ) -> None:
+        test_file = tmp_path / "test.pdf"
+        test_file.write_bytes(b"test content")
+        result = ocr_instance._get_document_fingerprint(str(test_file))
+        assert result.startswith("file:")
+        assert len(result) > 10
+
+    def test_should_use_url_as_fingerprint_for_remote_documents(
+        self, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        url = "https://example.com/doc.pdf"
+        result = ocr_instance._get_document_fingerprint(url)
+        assert result == url
+
+    def test_should_raise_error_when_local_file_does_not_exist(
+        self, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        with pytest.raises(FileNotFoundError):
+            ocr_instance._get_document_fingerprint("/nonexistent/file.pdf", input_type=InputType.FILEPATH)
+
+    def test_should_produce_identical_fingerprints_for_identical_content(
+        self, ocr_instance: OpticalCharacterRecognition, tmp_path: Path
+    ) -> None:
+        file_a = tmp_path / "a.pdf"
+        file_b = tmp_path / "b.pdf"
+        file_a.write_bytes(b"identical content")
+        file_b.write_bytes(b"identical content")
+        assert ocr_instance._get_document_fingerprint(str(file_a)) == ocr_instance._get_document_fingerprint(
+            str(file_b)
+        )
+
+
+# =============================================================================
+# Unit Tests: _prompt_for_duplicate_document
+# =============================================================================
+class TestPromptForDuplicateDocument:
+
+    @pytest.fixture
+    def ocr_instance(self) -> OpticalCharacterRecognition:
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=False,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="1")
+    def test_should_map_numeric_input_1_to_use_action(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "use"
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="2")
+    def test_should_map_numeric_input_2_to_overwrite_action(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "overwrite"
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="3")
+    def test_should_map_numeric_input_3_to_new_action(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "new"
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="4")
+    def test_should_map_numeric_input_4_to_skip_action(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "skip"
+
+    @patch("gptcli.src.modes.ocr.prompt")
+    def test_should_accept_action_names_as_input(
+        self, mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        for name in ("use", "overwrite", "new", "skip"):
+            mock_prompt.return_value = name
+            result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+            assert result == name
+
+    @patch("gptcli.src.modes.ocr.prompt", return_value="1")
+    def test_should_inform_user_about_on_duplicate_flag(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        captured = capsys.readouterr()
+        assert "--on-duplicate" in captured.out
+
+    @patch("gptcli.src.modes.ocr.prompt", side_effect=EOFError)
+    def test_should_default_to_skip_when_user_cancels(
+        self, _mock_prompt: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        result = ocr_instance._prompt_for_duplicate_document("/fake/doc.pdf")
+        assert result == "skip"
+
+
+# =============================================================================
+# Unit Tests: _generate_markdown_from (duplicate detection flow)
+# =============================================================================
+class TestGenerateMarkdownFrom:
+
+    @pytest.fixture
+    def ocr_instance(self) -> OpticalCharacterRecognition:
+        return OpticalCharacterRecognition(
+            model=MistralModelsOcr.default(),
+            provider=ProviderNames.MISTRAL.value,
+            store=True,
+            display_last=False,
+            display=False,
+            filelist="",
+            output_dir="",
+            no_output_dir=True,
+            inputs=[],
+            api_key="fake-key",
+        )
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath", return_value=("# New", [], 1))
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_perform_ocr_when_document_is_new(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        mock_ocr: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = []
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        mock_ocr.assert_called_once()
+        ocr_instance._storage.store_ocr_result.assert_called_once()
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_load_cached_result_when_duplicate_and_on_duplicate_is_use(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._on_duplicate = "use"
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._storage.load_ocr_session_data.return_value = ("# Cached", [("img.png", b"data")], 2)
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        ocr_instance._storage.load_ocr_session_data.assert_called_once_with("session-1")
+        ocr_instance._storage.store_ocr_result.assert_not_called()
+
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_write_cached_result_to_output_dir(
+        self, _mock_classify: MagicMock, _mock_fp: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        ocr_instance._on_duplicate = "use"
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._storage.load_ocr_session_data.return_value = ("# Cached", [("img.png", b"data")], 2)
+        with patch.object(ocr_instance, "_write_to_output_dir") as mock_write:
+            ocr_instance._generate_markdown_from("/fake/doc.pdf")
+            mock_write.assert_called_once_with(
+                document="/fake/doc.pdf", markdown_content="# Cached", image_data=[("img.png", b"data")]
+            )
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath", return_value=("# Fresh", [], 3))
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_re_ocr_and_overwrite_when_on_duplicate_is_overwrite(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        mock_ocr: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._on_duplicate = "overwrite"
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        mock_ocr.assert_called_once()
+        ocr_instance._storage.overwrite_ocr_result.assert_called_once()
+        ocr_instance._storage.store_ocr_result.assert_not_called()
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath", return_value=("# Fresh", [], 3))
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_re_ocr_and_save_separately_when_on_duplicate_is_new(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        mock_ocr: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._on_duplicate = "new"
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        mock_ocr.assert_called_once()
+        ocr_instance._storage.store_ocr_result.assert_called_once()
+        ocr_instance._storage.overwrite_ocr_result.assert_not_called()
+
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_skip_document_when_on_duplicate_is_skip(
+        self, _mock_classify: MagicMock, _mock_fp: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        ocr_instance._on_duplicate = "skip"
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        with patch.object(ocr_instance, "_perform_ocr_from_filepath") as mock_ocr:
+            ocr_instance._generate_markdown_from("/fake/doc.pdf")
+            mock_ocr.assert_not_called()
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath", return_value=("# Result", [], 1))
+    @patch.object(OpticalCharacterRecognition, "_prompt_for_duplicate_document", return_value="use")
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_prompt_user_when_duplicate_found_and_no_flag_set(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        mock_prompt: MagicMock,
+        _mock_ocr: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._on_duplicate = ""
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = ["session-1"]
+        ocr_instance._storage.load_ocr_session_data.return_value = ("# Cached", [], 1)
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        mock_prompt.assert_called_once()
+
+    @patch.object(OpticalCharacterRecognition, "_write_to_output_dir")
+    @patch.object(OpticalCharacterRecognition, "_perform_ocr_from_filepath", return_value=("# New", [], 1))
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.FILEPATH)
+    def test_should_include_content_hash_when_storing_result(
+        self,
+        _mock_classify: MagicMock,
+        _mock_fp: MagicMock,
+        _mock_ocr: MagicMock,
+        _mock_write: MagicMock,
+        ocr_instance: OpticalCharacterRecognition,
+    ) -> None:
+        ocr_instance._storage = MagicMock()
+        ocr_instance._storage.find_ocr_sessions_by_hash.return_value = []
+        ocr_instance._generate_markdown_from("/fake/doc.pdf")
+        call_kwargs = ocr_instance._storage.store_ocr_result.call_args.kwargs
+        assert call_kwargs["content_hash"] == "file:abc"
+
+    @patch.object(OpticalCharacterRecognition, "_get_document_fingerprint", return_value="file:abc")
+    @patch("gptcli.src.modes.ocr.classify_input", return_value=InputType.UNSUPPORTED)
+    def test_should_skip_unsupported_input_types(
+        self, _mock_classify: MagicMock, _mock_fp: MagicMock, ocr_instance: OpticalCharacterRecognition
+    ) -> None:
+        ocr_instance._storage = MagicMock()
+        ocr_instance._generate_markdown_from("not-a-valid-input")
+        ocr_instance._storage.store_ocr_result.assert_not_called()

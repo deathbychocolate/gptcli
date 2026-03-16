@@ -387,6 +387,33 @@ class TestStorage:
             )
             assert url_result["source"]["filename"] == "doc.pdf"
 
+        def test_should_include_content_hash_in_source_section(self, storage: Storage) -> None:
+            result = storage._build_ocr_metadata(
+                source="/path/to/doc.pdf",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                markdown_file="document.md",
+                original_filename="doc.md",
+                images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
+                content_hash="file:abc123",
+            )
+            assert result["source"]["hash"] == "file:abc123"
+
+        def test_should_default_to_empty_hash_when_omitted(self, storage: Storage) -> None:
+            result = storage._build_ocr_metadata(
+                source="/path/to/doc.pdf",
+                model=MistralModelsOcr.MISTRAL_OCR.value,
+                page_count=1,
+                markdown_file="document.md",
+                original_filename="doc.md",
+                images=[],
+                session_uuid="test-uuid",
+                created=1704067200.0,
+            )
+            assert result["source"]["hash"] == ""
+
     class TestStoreOcrResult:
 
         URL: str = "https://example.com"
@@ -1270,3 +1297,345 @@ class TestStorage:
             storage._append_to_manifest(str(tmp_path), "uuid-deleted", 200.0)
             storage._append_to_manifest(str(tmp_path), "uuid-exists", 100.0)
             assert storage._find_latest_uuid(str(tmp_path)) == "uuid-exists"
+
+    class TestFindOcrSessionsByHash:
+
+        @staticmethod
+        def _create_session_with_hash(tmp_path: str, content_hash: str) -> str:
+            """Create an OCR session dir with metadata containing the given hash."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
+            os.makedirs(session_dir)
+            metadata = {
+                "source": {
+                    "input": "/fake/doc.pdf",
+                    "input_type": "filepath",
+                    "filename": "doc.pdf",
+                    "hash": content_hash,
+                },
+                "ocr": {
+                    "created": 1704067200.0,
+                    "uuid": session_uuid,
+                    "model": "mistral-ocr-latest",
+                    "provider": "mistral",
+                    "page_count": 1,
+                },
+                "output": {"markdown_file": "document.md", "original_filename": "doc.md", "images": []},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+            return session_uuid
+
+        def test_should_find_session_matching_given_hash(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_with_hash(str(tmp_path), "file:abc123")
+            result = storage_with_ocr_tmp_dir.find_ocr_sessions_by_hash("file:abc123")
+            assert session_uuid in result
+
+        def test_should_return_nothing_when_no_session_has_matching_hash(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            self._create_session_with_hash(str(tmp_path), "file:abc123")
+            result = storage_with_ocr_tmp_dir.find_ocr_sessions_by_hash("file:different")
+            assert result == []
+
+        def test_should_return_nothing_when_storage_directory_does_not_exist(self) -> None:
+            storage = Storage(provider=ProviderNames.MISTRAL.value)
+            storage._ocr_dir = "/nonexistent/path"
+            result = storage.find_ocr_sessions_by_hash("file:abc123")
+            assert result == []
+
+        def test_should_ignore_legacy_sessions_without_hash_field(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
+            metadata = {
+                "source": {"input": "/fake/doc.pdf", "input_type": "filepath", "filename": "doc.pdf"},
+                "ocr": {"created": 1704067200.0, "uuid": session_uuid},
+                "output": {"markdown_file": "document.md", "images": []},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+            result = storage_with_ocr_tmp_dir.find_ocr_sessions_by_hash("file:abc123")
+            assert result == []
+
+        def test_should_ignore_sessions_with_unreadable_metadata(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                f.write("not valid json{{{")
+            result = storage_with_ocr_tmp_dir.find_ocr_sessions_by_hash("file:abc123")
+            assert result == []
+
+        def test_should_find_all_sessions_sharing_the_same_hash(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            uuid1 = self._create_session_with_hash(str(tmp_path), "file:same")
+            uuid2 = self._create_session_with_hash(str(tmp_path), "file:same")
+            result = storage_with_ocr_tmp_dir.find_ocr_sessions_by_hash("file:same")
+            assert len(result) == 2
+            assert set(result) == {uuid1, uuid2}
+
+    class TestLoadOcrSessionData:
+
+        @staticmethod
+        def _create_full_session(
+            tmp_path: str, markdown: str = "# Test", images: list[tuple[str, bytes]] | None = None, page_count: int = 3
+        ) -> str:
+            """Create a complete OCR session dir with markdown, images, and metadata."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
+            os.makedirs(session_dir)
+
+            with open(os.path.join(session_dir, "document.md"), "w", encoding="utf8") as f:
+                f.write(markdown)
+
+            image_filenames: list[str] = []
+            if images:
+                for img_name, img_data in images:
+                    with open(os.path.join(session_dir, img_name), "wb") as f:
+                        f.write(img_data)
+                    image_filenames.append(img_name)
+
+            metadata = {
+                "source": {
+                    "input": "/fake/doc.pdf",
+                    "input_type": "filepath",
+                    "filename": "doc.pdf",
+                    "hash": "file:abc",
+                },
+                "ocr": {
+                    "created": 1704067200.0,
+                    "uuid": session_uuid,
+                    "model": "mistral-ocr-latest",
+                    "provider": "mistral",
+                    "page_count": page_count,
+                },
+                "output": {"markdown_file": "document.md", "original_filename": "doc.md", "images": image_filenames},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+
+            return session_uuid
+
+        def test_should_return_markdown_images_and_page_count_for_valid_session(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            images = [("img_001.png", b"PNG_DATA")]
+            session_uuid = self._create_full_session(str(tmp_path), markdown="# Hello", images=images, page_count=5)
+            result = storage_with_ocr_tmp_dir.load_ocr_session_data(session_uuid)
+            assert result is not None
+            md, img_data, pg = result
+            assert md == "# Hello"
+            assert len(img_data) == 1
+            assert img_data[0] == ("img_001.png", b"PNG_DATA")
+            assert pg == 5
+
+        def test_should_return_none_for_nonexistent_session(self, storage_with_ocr_tmp_dir: Storage) -> None:
+            result = storage_with_ocr_tmp_dir.load_ocr_session_data("nonexistent-uuid")
+            assert result is None
+
+        def test_should_return_none_when_markdown_file_is_missing(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
+            metadata = {
+                "source": {"input": "/fake/doc.pdf", "hash": "file:abc"},
+                "ocr": {"page_count": 1},
+                "output": {"markdown_file": "document.md", "images": []},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+            result = storage_with_ocr_tmp_dir.load_ocr_session_data(session_uuid)
+            assert result is None
+
+        def test_should_return_empty_image_list_when_session_has_no_images(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_full_session(str(tmp_path), images=None)
+            result = storage_with_ocr_tmp_dir.load_ocr_session_data(session_uuid)
+            assert result is not None
+            _, img_data, _ = result
+            assert img_data == []
+
+        def test_should_skip_missing_image_files_without_failing(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            os.makedirs(session_dir)
+            with open(os.path.join(session_dir, "document.md"), "w", encoding="utf8") as f:
+                f.write("# Content")
+            metadata = {
+                "source": {"input": "/fake/doc.pdf", "hash": "file:abc"},
+                "ocr": {"page_count": 1},
+                "output": {"markdown_file": "document.md", "images": ["missing_img.png"]},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+            result = storage_with_ocr_tmp_dir.load_ocr_session_data(session_uuid)
+            assert result is not None
+            _, img_data, _ = result
+            assert img_data == []
+
+    class TestOverwriteOcrResult:
+
+        @staticmethod
+        def _create_session_for_overwrite(
+            tmp_path: str, markdown: str = "# Old", images: list[tuple[str, bytes]] | None = None
+        ) -> str:
+            """Create an OCR session suitable for overwriting."""
+            session_uuid = str(uuid.uuid4())
+            session_dir = os.path.join(tmp_path, session_uuid)
+            os.makedirs(session_dir)
+
+            with open(os.path.join(session_dir, "document.md"), "w", encoding="utf8") as f:
+                f.write(markdown)
+
+            image_filenames: list[str] = []
+            if images:
+                for img_name, img_data in images:
+                    with open(os.path.join(session_dir, img_name), "wb") as f:
+                        f.write(img_data)
+                    image_filenames.append(img_name)
+
+            metadata = {
+                "source": {
+                    "input": "/fake/doc.pdf",
+                    "input_type": "filepath",
+                    "filename": "doc.pdf",
+                    "hash": "file:old",
+                },
+                "ocr": {
+                    "created": 1704067200.0,
+                    "uuid": session_uuid,
+                    "model": "old-model",
+                    "provider": "mistral",
+                    "page_count": 1,
+                },
+                "output": {"markdown_file": "document.md", "original_filename": "doc.md", "images": image_filenames},
+            }
+            with open(os.path.join(session_dir, "metadata.json"), "w", encoding="utf8") as f:
+                json.dump(metadata, f)
+
+            # Add to manifest
+            manifest_path = os.path.join(tmp_path, _MANIFEST_FILENAME)
+            entries: list[dict[str, Any]] = []
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r", encoding="utf8") as f:
+                    entries = json.load(f)
+            entries.append({"uuid": session_uuid, "created": 1704067200.0})
+            with open(manifest_path, "w", encoding="utf8") as f:
+                json.dump(entries, f)
+
+            return session_uuid
+
+        def test_should_replace_markdown_with_new_content(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path))
+            storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# New Content",
+                model="new-model",
+                page_count=3,
+                image_data=[],
+                content_hash="file:new",
+            )
+            md_path = os.path.join(str(tmp_path), session_uuid, "document.md")
+            with open(md_path, "r", encoding="utf8") as f:
+                assert f.read() == "# New Content"
+
+        def test_should_replace_old_images_with_new_ones(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path), images=[("old_img.png", b"OLD")])
+            storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# New",
+                model="m",
+                page_count=1,
+                image_data=[("new_img.png", b"NEW")],
+                content_hash="file:new",
+            )
+            session_dir = os.path.join(str(tmp_path), session_uuid)
+            assert not os.path.exists(os.path.join(session_dir, "old_img.png"))
+            assert os.path.exists(os.path.join(session_dir, "new_img.png"))
+
+        def test_should_update_model_and_page_count_in_metadata(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path))
+            storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# X",
+                model="new-model-v2",
+                page_count=10,
+                image_data=[],
+                content_hash="file:new",
+            )
+            meta_path = os.path.join(str(tmp_path), session_uuid, "metadata.json")
+            with open(meta_path, "r", encoding="utf8") as f:
+                metadata = json.load(f)
+            assert metadata["ocr"]["model"] == "new-model-v2"
+            assert metadata["ocr"]["page_count"] == 10
+
+        def test_should_preserve_original_session_uuid(self, storage_with_ocr_tmp_dir: Storage, tmp_path: str) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path))
+            storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# X",
+                model="m",
+                page_count=1,
+                image_data=[],
+                content_hash="file:new",
+            )
+            meta_path = os.path.join(str(tmp_path), session_uuid, "metadata.json")
+            with open(meta_path, "r", encoding="utf8") as f:
+                metadata = json.load(f)
+            assert metadata["ocr"]["uuid"] == session_uuid
+
+        def test_should_update_content_hash_in_metadata(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path))
+            storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# X",
+                model="m",
+                page_count=1,
+                image_data=[],
+                content_hash="file:updated-hash",
+            )
+            meta_path = os.path.join(str(tmp_path), session_uuid, "metadata.json")
+            with open(meta_path, "r", encoding="utf8") as f:
+                metadata = json.load(f)
+            assert metadata["source"]["hash"] == "file:updated-hash"
+
+        def test_should_return_path_to_session_directory(
+            self, storage_with_ocr_tmp_dir: Storage, tmp_path: str
+        ) -> None:
+            session_uuid = self._create_session_for_overwrite(str(tmp_path))
+            result = storage_with_ocr_tmp_dir.overwrite_ocr_result(
+                session_uuid=session_uuid,
+                source="/fake/doc.pdf",
+                markdown_content="# X",
+                model="m",
+                page_count=1,
+                image_data=[],
+                content_hash="file:new",
+            )
+            assert result == os.path.join(str(tmp_path), session_uuid)

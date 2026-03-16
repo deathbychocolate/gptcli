@@ -439,6 +439,15 @@ class OutputTypes(BaseEnum):
         return cls.PLAIN.value
 
 
+class DuplicateAction(BaseEnum):
+    """Actions available when a duplicate OCR document is detected."""
+
+    USE = "use"
+    OVERWRITE = "overwrite"
+    NEW = "new"
+    SKIP = "skip"
+
+
 class StorageTypes(BaseEnum):
     """The storage types the project supports."""
 

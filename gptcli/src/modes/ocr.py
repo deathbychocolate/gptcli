@@ -8,16 +8,26 @@ The file as a result becomes suitable for consumption by non-OCR models.
 """
 
 import base64
+import hashlib
 import json
 import logging
 import os
 from logging import Logger
 
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.formatted_text import ANSI
 from requests import Response, post
 from requests.exceptions import RequestException
 
 from gptcli.src.common.api import recognizing_spinner
-from gptcli.src.common.constants import MISTRAL, OPENAI
+from gptcli.src.common.constants import (
+    GRN,
+    MISTRAL,
+    OPENAI,
+    RST,
+    DuplicateAction,
+)
 from gptcli.src.common.decorators import user_triggered_abort
 from gptcli.src.common.encryption import Encryption
 from gptcli.src.common.storage import Storage
@@ -42,6 +52,7 @@ class OpticalCharacterRecognition:
         include_images: bool = True,
         encryption: Encryption | None = None,
         api_key: str = "",
+        on_duplicate: str = "",
     ):
         """Initialize an OCR session for converting documents to Markdown.
 
@@ -58,6 +69,7 @@ class OpticalCharacterRecognition:
             include_images (bool, optional): Whether to extract images from OCR responses. Defaults to True.
             encryption (Encryption | None, optional): Encryption instance for encrypting stored data. Defaults to None.
             api_key (str, optional): The API key for authentication. Defaults to "".
+            on_duplicate (str, optional): Action when duplicate document found. One of "use", "overwrite", "new", "skip", or "" for interactive prompt. Defaults to "".
         """
         self._model: str = model
         self._provider: str = provider
@@ -68,6 +80,7 @@ class OpticalCharacterRecognition:
         self._output_dir: str | None = None if no_output_dir else output_dir
         self._inputs: list[str] = inputs
         self._include_images: bool = include_images
+        self._on_duplicate: str = on_duplicate
 
         self._storage: Storage = Storage(provider=provider, encryption=encryption)
 
@@ -103,22 +116,62 @@ class OpticalCharacterRecognition:
     def _generate_markdown_from(self, document: str) -> None:
         """Perform OCR on a document and optionally store/display the result.
 
+        Checks for duplicate documents by fingerprint. When a duplicate is found,
+        the action is determined by ``--on-duplicate`` (or interactive prompt).
+
         Args:
             document (str): The filepath or URL of the document to process.
         """
         input_type = classify_input(document)
-        if input_type == InputType.URL:
-            document_as_markdown, image_data, page_count = self._perform_ocr_from_url(url=document)
-        elif input_type == InputType.FILEPATH:
-            document_as_markdown, image_data, page_count = self._perform_ocr_from_filepath(filepath=document)
-        elif input_type == InputType.UNSUPPORTED:
+
+        if input_type == InputType.UNSUPPORTED:
             logger.warning("Detected unsupported input type, it is likely neither a URL nor a valid filepath.")
             logger.warning(f"Skipping '{document}'.")
             return None
-        else:
-            logger.warning(f"Received an unexpected input type.")
-            logger.warning(f"Skipping '{document}'.")
-            return None
+
+        content_hash = self._get_document_fingerprint(document, input_type)
+
+        # Check for existing sessions with same hash
+        existing_sessions = self._storage.find_ocr_sessions_by_hash(content_hash)
+
+        if existing_sessions:
+            action = self._on_duplicate if self._on_duplicate else self._prompt_for_duplicate_document(document)
+
+            if action == DuplicateAction.SKIP.value:
+                logger.info(f"Skipping document {document} as requested.")
+                return None
+
+            if action == DuplicateAction.USE.value:
+                latest_session = existing_sessions[0]
+                session_data = self._storage.load_ocr_session_data(latest_session)
+                if session_data is None:
+                    logger.warning(f"Failed to load cached OCR result for {document}.")
+                    return None
+                document_as_markdown, image_data, _ = session_data
+                logger.info(f"Using existing OCR result for {document} (session: {latest_session}).")
+                self._output_result(document, document_as_markdown, image_data)
+                return None
+
+            if action == DuplicateAction.OVERWRITE.value:
+                document_as_markdown, image_data, page_count = self._perform_ocr(document, input_type)
+                if self._store:
+                    session_uuid = existing_sessions[0]
+                    self._storage.overwrite_ocr_result(
+                        session_uuid=session_uuid,
+                        source=document,
+                        markdown_content=document_as_markdown,
+                        model=self._model,
+                        page_count=page_count,
+                        image_data=image_data,
+                        content_hash=content_hash,
+                    )
+                self._output_result(document, document_as_markdown, image_data)
+                return None
+
+            # action == "new": fall through to normal OCR + store below
+
+        # New document (or "new" action for duplicate)
+        document_as_markdown, image_data, page_count = self._perform_ocr(document, input_type)
 
         if self._store:
             session_dir = self._storage.store_ocr_result(
@@ -127,17 +180,40 @@ class OpticalCharacterRecognition:
                 model=self._model,
                 page_count=page_count,
                 image_data=image_data,
+                content_hash=content_hash,
             )
             logger.info(f"Stored OCR result to: {session_dir}")
 
-        self._write_to_output_dir(
-            document=document,
-            markdown_content=document_as_markdown,
-            image_data=image_data,
-        )
+        self._output_result(document, document_as_markdown, image_data)
+
+        return None
+
+    def _output_result(self, document: str, markdown_content: str, image_data: list[tuple[str, bytes]]) -> None:
+        """Write OCR result to output directory and optionally display it.
+
+        Args:
+            document (str): The original source document path or URL.
+            markdown_content (str): The extracted Markdown text content.
+            image_data (list[tuple[str, bytes]]): List of (filename, bytes) tuples for extracted images.
+        """
+        self._write_to_output_dir(document=document, markdown_content=markdown_content, image_data=image_data)
 
         if self._display:
-            print(document_as_markdown)
+            print(markdown_content)
+
+    def _perform_ocr(self, document: str, input_type: InputType) -> tuple[str, list[tuple[str, bytes]], int]:
+        """Route OCR processing based on input type.
+
+        Args:
+            document (str): The filepath or URL of the document.
+            input_type (InputType): The classified input type.
+
+        Returns:
+            tuple[str, list[tuple[str, bytes]], int]: Markdown content, image data, and page count.
+        """
+        if input_type == InputType.URL:
+            return self._perform_ocr_from_url(url=document)
+        return self._perform_ocr_from_filepath(filepath=document)
 
     def _validate_output_dir(self) -> None:
         """Validate that the output directory path is usable and create it if missing.
@@ -226,6 +302,81 @@ class OpticalCharacterRecognition:
             "authorization": f"Bearer {self._api_key}",
             "content-type": "application/json",
         }
+
+    def _get_document_fingerprint(self, document: str, input_type: InputType | None = None) -> str:
+        """Generate a unique fingerprint for a document based on its content or URL.
+
+        For URLs: uses the URL itself as the fingerprint (two different documents
+        at the same URL will be treated as duplicates).
+        For files: uses a SHA-256 hash of the file content as the fingerprint.
+
+        Args:
+            document (str): The filepath or URL of the document.
+            input_type (InputType | None): Pre-classified input type. If None, classification is performed internally.
+
+        Returns:
+            str: A unique fingerprint string for the document.
+
+        Raises:
+            FileNotFoundError: If the local file does not exist (raised by ``open()``).
+            ValueError: If the document type is unsupported.
+        """
+        if input_type is None:
+            input_type = classify_input(document)
+
+        if input_type == InputType.URL:
+            return document
+
+        if input_type == InputType.FILEPATH:
+            hash_obj = hashlib.sha256()
+            with open(document, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_obj.update(chunk)
+            return f"file:{hash_obj.hexdigest()}"
+
+        raise ValueError(f"Unsupported input type for fingerprinting: {document}")
+
+    def _prompt_for_duplicate_document(self, document: str) -> str:
+        """Prompt the user for action when a duplicate document is found.
+
+        Args:
+            document (str): The document path or URL.
+
+        Returns:
+            str: The user's choice: 'use', 'overwrite', 'new', or 'skip'.
+        """
+        choice_use: tuple[str, str] = ("1", DuplicateAction.USE.value)
+        choice_overwrite: tuple[str, str] = ("2", DuplicateAction.OVERWRITE.value)
+        choice_new: tuple[str, str] = ("3", DuplicateAction.NEW.value)
+        choice_skip: tuple[str, str] = ("4", DuplicateAction.SKIP.value)
+        choices = [*choice_use, *choice_overwrite, *choice_new, *choice_skip]
+
+        print(f"\nDocument '{document}' has already been processed.")
+        print("\nChoose and action:")
+        print(f"  1 | {DuplicateAction.USE.value:<10}  Use existing cached result.")
+        print(f"  2 | {DuplicateAction.OVERWRITE.value:<10}  Overwrite existing session with new OCR.")
+        print(f"  3 | {DuplicateAction.NEW.value:<10}  Create new session alongside existing.")
+        print(f"  4 | {DuplicateAction.SKIP.value:<10}  Skip this document.")
+        print("\nTip: use --on-duplicate to automate this choice.")
+
+        completer = WordCompleter(choices, ignore_case=True)
+
+        while True:
+            try:
+                choice = prompt(message=ANSI(f"{GRN}>>>{RST} "), completer=completer).strip().lower()
+
+                if choice in choice_use:
+                    return DuplicateAction.USE.value
+                elif choice in choice_overwrite:
+                    return DuplicateAction.OVERWRITE.value
+                elif choice in choice_new:
+                    return DuplicateAction.NEW.value
+                elif choice in choice_skip:
+                    return DuplicateAction.SKIP.value
+                else:
+                    print("Invalid choice. Please enter 1-4 or the action name.")
+            except (EOFError, KeyboardInterrupt):
+                return DuplicateAction.SKIP.value
 
     def _encode_pdf_to_base64(self, filepath: str) -> str:
         """Encode a PDF file to a base64 string.

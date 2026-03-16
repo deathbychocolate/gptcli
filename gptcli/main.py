@@ -237,6 +237,7 @@ def _enter_ocr_mode(args: Namespace, encryption: Encryption | None = None, api_k
         include_images=not args.no_images,
         encryption=encryption,
         api_key=api_key,
+        on_duplicate=args.on_duplicate,
     ).start()
 
 

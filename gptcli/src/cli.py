@@ -12,6 +12,7 @@ from gptcli.constants import (
     GPTCLI_PROVIDER_OPENAI_KEY_FILE,
 )
 from gptcli.src.common.constants import (
+    DuplicateAction,
     MistralModelRoles,
     MistralModelsChat,
     MistralModelsOcr,
@@ -291,6 +292,13 @@ def add_common_mode_arguments(subparser_modes: Any, provider: str) -> Any:
             action="store_true",
             default=False,
             help="Disable extracting images from the OCR response. Only Markdown text will be returned.",
+        )
+        parser_ocr.add_argument(
+            "--on-duplicate",
+            type=str,
+            choices=DuplicateAction.to_list(),
+            default="",
+            help="Action when a duplicate document is found.",
         )
         parser_ocr.add_argument(
             "inputs",
